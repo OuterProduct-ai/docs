@@ -51,7 +51,7 @@ import outerproduct as op
 op.init()  # must come first
 
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
-model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
 ```
 
 If you call any SDK function before `op.init()`, the SDK raises an error indicating that the client has not been initialized.

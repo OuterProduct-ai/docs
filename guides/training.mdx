@@ -17,7 +17,7 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     op.init()
     
     model = op.reasoning.fit(
-        dataset, task=op.BinclassConfig(label_column="churn")
+        dataset, task=op.Binclass(label_column="churn")
     ).wait()  # ReasoningModel
     ```
 
@@ -31,7 +31,7 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     
     op.init()
     
-    trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="churn"))
+    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="churn"))
     model = trainer.run().wait()  # Model
     ```
 
@@ -66,7 +66,7 @@ dataset = op.LocalDataset.from_numpy(X, y, feature_names=["sqft", "bedrooms"]).u
 ```
 
 <Note>
-  Each column carries a `Column` schema. The schema is inferred automatically by default; override it via the `columns=` argument when needed. The target column is always specified at fit time via the `task` config (e.g. `op.BinclassConfig(label_column=...)`), not on the dataset itself.
+  Each column carries a `Column` schema. The schema is inferred automatically by default; override it via the `columns=` argument when needed. The target column is always specified at fit time via the `task` config (e.g. `op.Binclass(label_column=...)`), not on the dataset itself.
 </Note>
 
 ## Default training call
@@ -76,11 +76,11 @@ The smallest valid call accepts a dataset and the target column name:
 ```python
 # ReasoningModel (predictions + explanations)
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()
 
 # Plain Model (predictions only)
-trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="churn"))
+trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="churn"))
 model = trainer.run().wait()
 ```
 
@@ -91,7 +91,7 @@ Pass `model_types` as a list of string identifiers resolved server-side. If you 
 ```python
 trainer = op.Trainer.configure(
     dataset,
-    task=op.BinclassConfig(label_column="churn"),
+    task=op.Binclass(label_column="churn"),
     model_types=["tabm", "xgboost"],
 )
 model = trainer.run().wait()
@@ -104,7 +104,7 @@ Pass a single `op.Metric()` or a list. With a single metric, training optimizes 
 ```python
 trainer = op.Trainer.configure(
     dataset,
-    task=op.BinclassConfig(label_column="churn"),
+    task=op.Binclass(label_column="churn"),
     metric=[op.Metric("auc"), op.Metric("accuracy")],
 )
 model = trainer.run().wait()
@@ -130,7 +130,7 @@ For `op.reasoning.fit()`, control search depth via `n_hyperopt_steps`:
 ```python
 model = op.reasoning.fit(
     dataset,
-    task=op.BinclassConfig(label_column="churn"),
+    task=op.Binclass(label_column="churn"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=10,
 ).wait()

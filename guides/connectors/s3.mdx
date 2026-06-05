@@ -43,7 +43,7 @@ import outerproduct as op
 connector = op.S3Connector(connector_credential_name="prod-aws", region="us-east-1")
 dataset = connector.table("s3://my-bucket/data/customers.parquet")
 
-model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>

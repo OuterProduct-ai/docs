@@ -40,7 +40,7 @@ CSV files work with the standard `outerproduct` install and need no additional d
     Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
 
     ```python
-    model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+    model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
     ```
   </Step>
 </Steps>
@@ -52,7 +52,7 @@ import outerproduct as op
 
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
-model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>

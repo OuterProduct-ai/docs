@@ -19,7 +19,7 @@ op.init(api_key="...")
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 reasoning_model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
@@ -99,7 +99,7 @@ op.init()
 dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="approved")
+    dataset, task=op.Binclass(label_column="approved")
 ).wait()
 
 # Fit a PatternTracker on the likely-denied cohort

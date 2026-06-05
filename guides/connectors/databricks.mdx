@@ -46,7 +46,7 @@ connector = op.DatabricksConnector(
 )
 dataset = connector.table("customers")
 
-model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>

@@ -11,7 +11,7 @@ The `outerproduct.reasoning` module is the entry point for training reasoning mo
 ```python
 op.reasoning.fit(
     dataset: Dataset,
-    task: TaskConfig | None = None,
+    task: Task | None = None,
     teacher: Model | Predictor | None = None,
     model_types: list[str] | None = None,
     metric: Metric | list[Metric] | None = None,
@@ -28,16 +28,18 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   Training data wrapped in an `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or any other `LocalDataset` constructor, or reference a connector. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
 </ParamField>
 
-<ParamField body="task" type="TaskConfig | None">
+<ParamField body="task" type="Task | None">
   The supervised learning task, which carries the target `label_column`. Pass the config that matches your problem:
 
   | Config | Use when |
   |---|---|
-  | `op.BinclassConfig(label_column=...)` | Binary classification (e.g. churn, fraud, approval) |
-  | `op.MulticlassConfig(label_column=...)` | Multi-class classification (three or more discrete classes) |
-  | `op.RegressionConfig(label_column=...)` | Continuous numerical target |
-  | `op.ForecastingConfig(label_column=..., id_column=..., timestamp_column=..., horizon=..., lookback=...)` | Time-series forecasting |
-  | `op.SequenceConfig(label_column=..., id_column=..., timestamp_column=...)` | Sequence modeling |
+  | `op.Binclass(label_column=...)` | Binary classification (e.g. churn, fraud, approval) |
+  | `op.Multiclass(label_column=...)` | Multi-class classification (three or more discrete classes) |
+  | `op.Regression(label_column=...)` | Continuous numerical target |
+  | `op.Forecasting(label_column=..., id_column=..., timestamp_column=..., horizon=..., lookback=...)` | Time-series forecasting |
+  | `op.SequenceBinclass(label_column=..., id_column=..., timestamp_column=...)` | Per-entity binary classification over each entity's sequence |
+  | `op.SequenceMulticlass(label_column=..., id_column=..., timestamp_column=...)` | Per-entity multi-class classification over each entity's sequence |
+  | `op.SequenceRegression(label_column=..., id_column=..., timestamp_column=...)` | Per-entity regression over each entity's sequence (accepted, not yet executable) |
 
   Required unless `teacher` is provided. When a teacher is set, OuterProduct queries it to generate training labels and `task` becomes optional.
 </ParamField>
@@ -93,7 +95,7 @@ dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
     dataset,
-    task=op.BinclassConfig(label_column="churn"),
+    task=op.Binclass(label_column="churn"),
 ).wait()  # ReasoningModel
 
 predictions = model.predict(op.LocalDataset.from_pandas(X_new).upload())
@@ -103,7 +105,7 @@ reasoning   = model.explain(op.LocalDataset.from_pandas(X_new).upload())
 ```python With hyperopt and model selection
 model = op.reasoning.fit(
     dataset,
-    task=op.BinclassConfig(label_column="loan_default"),
+    task=op.Binclass(label_column="loan_default"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=50,
 ).wait()
@@ -126,7 +128,7 @@ model = op.reasoning.fit(
 import time
 
 job = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 )
 
 while job.status() in ("pending", "running"):
@@ -190,7 +192,7 @@ op.init(api_key="your-api-key")
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
@@ -280,7 +282,7 @@ op.init(api_key="your-api-key")
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(

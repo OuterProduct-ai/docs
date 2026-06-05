@@ -25,7 +25,7 @@ dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 # 2. Train with reasoning
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="approved")
+    dataset, task=op.Binclass(label_column="approved")
 ).wait()
 
 # 3. Prepare inference rows (drop the label column the model never saw)

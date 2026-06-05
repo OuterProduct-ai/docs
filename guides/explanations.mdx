@@ -17,7 +17,7 @@ import outerproduct as op
 op.init()
 
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()  # ReasoningModel
 ```
 
@@ -89,7 +89,7 @@ op.init()
 # Train
 dataset = op.LocalDataset.from_csv("loans.csv").upload()
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="approved")
+    dataset, task=op.Binclass(label_column="approved")
 ).wait()
 
 # Inference dataset

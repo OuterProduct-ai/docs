@@ -58,7 +58,7 @@ import outerproduct as op
 op.init(api_key="your-api-key")
 
 model = op.reasoning.fit(
-    dataset, task=op.BinclassConfig(label_column="churn")
+    dataset, task=op.Binclass(label_column="churn")
 ).wait()
 
 test_dataset = op.LocalDataset.from_pandas(X_new).upload()

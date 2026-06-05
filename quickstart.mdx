@@ -20,7 +20,7 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from environment
 
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
-model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
 
 test_dataset = op.LocalDataset.from_csv("customers_test.csv").upload()
 predictions = model.predict(test_dataset)
@@ -31,7 +31,7 @@ print(reasoning.attributions.shape)  # (n_samples, n_features)
 ```
 
 <Tip>
-  Use `op.RegressionConfig(label_column=...)` for continuous targets or `op.MulticlassConfig(label_column=...)` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
+  Use `op.Regression(label_column=...)` for continuous targets or `op.Multiclass(label_column=...)` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
 </Tip>
 
 ## What's next
