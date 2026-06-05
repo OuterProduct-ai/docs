@@ -1,10 +1,10 @@
 ---
-title: "outerproduct.reasoning — Explainable Model Training"
+title: "outerproduct.reasoning — Reasoning Model Training"
 sidebarTitle: "Reasoning"
-description: "API reference for op.reasoning.fit() and PatternTracker — train explainable models and distil population-level patterns from their predictions."
+description: "API reference for op.reasoning.fit() and PatternTracker — train reasoning models and distil population-level patterns from their predictions."
 ---
 
-The `outerproduct.reasoning` module is the entry point for training explainable models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
+The `outerproduct.reasoning` module is the entry point for training reasoning models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
 
 ## `op.reasoning.fit()`
 
@@ -43,7 +43,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 </ParamField>
 
 <ParamField body="model_types" type="list[str] | None">
-  Restrict the model family search to a specific list, e.g. `["tabm", "xgboost"]`. When `None`, OuterProduct selects from its full portfolio of tabular model families. Providing this list is useful when you have a latency or interpretability constraint that rules out certain architectures.
+  Restrict the model family search to a specific list, e.g. `["tabm", "xgboost"]`. When `None`, OuterProduct selects from its full portfolio of model families. Providing this list is useful when you have a latency or interpretability constraint that rules out certain architectures.
 </ParamField>
 
 <ParamField body="metric" type="Metric | list[Metric] | None">
@@ -59,7 +59,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 </ParamField>
 
 <ParamField body="teacher" type="Model | Predictor | None">
-  A teacher model for knowledge distillation. Accepts either a previously trained OuterProduct `Model` / `ReasoningModel` or a `Predictor` wrapping an external HTTP scoring endpoint. When set, OuterProduct trains the new `ReasoningModel` to mimic the teacher's output, adding full explainability to a black-box predictor.
+  A teacher model for knowledge distillation. Accepts either a previously trained OuterProduct `Model` / `ReasoningModel` or a `Predictor` wrapping an external HTTP scoring endpoint. When set, OuterProduct trains the new `ReasoningModel` to mimic the teacher's output, adding full reasoning to a black-box predictor.
 </ParamField>
 
 ### Return value

@@ -4,7 +4,7 @@ sidebarTitle: "Connectors"
 description: "API reference for S3Connector, SnowflakeConnector, and DatabricksConnector. For local files and in-memory frames, use LocalDataset.upload()."
 ---
 
-The `outerproduct.connector` module provides three connector classes for loading tabular data from external sources into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer` — no intermediate download or local processing required. For local files and in-memory frames, build a `Dataset` with [`op.LocalDataset.from_*(...).upload()`](/sdk/dataset) instead.
+The `outerproduct.connector` module provides three connector classes for loading structured data from external sources into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer` — no intermediate download or local processing required. For local files and in-memory frames, build a `Dataset` with [`op.LocalDataset.from_*(...).upload()`](/sdk/dataset) instead.
 
 <Note>
   For all external connectors (S3, Snowflake, and Databricks), your cloud credentials are **never** passed through the SDK. You store them once in the [OuterProduct Console](https://console.outerproduct.com) under **Connectors**, and the SDK references them by the name you assigned. The OuterProduct backend uses those stored credentials at training and inference time.

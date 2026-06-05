@@ -1,10 +1,10 @@
 ---
 title: "outerproduct.agentic — Document Tabularization API"
 sidebarTitle: "Agentic"
-description: "API reference for the agentic documents module — convert unstructured documents into typed tabular features ready for ReasoningModel training."
+description: "API reference for the agentic documents module — convert unstructured documents into typed structured features ready for ReasoningModel training."
 ---
 
-The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed tabular features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
+The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed structured features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
 
 All public symbols for document tabularization live in the `outerproduct.agentic.documents` submodule.
 
@@ -51,7 +51,7 @@ schema = documents.induce_schema(raw_documents, questions=questions)
 # 3. Tabularize the full document set using the schema
 dataset = documents.tabularize(raw_documents, schema=schema)
 
-# 4. Train a ReasoningModel on the resulting tabular dataset
+# 4. Train a ReasoningModel on the resulting structured dataset
 model = op.reasoning.fit(
     dataset,
     task=op.BinclassConfig(label_column="has_auto_renewal"),
@@ -96,7 +96,7 @@ Analyzes a collection of documents and returns a `DocumentSchema` that describes
 outerproduct.agentic.documents.tabularize(documents, schema) -> DocumentDataset
 ```
 
-Applies a `DocumentSchema` to a collection of documents and returns a `DocumentDataset` — a typed tabular dataset where each row corresponds to one document and each column corresponds to a `DocumentQuestion` in the schema.
+Applies a `DocumentSchema` to a collection of documents and returns a `DocumentDataset` — a typed structured dataset where each row corresponds to one document and each column corresponds to a `DocumentQuestion` in the schema.
 
 <ParamField body="documents" type="list" required>
   The full collection of documents to tabularize. These can be the same documents passed to `induce_schema` or a larger dataset that shares the same structure.
@@ -107,7 +107,7 @@ Applies a `DocumentSchema` to a collection of documents and returns a `DocumentD
 </ParamField>
 
 <ResponseField name="DocumentDataset" type="DocumentDataset">
-  A typed tabular dataset derived from the source documents. Each row represents one document; each column represents one answered `DocumentQuestion`. Extends `Dataset`, so it can be passed directly to `op.reasoning.fit()` or `Trainer.configure()`.
+  A typed structured dataset derived from the source documents. Each row represents one document; each column represents one answered `DocumentQuestion`. Extends `Dataset`, so it can be passed directly to `op.reasoning.fit()` or `Trainer.configure()`.
 </ResponseField>
 
 ---

@@ -6,8 +6,9 @@
   height: 2.625rem !important;
 }
 
-/* Drop the "Ask Assistant" entry from the search bar. */
+/* Drop the "Ask Assistant" toggle that sits next to the search bar. */
 #assistant-entry,
-#assistant-entry-mobile {
+#assistant-entry-mobile,
+[aria-label="Toggle assistant panel"] {
   display: none !important;
 }

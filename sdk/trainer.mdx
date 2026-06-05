@@ -1,7 +1,7 @@
 ---
 title: "outerproduct.Trainer — Model Training Configuration"
 sidebarTitle: "Trainer"
-description: "Train tabular ML models with outerproduct.Trainer. Configure model families, optimization metrics, search strategy, and knowledge distillation."
+description: "Train models on structured data with outerproduct.Trainer. Configure model families, optimization metrics, search strategy, and knowledge distillation."
 ---
 
 `outerproduct.Trainer` is the low-level training interface that gives you full control over the model-selection and hyperparameter search that runs on the OuterProduct platform. It coordinates a parallel search over model families, hyperparameter spaces, and metric weightings — all server-side. The result is a single trained `Model` representing the best configuration found. If you also need feature-level explanations, use `op.reasoning.fit()` instead, which runs the same search and returns a `ReasoningModel`.

@@ -313,7 +313,7 @@ Describes a single feature edit within a `Counterfactual`.
 
 ## Predictor
 
-`Predictor` wraps an arbitrary HTTP scoring endpoint so you can use an existing model as a **teacher** in OuterProduct's distillation flow. Pass a `Predictor` as the `teacher` argument to `op.reasoning.fit()` to distil a `ReasoningModel` that mimics the teacher's predictions while adding full explainability.
+`Predictor` wraps an arbitrary HTTP scoring endpoint so you can use an existing model as a **teacher** in OuterProduct's distillation flow. Pass a `Predictor` as the `teacher` argument to `op.reasoning.fit()` to distil a `ReasoningModel` that mimics the teacher's predictions while adding full reasoning.
 
 ```python
 op.model.Predictor(url: str, headers: dict | None = None)

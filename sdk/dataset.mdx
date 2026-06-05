@@ -1,7 +1,7 @@
 ---
-title: "outerproduct.Dataset — Tabular Data for ML Training"
+title: "outerproduct.Dataset — Structured Data for ML Training"
 sidebarTitle: "Dataset"
-description: "Stage local tabular data with outerproduct.LocalDataset (CSV, Parquet, pandas, NumPy) and upload it to a server-backed Dataset for training and inference."
+description: "Stage local structured data with outerproduct.LocalDataset (CSV, Parquet, pandas, NumPy) and upload it to a server-backed Dataset for training and inference."
 ---
 
 `outerproduct.Dataset` is the typed, server-backed data handle that all OuterProduct training and inference functions accept. You don't construct it from raw data directly — you stage local data in an `op.LocalDataset` (from a file, DataFrame, or array) and call `.upload()`, or you reference a [connector](/sdk/connectors) (S3, Snowflake, Databricks). The target column is not marked on the dataset itself — you name it later via the `task` config (e.g. `op.BinclassConfig(label_column=...)`) when you configure a trainer or call `reasoning.fit()`.
