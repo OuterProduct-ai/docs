@@ -5,7 +5,7 @@ icon: "layer-group"
 description: "Reference Databricks SQL warehouse or cluster tables from OuterProduct using a stored access token. No Databricks credentials pass through the SDK."
 ---
 
-`DatabricksConnector` lets OuterProduct read data from your Databricks SQL warehouse or cluster at training and inference time. You store your Databricks credential once in the [OuterProduct Console](https://console.outerproduct.com) using a personal access token and reference it by name in the SDK. No Databricks access tokens are ever passed through the SDK — the OuterProduct backend authenticates directly with Databricks using the stored credential.
+`DatabricksConnector` lets OuterProduct read data from your Databricks SQL warehouse or cluster at training and inference time. You store your Databricks credential once in the [OuterProduct Console](https://console.outerproduct.com) using a personal access token and reference it by name in the SDK. No Databricks access tokens are ever passed through the SDK, as the OuterProduct backend authenticates directly with Databricks using the stored credential.
 
 ## Add a Databricks credential in the Console
 
@@ -16,7 +16,7 @@ Before using `DatabricksConnector` from Python, create a credential in the Outer
     Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **Databricks**.
   </Step>
   <Step title="Generate a personal access token in Databricks">
-    In your Databricks account, navigate to **Settings → Developer → Access tokens** and click **Generate new token**. When prompted, select **Other APIs** as the token type. Copy the token — you'll need it in the next step.
+    In your Databricks account, navigate to **Settings → Developer → Access tokens** and click **Generate new token**. When prompted, select **Other APIs** as the token type. Copy this token, as you'll need it in the next step.
 
     <Note>
       Assign the token to a Databricks user or service principal that has `SELECT` access on the tables you want OuterProduct to read.

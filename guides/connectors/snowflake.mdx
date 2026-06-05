@@ -2,10 +2,10 @@
 title: "Connect OuterProduct to Snowflake with a PAT Credential"
 sidebarTitle: "Snowflake"
 icon: "snowflake"
-description: "Query Snowflake tables from OuterProduct using a stored Programmatic Access Token. No Snowflake credentials pass through the SDK — set up in minutes."
+description: "Query Snowflake tables from OuterProduct using a stored Programmatic Access Token."
 ---
 
-`SnowflakeConnector` lets OuterProduct read data from your Snowflake tables at training and inference time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK — the OuterProduct backend authenticates directly with Snowflake using the stored PAT.
+`SnowflakeConnector` lets OuterProduct read data from your Snowflake tables at training and inference time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK. The OuterProduct backend authenticates directly with Snowflake using the stored PAT.
 
 ## Add a Snowflake credential in the Console
 
@@ -16,7 +16,7 @@ Before using `SnowflakeConnector` from Python, create a credential in the OuterP
     Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **Snowflake**.
   </Step>
   <Step title="Generate a Programmatic Access Token in Snowflake">
-    In Snowsight, navigate to **Governance & Security → Users & roles**. Select the user the token will be assigned to, then go to **Programmatic access tokens → Generate new token**. Copy the token — you'll need it in the next step.
+    In Snowsight, navigate to **Governance & Security → Users & roles**. Select the user the token will be assigned to, then go to **Programmatic access tokens → Generate new token**. Copy this token, as you'll need it in the next step.
 
     <Note>
       Assign the PAT to a Snowflake user that has `SELECT` access on the tables you want OuterProduct to read.

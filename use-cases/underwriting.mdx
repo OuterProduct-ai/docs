@@ -2,153 +2,143 @@
 title: "Build an Underwriting Reasoning App with OuterProduct"
 sidebarTitle: "Underwriting"
 icon: "file-invoice-dollar"
-description: "Bolt traceable reasoning onto your risk-scoring model for audit trails, policy optimization, and per-applicant counterfactuals — production untouched."
+description: "Bolt traceable reasoning onto your risk-scoring model for audit trails, policy optimization, and per-applicant counterfactuals."
 ---
 
-Lenders and insurers rely on black-box ML models — random forests, neural networks, transformers — to score applicant risk. Pairing each decision with specific reasoning unlocks the intelligence and traceability underwriters need for policy optimization, accelerated underwriting, and compliant audit. OuterProduct bolts onto your existing scoring model without replacing it, adding a reasoning engine that runs alongside the scorer in real time and leaves the production decision path untouched.
+Lenders and insurers rely on black-box ML models - gradient boosted trees, neural networks, transformers - to score applicant risk. Pairing each decision with specific reasoning unlocks the intelligence and traceability underwriters need for policy optimization, accelerated underwriting, and compliant audit. OuterProduct bolts onto your existing scoring model without replacing it, adding a reasoning engine that runs alongside the scorer in real time and leaves the production decision path untouched.
 
 This guide walks you through wrapping your existing scoring model in a reasoning app with intelligence at three levels:
 
-- **Scoring model** — what the model does in aggregate, how it aligns with business rules and KPIs, and its data efficiency for feature sourcing and model improvement.
-- **Patterns and trends** — fingerprinting applicant cohorts and tracking how risk patterns emerge and evolve.
-- **Cases** — for one applicant, why the decision landed where it did and what would flip it.
+- **Scoring model** - what the model does in aggregate, how it aligns with business rules and KPIs, and its data efficiency for feature sourcing and model improvement.
+- **Patterns and trends** - fingerprinting applicant cohorts and tracking how risk patterns emerge and evolve.
+- **Cases** - for one applicant, why the decision landed where it did and what would flip it.
 
 <Steps>
+  <Step title="Distill your scoring model">
+    Point at historical applicant data via a connector, wrap your scoring endpoint as a `Predictor`, and pass it as `teacher` to `op.reasoning.fit`. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
 
-<Step title="Distill your scoring model">
+    <CodeGroup>
 
-Point at historical applicant data via a connector, wrap your scoring endpoint as a `Predictor`, and pass it as `teacher` to `op.reasoning.fit`. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
-
-<CodeGroup>
-
-```python Distill the scoring model
-import outerproduct as op
-
-op.init()
-
-# Historical applicants (for training) — already in Databricks. Replace
-# the angle-bracket placeholders below with your workspace's values;
-# `connector_credential_name` references a Databricks credential you've already
-# added in console.outerproduct.com.
-connector = op.DatabricksConnector(
-    server_hostname="<workspace>.cloud.databricks.com",
-    http_path="/sql/1.0/warehouses/<warehouse-id>",
-    catalog="<catalog>",
-    schema_name="<schema>",
-    connector_credential_name="underwriting-prod",
-)
-dataset = connector.table("applicants_train")
-
-# Your production scorer — typically a Databricks Model Serving endpoint.
-teacher = op.model.Predictor(
-    "https://underwriting.example.com/score",
-    headers={"Authorization": "Bearer ..."},
-)
-
-reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
-```
-
-</CodeGroup>
-
-<Tip>
-  See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for full distillation details.
-</Tip>
-
-</Step>
-
-<Step title="Plug in the daily applicant stream">
-
-Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training — in practice, the view the production scorer already reads — and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
-
-<CodeGroup>
-
-```python Score today's applicants
-import pandas as pd
-from databricks import sql
-
-with sql.connect(**databricks_config) as cnx:
-    applicants_today = pd.read_sql(
-        "SELECT * FROM underwriting.applicants_today",
-        cnx,
+    ```python Distill the scoring model
+    import outerproduct as op
+    
+    op.init()
+    
+    # Historical applicants (for training) — already in Databricks. Replace
+    # the angle-bracket placeholders below with your workspace's values;
+    # `connector_credential_name` references a Databricks credential you've already
+    # added in console.outerproduct.com.
+    connector = op.DatabricksConnector(
+        server_hostname="<workspace>.cloud.databricks.com",
+        http_path="/sql/1.0/warehouses/<warehouse-id>",
+        catalog="<catalog>",
+        schema_name="<schema>",
+        connector_credential_name="underwriting-prod",
     )
+    dataset = connector.table("applicants_train")
+    
+    # Your production scorer — typically a Databricks Model Serving endpoint.
+    teacher = op.model.Predictor(
+        "https://underwriting.example.com/score",
+        headers={"Authorization": "Bearer ..."},
+    )
+    
+    reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
+    ```
 
-today = op.LocalDataset.from_pandas(applicants_today).upload()
-predictions, reasoning = reasoning_model.predict_and_explain(today)
-```
+    </CodeGroup>
 
-</CodeGroup>
+    <Tip>
+      See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for full distillation details.
+    </Tip>
+  </Step>
+  <Step title="Plug in the daily applicant stream">
+    Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training  and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
 
-</Step>
+    <CodeGroup>
 
-<Step title="Reason at three altitudes">
+    ```python Score today's applicants
+    import pandas as pd
+    from databricks import sql
+    
+    with sql.connect(**databricks_config) as cnx:
+        applicants_today = pd.read_sql(
+            "SELECT * FROM underwriting.applicants_today",
+            cnx,
+        )
+    
+    today = op.LocalDataset.from_pandas(applicants_today).upload()
+    predictions, reasoning = reasoning_model.predict_and_explain(today)
+    ```
 
-Use the predictions and reasoning context to power every level of your underwriting app — from portfolio-wide KPIs down to a single applicant's audit trail.
+    </CodeGroup>
+  </Step>
+  <Step title="Reason at three altitudes">
+    Use the predictions and reasoning context to power every level of your underwriting app - from portfolio-wide KPIs down to a single applicant's audit trail.
 
-#### Scoring engine — KPIs, drivers, and drift
+    #### Scoring engine — KPIs, drivers, and drift
 
-Track headline KPIs (e.g., denials) over time, watch for anomalies and drift, and characterize the features driving risk across the population. Because `get_global_drivers()` exposes the features the model relies on, the view doubles as a data-efficiency check — features with low utilization are candidates for retirement.
+    Track headline KPIs (e.g., denials) over time, watch for anomalies and drift, and characterize the features driving risk across the population. Because `get_global_drivers()` exposes the features the model relies on, the view doubles as a data-efficiency check - features with low utilization are candidates for retirement.
 
-<CodeGroup>
+    <CodeGroup>
 
-```python Global feature drivers
-importance = reasoning_model.get_global_drivers()
-for name, score in zip(importance.feature_names, importance.attributions):
-    print(f"{name}: {score:.4f}")
-```
+    ```python Global feature drivers
+    importance = reasoning_model.get_global_drivers()
+    for name, score in zip(importance.feature_names, importance.attributions):
+        print(f"{name}: {score:.4f}")
+    ```
 
-</CodeGroup>
+    </CodeGroup>
 
-#### Applicant patterns — recurring denial profiles
+    #### Applicant patterns — recurring denial profiles
 
-Fit a `PatternTracker` on the denial band to surface the dominant *combinations* of features that drive risk decisions. Each pattern is an executable filter with precision and lift stats, ready to apply to fresh applicants.
+    Fit a `PatternTracker` on the denial band to surface the dominant _combinations_ of features that drive risk decisions. Each pattern is an executable filter with precision and lift stats, ready to apply to fresh applicants.
 
-<CodeGroup>
+    <CodeGroup>
 
-```python Fit and apply a PatternTracker
-pt = op.reasoning.pattern_tracker.fit(
-    reasoning_model, dataset, target_range=(0.5, None)
-).wait()
-for fp in pt.patterns:
-    print(f"{fp.label}: precision={fp.precision:.2f} lift={fp.lift:.2f}")
+    ```python Fit and apply a PatternTracker
+    pt = op.reasoning.pattern_tracker.fit(
+        reasoning_model, dataset, target_range=(0.5, None)
+    ).wait()
+    for fp in pt.patterns:
+        print(f"{fp.label}: precision={fp.precision:.2f} lift={fp.lift:.2f}")
+    
+    # Apply to today's batch: which patterns each new applicant matches.
+    matches = pt.transform(today)
+    distribution = pt.distribution(today)
+    ```
 
-# Apply to today's batch: which patterns each new applicant matches.
-matches = pt.transform(today)
-distribution = pt.distribution(today)
-```
+    </CodeGroup>
 
-</CodeGroup>
+    <Note>
+      See the [Pattern Tracker guide](/guides/pattern-tracker) for the full API including partition and labeling options.
+    </Note>
 
-<Note>
-  See the [Pattern Tracker guide](/guides/pattern-tracker) for the full API including partition and labeling options.
-</Note>
+    #### Individual applications — explanation and scenario
 
-#### Individual applications — explanation and scenario
+    For one applicant, pair the explanation with a counterfactual scenario using `scenario()`. The explanation serves as the audit trail on file. The scenario doubles as the defensibility argument when a decision is challenged, and as a forward-looking recommendation. For example, "if the applicant resolves one recent credit inquiry and verifies stable employment, they will be approved on reapplication."
 
-For one applicant, pair the explanation with a counterfactual scenario using `scenario()`. The explanation serves as the audit trail on file. The scenario doubles as the defensibility argument when a decision is challenged, and as a forward-looking recommendation — for example, "if the applicant resolves one recent credit inquiry and verifies stable employment, they will be approved on reapplication."
+    <CodeGroup>
 
-<CodeGroup>
+    ```python Per-applicant explanation and counterfactual
+    applicant = op.LocalDataset.from_pandas(applicants_today.iloc[[42]]).upload()
+    
+    prediction, explanation = reasoning_model.predict_and_explain(applicant)
+    result = reasoning_model.scenario(applicant, target_class=1, max_steps=10)
+    
+    for cf in result.queries[0].counterfactuals:
+        print(f"If the applicant changes {cf.n_changes} factor(s), they're approved:")
+        for feature, change in cf.changes.items():
+            print(f"  {feature}: {change.before} → {change.after}")
+    ```
 
-```python Per-applicant explanation and counterfactual
-applicant = op.LocalDataset.from_pandas(applicants_today.iloc[[42]]).upload()
-
-prediction, explanation = reasoning_model.predict_and_explain(applicant)
-result = reasoning_model.scenario(applicant, target_class=1, max_steps=10)
-
-for cf in result.queries[0].counterfactuals:
-    print(f"If the applicant changes {cf.n_changes} factor(s), they're approved:")
-    for feature, change in cf.changes.items():
-        print(f"  {feature}: {change.before} → {change.after}")
-```
-
-</CodeGroup>
-
-</Step>
-
+    </CodeGroup>
+  </Step>
 </Steps>
 
 ## A composable reasoning layer
 
-`get_global_drivers()`, `pattern_tracker.fit()`, `predict_and_explain()`, and `scenario()` compose freely in a custom app. Plug them into your enterprise stack — warehouses, BI tools, rule engines, and case-management systems — and surface reasoning wherever it's needed: an underwriter dashboard, a portfolio alert, a write-back into the case UI, or an LLM agent drafting case notes.
+`get_global_drivers()`, `pattern_tracker.fit()`, `predict_and_explain()`, and `scenario()` compose freely in a custom app. Plug them into your enterprise warehouses, BI tools, rule engines, and case-management systems, and surface reasoning wherever it's needed: an underwriter dashboard, a portfolio alert, a write-back into the case UI, or an LLM agent drafting case notes.
 
 <Warning>
   Enrich the reasoning context further with signals from your wider enterprise data, complementary models, and underwriting policy rules to get the most out of each level.
@@ -160,6 +150,7 @@ for cf in result.queries[0].counterfactuals:
   <Card title="Explanations" icon="magnifying-glass" href="/guides/explanations">
     Feature attributions and rule-based explanations for every prediction.
   </Card>
+
   <Card title="Counterfactuals" icon="arrow-right-arrow-left" href="/guides/counterfactuals">
     Control scenario search and read the returned `ScenarioResult`.
   </Card>

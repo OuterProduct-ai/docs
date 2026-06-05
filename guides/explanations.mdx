@@ -5,7 +5,7 @@ icon: "lightbulb"
 description: "Use ReasoningModel to get per-sample feature attributions, human-readable decision rules, and global feature importance across your entire trained model."
 ---
 
-A `ReasoningModel` gives you everything a plain `Model` does — plus the ability to ask *why* the model made each prediction. You can inspect individual predictions through local explanations, understand the model's overall behavior through global feature importance, or retrieve both predictions and explanations in a single API call.
+A `ReasoningModel` wraps the standard `Model` class with individual reasoning methods.
 
 ## Train a ReasoningModel
 
@@ -35,10 +35,10 @@ reasoning = model.explain(test_dataset)
 The `Reasoning` object contains:
 
 | Attribute | Type | Description |
-|---|---|---|
+| --- | --- | --- |
 | `reasoning.feature_names` | `list[str]` | Ordered list of feature names, matching training-time columns |
 | `reasoning.attributions` | `ndarray` shape `(n_samples, n_features)` | Per-sample contribution of each feature to the prediction |
-| `reasoning.rules` | `list[str] \| None` | Human-readable decision rules, if the model produces them |
+| `reasoning.rules` | `list[str] | None` | Human-readable decision rules, if the model produces them |
 
 ```python
 reasoning.feature_names    # ["age", "income", "credit_score", ...]
@@ -47,7 +47,7 @@ reasoning.rules            # ["age > 30 AND income > 60000 → positive", ...] o
 ```
 
 <Note>
-Attribution signs matter: a positive value means the feature pushed the prediction higher; a negative value means it pulled the prediction lower. Magnitudes reflect relative importance within each sample.
+  Attribution signs matter: a positive value means the feature pushed the prediction higher; a negative value means it pulled the prediction lower. Magnitudes reflect relative importance within each sample.
 </Note>
 
 ## Predict and explain in one call
@@ -63,7 +63,7 @@ predictions, reasoning = model.predict_and_explain(test_dataset)
 ```
 
 <Tip>
-Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately — it's faster and avoids any risk of the two calls returning results for different internal model states.
+  Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately — it's faster and avoids any risk of the two calls returning results for different internal model states.
 </Tip>
 
 ## Global feature importance
@@ -118,6 +118,7 @@ for i, (pred, attribs) in enumerate(zip(predictions, reasoning.attributions)):
   <Card title="Counterfactuals" href="/guides/counterfactuals">
     Find minimal input changes that would flip a prediction using `model.scenario()`.
   </Card>
+
   <Card title="Pattern Tracker" href="/guides/pattern-tracker">
     Aggregate explanation patterns across a cohort with `op.reasoning.pattern_tracker.fit()`.
   </Card>

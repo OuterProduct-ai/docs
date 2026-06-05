@@ -15,18 +15,23 @@ When connected, the assistant gains access to five categories of tools:
   <Card title="Training" icon="brain">
     Fit a model on any structured dataset you upload or reference.
   </Card>
+
   <Card title="Prediction" icon="bolt">
     Score new rows against a trained model.
   </Card>
+
   <Card title="Explanation" icon="magnifying-glass">
     Get per-feature importance for any individual prediction.
   </Card>
+
   <Card title="Counterfactual" icon="arrow-right-arrow-left">
     Find the minimal realistic changes that flip an outcome.
   </Card>
+
   <Card title="Upload" icon="arrow-up-from-bracket">
     Send CSV data straight from the conversation.
   </Card>
+
   <Card title="Pattern aggregates" icon="chart-bar">
     Mine decision-pattern summaries across a dataset.
   </Card>
@@ -35,14 +40,14 @@ When connected, the assistant gains access to five categories of tools:
 ## Server details
 
 | Property | Value |
-|---|---|
+| --- | --- |
 | Server URL | `https://mcp.outerproduct.com/mcp` |
 | Authentication | OAuth 2.1 — no API key required |
 | Hosting | Remote (no local process to manage) |
 
 ## Authentication
 
-The server uses **OAuth 2.1**, so there is no API key to copy and paste. Modern MCP clients — Claude Desktop, Claude Code, and Cursor — drive the authentication flow automatically. You add the server URL, click **Authenticate**, sign in to OuterProduct in your browser, and you're done.
+The server uses **OAuth 2.1**, so there is no API key to copy and paste. Modern MCP clients - Claude Desktop, Claude Code, and Cursor - drive the authentication flow automatically. You add the server URL, click **Authenticate**, sign in to OuterProduct in your browser, and you're done.
 
 ## Connect your client
 
@@ -57,7 +62,7 @@ Choose the tab for the client you are using.
       <Step title="Paste the server URL">
         Enter the following URL and confirm:
 
-        ```
+        ```text
         https://mcp.outerproduct.com/mcp
         ```
       </Step>
@@ -123,12 +128,13 @@ A healthy connection returns a list that includes training, prediction, explanat
 
 ## Built-in workflows
 
-OuterProduct ships pre-built workflows for common real-world use cases. When your prompt matches a recognised scenario, the assistant follows the workflow automatically — no extra installation needed.
+OuterProduct ships pre-built workflows for common real-world use cases. When your prompt matches a recognised scenario, the assistant follows the workflow automatically.
 
 <CardGroup cols={2}>
   <Card title="Suspicious Activity Reports (SAR)" icon="shield-halved">
     Helps fraud and compliance teams draft a SAR grounded in model-level evidence from your transaction data.
   </Card>
+
   <Card title="Churn Winback Briefings" icon="users">
     Produces a retention brief for customer success teams, ranking at-risk customers and surfacing actionable levers.
   </Card>

@@ -5,7 +5,7 @@ icon: "code-branch"
 description: "Use model.scenario() on a ReasoningModel to find minimal changes that flip a prediction to a target class, returned as structured ScenarioResult objects."
 ---
 
-Counterfactual analysis answers a concrete question: *"What is the smallest change to this input that would flip the model's prediction?"* Instead of just knowing that a loan application was denied, you can tell the applicant exactly what would need to change — credit score up by 40 points, income above a threshold — to receive a different outcome.
+Counterfactual analysis answers a concrete question: _"What is the smallest change to this input that would flip the model's prediction?"_ Instead of just knowing that a loan application was denied, you can tell the applicant exactly what would need to change - credit score up by 40 points, adding a co-borrower with certain attributes - to receive a different outcome.
 
 `model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate counterfactual edits found by the search.
 
@@ -45,6 +45,7 @@ for q in result.queries:
 
 <Accordion title="QueryResult">
   One per input row. Contains:
+
   - `q.query_index` — position of this row in your input dataset.
   - `q.baseline_prediction` — the model's original prediction for this row.
   - `q.already_at_desired_class` — `True` if the row is already classified as `target_class`; no counterfactual is needed.
@@ -53,6 +54,7 @@ for q in result.queries:
 
 <Accordion title="Counterfactual">
   One candidate set of edits. Contains:
+
   - `cf.n_changes` — number of features changed.
   - `cf.changes` — `dict[str, Change]` mapping each changed feature name to a `Change` object with `.before` and `.after` values.
 </Accordion>
@@ -71,7 +73,7 @@ result = model.scenario(
 ```
 
 <Tip>
-Increase `n_trials` when the default search misses plausible counterfactuals for complex, high-dimensional inputs. Increase `max_steps` when you're willing to accept counterfactuals that require more simultaneous changes.
+  Increase `n_trials` when the default search misses plausible counterfactuals for complex, high-dimensional inputs. Increase `max_steps` when you're willing to accept counterfactuals that require more simultaneous changes.
 </Tip>
 
 ## Full example: flipping denied loan applications
@@ -122,6 +124,7 @@ for q in result.queries:
   <Card title="Explanations" href="/guides/explanations">
     Understand which features drive each prediction before running counterfactuals.
   </Card>
+
   <Card title="Pattern Tracker" href="/guides/pattern-tracker">
     Aggregate patterns across an entire cohort rather than row by row.
   </Card>

@@ -2,10 +2,10 @@
 title: "Connect OuterProduct to Amazon S3 with IAM Role Auth"
 sidebarTitle: "Amazon S3"
 icon: "box-archive"
-description: "Reference files in your Amazon S3 bucket from OuterProduct using a stored IAM credential. No AWS keys pass through the SDK — setup takes minutes."
+description: "Reference files in your Amazon S3 bucket from OuterProduct using a stored IAM credential."
 ---
 
-`S3Connector` lets OuterProduct read data directly from your Amazon S3 bucket at training and inference time. You store your AWS credential once in the [OuterProduct Console](https://console.outerproduct.com) and reference it by name in the SDK. No AWS access keys or secrets are ever passed through the SDK — the OuterProduct backend assumes a cross-account IAM role you create in your AWS account.
+`S3Connector` lets OuterProduct read data directly from your Amazon S3 bucket at training and inference time. You store your AWS credential once in the [OuterProduct Console](https://console.outerproduct.com) and reference it by name in the SDK. No AWS access keys or secrets are ever passed through the SDK. Instead, the OuterProduct backend assumes a cross-account IAM role you create in your AWS account.
 
 ## Add an S3 credential in the Console
 

@@ -5,7 +5,7 @@ icon: "plug"
 description: "Connectors point OuterProduct at your data sources and return a Dataset for training and inference. Choose from file upload, S3, Snowflake, or Databricks."
 ---
 
-Connectors are the bridge between your data and OuterProduct's training and inference pipelines. Each connector points OuterProduct at a data source — whether that's a file on your local machine or a table in a cloud data warehouse — and returns a `Dataset` object you pass directly to `op.reasoning.fit()` or other model operations.
+Connectors are the bridge between your data and OuterProduct's training and inference pipelines. Each connector points OuterProduct at a data source, whether that's a file on your local machine or a table in a cloud data warehouse, and returns a `Dataset` object you pass directly to `op.reasoning.fit()` or other model operations.
 
 OuterProduct supports four data sources — local files plus S3, Snowflake, and Databricks. For cloud data sources (S3, Snowflake, and Databricks), you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself — the OuterProduct backend retrieves your data at training time using the stored credential.
 
@@ -13,12 +13,15 @@ OuterProduct supports four data sources — local files plus S3, Snowflake, and 
   <Card title="File Upload" icon="arrow-up-from-bracket" href="/guides/connectors/file-upload">
     Upload a local CSV or Parquet file directly from Python. No console setup required.
   </Card>
+
   <Card title="Amazon S3" icon="aws" href="/guides/connectors/s3">
     Reference files in your S3 bucket by stored credential. Your AWS keys never leave your account.
   </Card>
+
   <Card title="Snowflake" icon="snowflake" href="/guides/connectors/snowflake">
     Query Snowflake tables by stored credential using a Programmatic Access Token.
   </Card>
+
   <Card title="Databricks" icon="database" href="/guides/connectors/databricks">
     Read Databricks SQL warehouse or cluster tables by stored credential.
   </Card>
@@ -27,11 +30,11 @@ OuterProduct supports four data sources — local files plus S3, Snowflake, and 
 ## Choosing a connector
 
 | Connector | Setup required | Data location |
-|---|---|---|
+| --- | --- | --- |
 | `LocalDataset.upload()` | None | Local file or in-memory frame |
-| `S3Connector` | Console + AWS IAM role | Amazon S3 bucket |
-| `SnowflakeConnector` | Console + Snowflake PAT | Snowflake table |
-| `DatabricksConnector` | Console + Databricks PAT | Databricks SQL warehouse or cluster |
+| `S3Connector` | Console \+ AWS IAM role | Amazon S3 bucket |
+| `SnowflakeConnector` | Console \+ Snowflake PAT | Snowflake table |
+| `DatabricksConnector` | Console \+ Databricks PAT | Databricks SQL warehouse or cluster |
 
 <Note>
   Cloud connectors (S3, Snowflake, Databricks) require you to add a credential in the [OuterProduct Console](https://console.outerproduct.com) before using them from the SDK. Local uploads via `op.LocalDataset.upload()` are stateless and work immediately with no prior setup.
