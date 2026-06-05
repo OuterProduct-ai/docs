@@ -54,7 +54,7 @@ See the [Authentication](/authentication) page for alternative methods, includin
 Create a typed `Dataset` handle from your training CSV:
 
 ```python
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 ```
 
 OuterProduct also supports Parquet files, Pandas DataFrames, NumPy arrays, and cloud connectors for S3, Snowflake, and Databricks.
@@ -76,7 +76,7 @@ model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).
 Load your held-out test data, then call `predict()` for scores and `explain()` for feature-level attributions:
 
 ```python
-test_dataset = op.Dataset.from_csv("customers_test.csv")
+test_dataset = op.LocalDataset.from_csv("customers_test.csv").upload()
 predictions = model.predict(test_dataset)
 reasoning = model.explain(test_dataset)
 
@@ -97,10 +97,10 @@ import outerproduct as op
 
 op.init()  # reads OUTERPRODUCT_API_KEY from environment
 
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 
-test_dataset = op.Dataset.from_csv("customers_test.csv")
+test_dataset = op.LocalDataset.from_csv("customers_test.csv").upload()
 predictions = model.predict(test_dataset)
 reasoning = model.explain(test_dataset)
 

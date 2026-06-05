@@ -25,7 +25,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 ### Parameters
 
 <ParamField body="dataset" type="Dataset" required>
-  Training data wrapped in an `op.Dataset`. Build one with `op.Dataset(df)`, `op.Dataset.from_csv(...)`, or any other `Dataset` constructor. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+  Training data wrapped in an `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or any other `LocalDataset` constructor — or reference a connector. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
 </ParamField>
 
 <ParamField body="task" type="TaskConfig | None">
@@ -96,8 +96,8 @@ model = op.reasoning.fit(
     task=op.BinclassConfig(label_column="churn"),
 ).wait()  # ReasoningModel
 
-predictions = model.predict(op.Dataset(X_new))
-reasoning   = model.explain(op.Dataset(X_new))
+predictions = model.predict(op.LocalDataset.from_pandas(X_new).upload())
+reasoning   = model.explain(op.LocalDataset.from_pandas(X_new).upload())
 ```
 
 ```python With hyperopt and model selection
@@ -295,7 +295,7 @@ for fp in pt.patterns:
     print(f"  {fp.label}: precision={fp.precision:.2f}, lift={fp.lift:.2f}")
 
 # --- Apply to new data ---
-X_new = op.Dataset(pd.read_csv("new_customers.csv"))
+X_new = op.LocalDataset.from_pandas(pd.read_csv("new_customers.csv")).upload()
 
 # Boolean match matrix
 match_matrix = pt.transform(X_new)

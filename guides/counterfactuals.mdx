@@ -22,7 +22,7 @@ queries_df = pd.DataFrame([
     {"age": 40, "income": 85000, "credit_score": 710},
 ])
 
-result = model.scenario(op.Dataset(queries_df), target_class=1)
+result = model.scenario(op.LocalDataset.from_pandas(queries_df).upload(), target_class=1)
 
 for q in result.queries:
     print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
@@ -63,7 +63,7 @@ By default `target_class` is `1`. Control the search budget with `n_trials` and 
 
 ```python
 result = model.scenario(
-    op.Dataset(queries_df),
+    op.LocalDataset.from_pandas(queries_df).upload(),
     target_class=1,
     n_trials=200,   # number of attempts per query row
     max_steps=20,   # maximum number of edit steps per attempt
@@ -83,21 +83,21 @@ import pandas as pd
 op.init()
 
 # Train a model
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 model = op.reasoning.fit(
     dataset, task=op.BinclassConfig(label_column="approved")
 ).wait()
 
 # Predict on new applicants
 X_new = pd.read_csv("new_applicants.csv")
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)
 
 # Run counterfactuals only for denied applicants
 import numpy as np
 denied_mask = predictions < 0.5
 denied_df = X_new[denied_mask].reset_index(drop=True)
-denied_dataset = op.Dataset(denied_df)
+denied_dataset = op.LocalDataset.from_pandas(denied_df).upload()
 
 result = model.scenario(denied_dataset, target_class=1, n_trials=100, max_steps=10)
 

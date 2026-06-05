@@ -66,13 +66,13 @@ For quick experiments with smaller data, build a dataset in memory:
 
 ```python
 # From a pandas DataFrame
-dataset = op.Dataset.from_pandas(df)
+dataset = op.LocalDataset.from_pandas(df).upload()
 
 # From a CSV (loaded locally)
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 # From NumPy arrays
-dataset = op.Dataset.from_numpy(X, y, feature_names=["sqft", "bedrooms"])
+dataset = op.LocalDataset.from_numpy(X, y, feature_names=["sqft", "bedrooms"]).upload()
 ```
 
 <Note>

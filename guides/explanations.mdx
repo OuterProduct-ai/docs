@@ -28,7 +28,7 @@ See the [Training guide](/guides/training) for the full set of configuration opt
 `model.explain(dataset)` returns a `Reasoning` object with per-sample feature attributions for every row in your dataset.
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 reasoning = model.explain(test_dataset)
 ```
 
@@ -55,7 +55,7 @@ Attribution signs matter: a positive value means the feature pushed the predicti
 When you need both prediction scores and attributions, use `predict_and_explain()`. It runs a single round-trip and guarantees the predictions and attributions correspond to the same forward pass.
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions, reasoning = model.predict_and_explain(test_dataset)
 
 # predictions: numpy.ndarray of shape (n_samples,)
@@ -87,7 +87,7 @@ import outerproduct as op
 op.init()
 
 # Train
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 model = op.reasoning.fit(
     dataset, task=op.BinclassConfig(label_column="approved")
 ).wait()
@@ -95,7 +95,7 @@ model = op.reasoning.fit(
 # Inference dataset
 import pandas as pd
 X = pd.read_csv("new_applicants.csv")
-test_dataset = op.Dataset(X)
+test_dataset = op.LocalDataset.from_pandas(X).upload()
 
 # Global importance — inspect once after training
 global_reasoning = model.get_global_drivers()

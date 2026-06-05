@@ -70,7 +70,7 @@ groups = pt.partition(X_new)
 ```
 
 <Note>
-`pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array — you do not need to wrap them in `op.Dataset()`.
+`pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array directly — they run locally, so unlike `model.predict()` they do not require an uploaded `Dataset`.
 </Note>
 
 ## Jobs API

@@ -19,7 +19,7 @@ model.predict(dataset: Dataset) -> numpy.ndarray
 Scores every row in `dataset` and returns a one-dimensional NumPy array of predictions. The SDK validates `dataset`'s column schema against the model's training-time schema before the request leaves your machine, so mismatched or missing features raise a descriptive local error rather than a server-side 400.
 
 <ParamField body="dataset" type="Dataset" required>
-  An `op.Dataset` wrapping your inference rows. Build one with `op.Dataset(df)`, `op.Dataset.from_csv(...)`, or `op.Dataset.from_numpy(...)`. Column names must match the features seen during training.
+  An `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or `op.LocalDataset.from_numpy(...).upload()` — or reference a connector. Column names must match the features seen during training.
 </ParamField>
 
 <ResponseField name="returns" type="numpy.ndarray">
@@ -31,7 +31,7 @@ import outerproduct as op
 
 op.init(api_key="your-api-key")
 
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)  # numpy.ndarray, shape (n_samples,)
 
 print(predictions[:5])
@@ -61,7 +61,7 @@ model = op.reasoning.fit(
     dataset, task=op.BinclassConfig(label_column="churn")
 ).wait()
 
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)
 ```
 
@@ -96,7 +96,7 @@ Returns per-sample feature attributions for every row in `dataset`. Each attribu
 </ResponseField>
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 reasoning = model.explain(test_dataset)
 
 print(reasoning.feature_names)
@@ -130,7 +130,7 @@ Returns predictions and local explanations in a single API round-trip. Prefer th
 </ResponseField>
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions, reasoning = model.predict_and_explain(test_dataset)
 
 for i, (pred, attrs) in enumerate(zip(predictions, reasoning.attributions)):
@@ -210,10 +210,10 @@ import pandas as pd
 
 op.init(api_key="your-api-key")
 
-queries = op.Dataset(pd.DataFrame([
+queries = op.LocalDataset.from_pandas(pd.DataFrame([
     {"age": 25, "income": 50000, "credit_score": 620},
     {"age": 40, "income": 85000, "credit_score": 710},
-]))
+])).upload()
 
 result = model.scenario(queries, target_class=1)
 
@@ -344,7 +344,7 @@ model = op.reasoning.fit(
 ).wait()
 
 # The distilled model now supports explain(), get_global_drivers(), and scenario().
-reasoning = model.explain(op.Dataset(X_new))
+reasoning = model.explain(op.LocalDataset.from_pandas(X_new).upload())
 ```
 
 <Note>

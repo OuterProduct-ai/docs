@@ -1,41 +1,39 @@
 ---
 title: "outerproduct.Dataset — Tabular Data for ML Training"
 sidebarTitle: "Dataset"
-description: "Load and inspect tabular data with outerproduct.Dataset. Supports CSV, Parquet, pandas DataFrames, and NumPy arrays with automatic column schema inference."
+description: "Stage local tabular data with outerproduct.LocalDataset (CSV, Parquet, pandas, NumPy) and upload it to a server-backed Dataset for training and inference."
 ---
 
-`outerproduct.Dataset` is the typed data handle that all OuterProduct training and inference functions accept. It wraps your tabular data together with a per-column `Column` schema, which is inferred automatically from the data by default. The target column is not marked on the `Dataset` itself — you name it later via the `task` config (e.g. `op.BinclassConfig(label_column=...)`) when you configure a trainer or call `reasoning.fit()`.
+`outerproduct.Dataset` is the typed, server-backed data handle that all OuterProduct training and inference functions accept. You don't construct it from raw data directly — you stage local data in an `op.LocalDataset` (from a file, DataFrame, or array) and call `.upload()`, or you reference a [connector](/sdk/connectors) (S3, Snowflake, Databricks). The target column is not marked on the dataset itself — you name it later via the `task` config (e.g. `op.BinclassConfig(label_column=...)`) when you configure a trainer or call `reasoning.fit()`.
 
-## Constructor
+<Note>
+  You **cannot** build a `Dataset` from a raw `pandas.DataFrame` or `numpy.ndarray` directly (`op.Dataset(df)` is not supported). Stage the data through `op.LocalDataset` and call `.upload()`.
+</Note>
 
-```python
-op.Dataset(X)
-```
+## Building a dataset
 
-Construct a `Dataset` directly from a pandas DataFrame or a NumPy array. For file-based sources, prefer the factory methods below.
-
-<ParamField body="X" type="pd.DataFrame | np.ndarray" required>
-  The feature matrix. All columns are included; no column is designated as the target at this stage.
-</ParamField>
+Stage local data in an `op.LocalDataset` and call `.upload()` — it serializes the rows, uploads them via a presigned URL, and returns a server-backed `Dataset`:
 
 ```python
 import pandas as pd
 import outerproduct as op
 
 df = pd.DataFrame({"age": [25, 32, 47], "income": [40000, 75000, 120000]})
-dataset = op.Dataset(df)
+dataset = op.LocalDataset.from_pandas(df).upload()
 ```
 
 ---
 
-## Factory Methods
+## LocalDataset constructors
 
-### `Dataset.from_csv()`
+Each constructor returns a `LocalDataset` holding your rows. Call `.upload()` (or `.aupload()` for async) on it to get a `Dataset`.
 
-Load a Dataset from a local CSV file.
+### `LocalDataset.from_csv()`
+
+Stage a local CSV file.
 
 ```python
-op.Dataset.from_csv(path)
+op.LocalDataset.from_csv(path)
 ```
 
 <ParamField body="path" type="string" required>
@@ -45,18 +43,17 @@ op.Dataset.from_csv(path)
 ```python
 import outerproduct as op
 
-dataset = op.Dataset.from_csv("customers.csv")
-print(dataset.n_samples, dataset.n_features)
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 ```
 
 ---
 
-### `Dataset.from_pandas()`
+### `LocalDataset.from_pandas()`
 
-Create a Dataset from an existing pandas DataFrame.
+Stage an existing pandas DataFrame.
 
 ```python
-op.Dataset.from_pandas(df)
+op.LocalDataset.from_pandas(df)
 ```
 
 <ParamField body="df" type="pd.DataFrame" required>
@@ -68,17 +65,17 @@ import pandas as pd
 import outerproduct as op
 
 df = pd.read_csv("loans.csv")
-dataset = op.Dataset.from_pandas(df)
+dataset = op.LocalDataset.from_pandas(df).upload()
 ```
 
 ---
 
-### `Dataset.from_parquet()`
+### `LocalDataset.from_parquet()`
 
-Load a Dataset from a Parquet file.
+Stage a local Parquet file.
 
 ```python
-op.Dataset.from_parquet(path)
+op.LocalDataset.from_parquet(path)
 ```
 
 <ParamField body="path" type="string" required>
@@ -92,17 +89,17 @@ op.Dataset.from_parquet(path)
 ```python
 import outerproduct as op
 
-dataset = op.Dataset.from_parquet("loans.parquet")
+dataset = op.LocalDataset.from_parquet("loans.parquet").upload()
 ```
 
 ---
 
-### `Dataset.from_numpy()`
+### `LocalDataset.from_numpy()`
 
-Build a Dataset from NumPy arrays. Useful when your data is already in memory as arrays rather than a DataFrame.
+Stage NumPy arrays. Useful when your data is already in memory as arrays rather than a DataFrame.
 
 ```python
-op.Dataset.from_numpy(X, y=None, feature_names=None)
+op.LocalDataset.from_numpy(X, y=None, feature_names=None)
 ```
 
 <ParamField body="X" type="np.ndarray" required>
@@ -110,11 +107,11 @@ op.Dataset.from_numpy(X, y=None, feature_names=None)
 </ParamField>
 
 <ParamField body="y" type="np.ndarray">
-  Optional label array of shape `(n_samples,)`. When provided, it is appended to the Dataset as an additional column alongside the features.
+  Optional label array of shape `(n_samples,)`. When provided, it is appended to the dataset as an additional column alongside the features.
 </ParamField>
 
 <ParamField body="feature_names" type="list[str]">
-  Optional list of column names for the feature matrix. Must have the same length as `X.shape[1]`. If omitted, columns are named `feature_0`, `feature_1`, etc.
+  Optional list of column names for the feature matrix. Must have the same length as `X.shape[1]`. If omitted, columns are named `x0`, `x1`, etc.
 </ParamField>
 
 ```python
@@ -124,99 +121,40 @@ import outerproduct as op
 X = np.array([[1200, 3, 2], [850, 2, 1], [2100, 4, 3]])
 y = np.array([0, 0, 1])
 
-dataset = op.Dataset.from_numpy(
+dataset = op.LocalDataset.from_numpy(
     X,
     y,
     feature_names=["sqft", "bedrooms", "bathrooms"],
-)
-print(dataset.feature_names)  # ['sqft', 'bedrooms', 'bathrooms', 'y']
+).upload()
 ```
+
+<Note>
+  `op.LocalDataset` also accepts a polars DataFrame via `from_polars(df)`, plus `torch.Tensor`, 2-D `numpy.ndarray`, and nested lists.
+</Note>
 
 ---
 
-## Instance Attributes
+## Datasets from connectors
 
-After creating a Dataset, the following attributes are available for inspection:
-
-<ResponseField name="n_samples" type="int">
-  The number of rows in the dataset.
-</ResponseField>
-
-<ResponseField name="n_features" type="int">
-  The total number of columns in the dataset. Because the target column is not designated on the `Dataset` itself, all columns — including any `y` array appended via `from_numpy(y=...)` — are counted here.
-</ResponseField>
-
-<ResponseField name="feature_names" type="list[str]">
-  Ordered list of column names. Matches the column order of the original data source.
-</ResponseField>
+A `Dataset` can also reference data in a cloud source without uploading. Configure the credential once in the [Console](https://console.outerproduct.com), then build a connector-backed `Dataset` with `.table(...)`:
 
 ```python
-dataset = op.Dataset.from_csv("customers.csv")
+import outerproduct as op
 
-print(dataset.n_samples)      # e.g. 50000
-print(dataset.n_features)     # e.g. 12
-print(dataset.feature_names)  # ['age', 'income', 'tenure', ...]
+connector = op.S3Connector(connector_credential_name="prod-aws", region="us-east-1")
+dataset = connector.table("s3://my-bucket/data/customers.parquet")
 ```
 
----
-
-## Methods
-
-### `dataset.head()`
-
-Return a preview of the first rows of the dataset. Useful for quickly verifying that data loaded correctly.
-
-```python
-print(dataset.head())
-```
-
-<ResponseField name="return value" type="pd.DataFrame">
-  A pandas DataFrame containing the first rows of the dataset, similar to `df.head()`.
-</ResponseField>
-
----
-
-### `dataset.to_pandas()`
-
-Convert the dataset back to a pandas DataFrame.
-
-```python
-df = dataset.to_pandas()
-```
-
-<ResponseField name="return value" type="pd.DataFrame">
-  A full pandas DataFrame representation of the dataset, with column names preserved.
-</ResponseField>
-
-```python
-# Drop the label before running inference
-df = dataset.to_pandas()
-X_test = df.drop(columns=["churn"])
-test_dataset = op.Dataset(X_test)
-```
+See the [Connectors reference](/sdk/connectors) for S3, Snowflake, and Databricks.
 
 ---
 
 ## Column Schema
 
-Every column in a `Dataset` carries a `Column` schema object that captures its data type and any encoding or imputation hints. By default the schema is **inferred automatically** from the data — you rarely need to set it manually.
-
-If you need to override the inferred schema for one or more columns, pass a `columns=` mapping when constructing the Dataset:
-
-```python
-from outerproduct.dataset import Column
-
-dataset = op.Dataset.from_csv(
-    "customers.csv",
-    columns={
-        "account_age_days": Column(dtype="numeric"),
-        "plan_tier": Column(dtype="categorical"),
-    },
-)
-```
+Every column in a dataset carries a `Column` schema object that captures its data type. By default the schema is **inferred automatically** from the data — you rarely need to set it manually. Inspect it via `dataset.columns`.
 
 <Note>
-  The target (label) column is **not** declared on the `Dataset`. You specify it later using the `task` config (e.g. `op.BinclassConfig(label_column=...)`) in [`Trainer.configure()`](/sdk/trainer) or `op.reasoning.fit()`.
+  The target (label) column is **not** declared on the dataset. You specify it later using the `task` config (e.g. `op.BinclassConfig(label_column=...)`) in [`Trainer.configure()`](/sdk/trainer) or `op.reasoning.fit()`.
 </Note>
 
 ---
@@ -230,9 +168,8 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("loans.csv")
-print(f"Loaded {dataset.n_samples} rows with {dataset.n_features} features.")
-print(dataset.head())
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="approved")).wait()
 ```
 
 ```python From pandas
@@ -242,8 +179,7 @@ import outerproduct as op
 op.init()
 
 df = pd.read_csv("loans.csv")
-dataset = op.Dataset.from_pandas(df)
-print(dataset.feature_names)
+dataset = op.LocalDataset.from_pandas(df).upload()
 ```
 
 ```python From NumPy
@@ -255,12 +191,11 @@ op.init()
 X = np.random.rand(1000, 5)
 y = (X[:, 0] > 0.5).astype(int)
 
-dataset = op.Dataset.from_numpy(
+dataset = op.LocalDataset.from_numpy(
     X,
     y,
     feature_names=["f0", "f1", "f2", "f3", "f4"],
-)
-print(dataset.n_samples, dataset.n_features)
+).upload()
 ```
 
 ```python From Parquet
@@ -269,8 +204,7 @@ import outerproduct as op
 op.init()
 
 # Requires: pip install outerproduct[parquet]
-dataset = op.Dataset.from_parquet("warehouse/transactions.parquet")
-print(dataset.head())
+dataset = op.LocalDataset.from_parquet("warehouse/transactions.parquet").upload()
 ```
 
 </CodeGroup>

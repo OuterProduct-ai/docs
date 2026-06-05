@@ -69,7 +69,7 @@ import outerproduct as op
 
 op.init()  # must come first
 
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 

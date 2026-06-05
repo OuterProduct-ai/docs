@@ -70,7 +70,7 @@ with sql.connect(**databricks_config) as cnx:
         cnx,
     )
 
-today = op.Dataset(applicants_today)
+today = op.LocalDataset.from_pandas(applicants_today).upload()
 predictions, reasoning = reasoning_model.predict_and_explain(today)
 ```
 
@@ -125,7 +125,7 @@ For one applicant, pair the explanation with a counterfactual scenario using `sc
 <CodeGroup>
 
 ```python Per-applicant explanation and counterfactual
-applicant = op.Dataset(applicants_today.iloc[[42]])
+applicant = op.LocalDataset.from_pandas(applicants_today.iloc[[42]]).upload()
 
 prediction, explanation = reasoning_model.predict_and_explain(applicant)
 result = reasoning_model.scenario(applicant, target_class=1, max_steps=10)

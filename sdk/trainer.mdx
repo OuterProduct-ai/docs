@@ -67,7 +67,7 @@ op.Trainer.configure(
 import outerproduct as op
 
 op.init()
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 trainer = op.Trainer.configure(
     dataset,
@@ -195,7 +195,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="approved"))
 model = trainer.run().wait()
@@ -211,7 +211,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 trainer = op.Trainer.configure(
     dataset,
@@ -232,7 +232,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 # Pass multiple metrics to trigger a Pareto sweep.
 # Training explores all weightings between AUC and accuracy,
@@ -260,7 +260,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="approved"))
 
 # Submit and continue doing other work
@@ -285,7 +285,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 # Wrap an external model as the teacher
 teacher = op.model.Predictor(

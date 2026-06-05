@@ -66,10 +66,10 @@ OuterProduct handles three layers of intelligence out of the box:
 
     op.init()
 
-    dataset = op.Dataset.from_csv("customers.csv")
+    dataset = op.LocalDataset.from_csv("customers.csv").upload()
     model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 
-    predictions, reasoning = model.predict_and_explain(op.Dataset.from_csv("customers_test.csv"))
+    predictions, reasoning = model.predict_and_explain(op.LocalDataset.from_csv("customers_test.csv").upload())
     print(reasoning.feature_names)
     print(reasoning.attributions.shape)
     ```

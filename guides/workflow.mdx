@@ -20,7 +20,7 @@ import outerproduct as op
 
 op.init()  # reads OUTERPRODUCT_API_KEY from environment
 
-dataset = op.Dataset.from_csv("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 ```
 
 ```python From pandas
@@ -30,7 +30,7 @@ import outerproduct as op
 op.init()
 
 df = pd.read_csv("loans.csv")
-dataset = op.Dataset.from_pandas(df)
+dataset = op.LocalDataset.from_pandas(df).upload()
 ```
 
 ```python From Parquet
@@ -38,7 +38,7 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_parquet("loans.parquet")
+dataset = op.LocalDataset.from_parquet("loans.parquet").upload()
 ```
 
 ```python From NumPy
@@ -46,10 +46,10 @@ import outerproduct as op
 
 op.init()
 
-dataset = op.Dataset.from_numpy(
+dataset = op.LocalDataset.from_numpy(
     X, y,
     feature_names=["sqft", "bedrooms", "bathrooms"],
-)
+).upload()
 ```
 
 </CodeGroup>
@@ -149,10 +149,10 @@ reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
 
 ### Generate Predictions
 
-Wrap your inference rows in `op.Dataset()` before calling `predict()`. The SDK validates your dataset's columns against the model's training-time schema locally before the call goes out.
+Build a `Dataset` from your inference rows with `op.LocalDataset.from_*(...).upload()` before calling `predict()`. The SDK validates your dataset's columns against the model's training-time schema locally before the call goes out.
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)  # numpy.ndarray
 ```
 
@@ -162,7 +162,7 @@ Explanations are available on any `ReasoningModel`. Call `explain()` for local p
 
 ```python
 # Local explanations
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 reasoning = model.explain(test_dataset)
 
 reasoning.feature_names    # list[str]
@@ -183,7 +183,7 @@ for name, importance in zip(reasoning.feature_names, reasoning.attributions):
 Ask "what minimal change would flip this prediction?" for any set of input rows. `model.scenario()` returns a `ScenarioResult` with one `QueryResult` per input row.
 
 ```python
-queries = op.Dataset(X_query)
+queries = op.LocalDataset.from_pandas(X_query).upload()
 result = model.scenario(queries, target_class=1, max_steps=10)
 
 for q in result.queries:
@@ -221,7 +221,7 @@ import outerproduct as op
 op.init()
 
 # 1. Load data
-dataset = op.Dataset.from_csv("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 # 2. Train with reasoning
 model = op.reasoning.fit(
@@ -230,7 +230,7 @@ model = op.reasoning.fit(
 
 # 3. Prepare inference rows (drop the label column the model never saw)
 X = dataset.to_pandas().head(100).drop(columns=["approved"])
-test = op.Dataset(X)
+test = op.LocalDataset.from_pandas(X).upload()
 
 # 4. Global importance
 importance = model.get_global_drivers()
@@ -242,7 +242,7 @@ predictions, reasoning = model.predict_and_explain(test)
 
 # 6. Counterfactuals: what would flip the denied loans to approved?
 denied_mask = predictions < 0.5
-denied = op.Dataset(X[denied_mask])
+denied = op.LocalDataset.from_pandas(X[denied_mask]).upload()
 scenarios = model.scenario(denied, target_class=1)
 
 # 7. Pattern aggregation across the denied cohort

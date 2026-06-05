@@ -9,12 +9,12 @@ Once you have a trained model, generating predictions is a single method call. B
 
 ## Wrap your data in a Dataset
 
-`predict()` requires an `op.Dataset` — you cannot pass a raw DataFrame or array directly. Wrap your inference rows before calling the model.
+`predict()` requires an `op.Dataset` — you cannot pass a raw DataFrame or array directly. Build one from your inference rows with `op.LocalDataset.from_*(...).upload()` before calling the model.
 
 ```python
 import outerproduct as op
 
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)  # numpy.ndarray
 ```
 
@@ -26,13 +26,13 @@ You can construct the inference dataset in any of the same ways you built the tr
 
 ```python
 # From a DataFrame
-test_dataset = op.Dataset(df)
+test_dataset = op.LocalDataset.from_pandas(df).upload()
 
 # From a CSV
-test_dataset = op.Dataset.from_csv("new_customers.csv")
+test_dataset = op.LocalDataset.from_csv("new_customers.csv").upload()
 
 # From NumPy
-test_dataset = op.Dataset.from_numpy(X_new)
+test_dataset = op.LocalDataset.from_numpy(X_new).upload()
 ```
 
 ## Predict and explain in one call
@@ -40,7 +40,7 @@ test_dataset = op.Dataset.from_numpy(X_new)
 If you have a `ReasoningModel`, use `predict_and_explain()` to avoid two separate round-trips. You get both the prediction array and a `Reasoning` object with per-sample feature attributions.
 
 ```python
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions, reasoning = model.predict_and_explain(test_dataset)
 ```
 
@@ -55,7 +55,7 @@ Prefer `predict_and_explain()` over calling `predict()` and `explain()` separate
 ```python
 import numpy as np
 
-test_dataset = op.Dataset(X_new)
+test_dataset = op.LocalDataset.from_pandas(X_new).upload()
 predictions = model.predict(test_dataset)
 
 print(type(predictions))        # <class 'numpy.ndarray'>
