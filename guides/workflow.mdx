@@ -54,14 +54,6 @@ dataset = op.LocalDataset.from_numpy(
 
 </CodeGroup>
 
-After loading, you can inspect the dataset before training:
-
-```python
-print(dataset.n_samples, dataset.n_features)
-print(dataset.feature_names)
-print(dataset.head())
-```
-
 ### Upload a Dataset
 
 For larger datasets, upload the file once with `LocalDataset.upload()` and reuse the returned `Dataset` across training runs without re-uploading.
@@ -217,6 +209,7 @@ The following snippet chains all seven steps into a single script you can run ag
 
 ```python
 import outerproduct as op
+import pandas as pd
 
 op.init()
 
@@ -229,7 +222,7 @@ model = op.reasoning.fit(
 ).wait()
 
 # 3. Prepare inference rows (drop the label column the model never saw)
-X = dataset.to_pandas().head(100).drop(columns=["approved"])
+X = pd.read_csv("loans.csv").head(100).drop(columns=["approved"])
 test = op.LocalDataset.from_pandas(X).upload()
 
 # 4. Global importance
