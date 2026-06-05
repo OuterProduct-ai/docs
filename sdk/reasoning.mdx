@@ -1,0 +1,350 @@
+---
+title: "outerproduct.reasoning — Explainable Model Training"
+sidebarTitle: "Reasoning"
+description: "API reference for op.reasoning.fit() and PatternTracker — train explainable models and distil population-level patterns from their predictions."
+---
+
+The `outerproduct.reasoning` module is the entry point for training explainable models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
+
+## `op.reasoning.fit()`
+
+```python
+op.reasoning.fit(
+    dataset: Dataset,
+    label_column: str | None = None,
+    task_type: str | None = None,
+    model_types: list[str] | None = None,
+    n_hyperopt_steps: int | None = None,
+    teacher: Model | Predictor | None = None,
+    device: str | None = None,
+) -> Job[ReasoningModel]
+```
+
+Submits a training job and returns a non-blocking `Job` handle immediately. Call `.wait()` on the handle to block until training completes and receive the trained `ReasoningModel`.
+
+### Parameters
+
+<ParamField body="dataset" type="Dataset" required>
+  Training data wrapped in an `op.Dataset`. Build one with `op.Dataset(df)`, `op.Dataset.from_csv(...)`, or any other `Dataset` constructor. The column you name in `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+</ParamField>
+
+<ParamField body="label_column" type="str | None">
+  Name of the column in `dataset` that contains the target labels. Required unless `teacher` is provided — when a teacher is set, OuterProduct queries the teacher to generate training labels and `label_column` becomes optional.
+</ParamField>
+
+<ParamField body="task_type" type="str | None">
+  The supervised learning task. Accepted values:
+
+  | Value | Use when |
+  |---|---|
+  | `"binclass"` | Binary classification (e.g. churn, fraud, approval) |
+  | `"multiclass"` | Multi-class classification (three or more discrete classes) |
+  | `"regression"` | Continuous numerical target |
+
+  If omitted, OuterProduct infers the task type from the label column's data.
+</ParamField>
+
+<ParamField body="model_types" type="list[str] | None">
+  Restrict the model family search to a specific list, e.g. `["tabm", "xgboost"]`. When `None`, OuterProduct selects from its full portfolio of tabular model families. Providing this list is useful when you have a latency or interpretability constraint that rules out certain architectures.
+</ParamField>
+
+<ParamField body="n_hyperopt_steps" type="int | None">
+  Number of hyperparameter optimisation trials to run. Higher values improve model quality at the cost of longer training time. When `None`, OuterProduct uses a sensible default based on dataset size.
+</ParamField>
+
+<ParamField body="teacher" type="Model | Predictor | None">
+  A teacher model for knowledge distillation. Accepts either a previously trained OuterProduct `Model` / `ReasoningModel` or a `Predictor` wrapping an external HTTP scoring endpoint. When set, OuterProduct trains the new `ReasoningModel` to mimic the teacher's output, adding full explainability to a black-box predictor.
+</ParamField>
+
+<ParamField body="device" type="str | None">
+  Compute device hint passed to the training backend, e.g. `"cuda"` or `"cpu"`. Leave as `None` to let OuterProduct select the appropriate device automatically.
+</ParamField>
+
+### Return value
+
+<ResponseField name="returns" type="Job[ReasoningModel]">
+  A non-blocking job handle. The job runs on OuterProduct's hosted infrastructure. Use the methods below to interact with it.
+
+  <Expandable title="Job methods">
+    <ResponseField name=".wait()" type="ReasoningModel">
+      Blocks the current thread until the job completes, then returns the trained `ReasoningModel`. This is the most common pattern for scripts and notebooks.
+    </ResponseField>
+    <ResponseField name=".status()" type="str">
+      Returns the current job state without blocking: `"pending"`, `"running"`, `"completed"`, or `"failed"`.
+    </ResponseField>
+    <ResponseField name=".results()" type="any">
+      Returns the raw result payload once the job has completed. Prefer `.wait()` for typed access to the model.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+
+```python Basic training
+import outerproduct as op
+
+op.init(api_key="your-api-key")
+
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+
+model = op.reasoning.fit(
+    dataset,
+    label_column="churn",
+    task_type="binclass",
+).wait()  # ReasoningModel
+
+predictions = model.predict(op.Dataset(X_new))
+reasoning   = model.explain(op.Dataset(X_new))
+```
+
+```python With hyperopt and model selection
+model = op.reasoning.fit(
+    dataset,
+    label_column="loan_default",
+    task_type="binclass",
+    model_types=["tabm", "xgboost"],
+    n_hyperopt_steps=50,
+).wait()
+```
+
+```python Knowledge distillation from an external scorer
+teacher = op.model.Predictor(
+    url="https://my-scoring-service.example.com/predict",
+    headers={"Authorization": "Bearer my-token"},
+)
+
+# label_column is optional when a teacher is provided
+model = op.reasoning.fit(
+    dataset,
+    teacher=teacher,
+    task_type="binclass",
+).wait()
+```
+
+```python Non-blocking with status polling
+import time
+
+job = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+)
+
+while job.status() in ("pending", "running"):
+    print(f"Job status: {job.status()}")
+    time.sleep(10)
+
+model = job.wait()
+```
+
+</CodeGroup>
+
+<Tip>
+  For large datasets or long hyperopt runs, use the non-blocking pattern and poll `job.status()` so your script can do other work while training proceeds.
+</Tip>
+
+---
+
+## `op.reasoning.pattern_tracker.fit()`
+
+```python
+op.reasoning.pattern_tracker.fit(
+    model: ReasoningModel,
+    dataset: Dataset,
+    target_range: tuple[float | None, float | None],
+) -> Job[PatternTracker]
+```
+
+Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band into a compact, portable set of named filter patterns. The fitted `PatternTracker` can then be applied to any schema-compatible dataset to score rows against those patterns.
+
+### Parameters
+
+<ParamField body="model" type="ReasoningModel" required>
+  A trained `ReasoningModel` (produced by `op.reasoning.fit().wait()`). The tracker learns from this model's explanations over the supplied `dataset`.
+</ParamField>
+
+<ParamField body="dataset" type="Dataset" required>
+  The dataset used to fit the tracker. The tracker analyses the model's predictions and attributions over these rows to extract recurring patterns within the `target_range`.
+</ParamField>
+
+<ParamField body="target_range" type="tuple[float | None, float | None]" required>
+  An inclusive prediction band that defines which rows are considered "positive" examples for pattern extraction. Either bound may be `None` for an open-ended range; at least one bound must be set.
+
+  | `target_range` | Selects |
+  |---|---|
+  | `(0.5, None)` | `pred >= 0.5` — likely-positive cohort |
+  | `(None, 0.5)` | `pred <= 0.5` — likely-negative cohort |
+  | `(0.4, 0.6)` | `0.4 <= pred <= 0.6` — borderline / uncertain band |
+</ParamField>
+
+### Return value
+
+<ResponseField name="returns" type="Job[PatternTracker]">
+  A non-blocking job handle. Call `.wait()` to block until fitting completes and receive the `PatternTracker`. You can also poll with `.status()` or access the raw payload with `.results()`.
+</ResponseField>
+
+```python
+import outerproduct as op
+
+op.init(api_key="your-api-key")
+
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()
+
+pt = op.reasoning.pattern_tracker.fit(
+    model,
+    dataset,
+    target_range=(0.5, None),  # analyse rows where pred >= 0.5
+).wait()
+
+print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
+```
+
+---
+
+## PatternTracker
+
+`PatternTracker` is produced by `op.reasoning.pattern_tracker.fit().wait()`. It holds a set of named filter patterns and can score any schema-compatible dataset against them.
+
+### Attributes
+
+<ResponseField name="patterns" type="list[FilterPattern]">
+  The patterns discovered during fitting. Each entry is a `FilterPattern` with a human-readable label and quality metrics. See [FilterPattern](#filterpattern) below.
+</ResponseField>
+
+<ResponseField name="coverage_fit" type="float">
+  Fraction of rows in the fitting dataset that are matched by at least one pattern. A value of `0.82` means 82 % of the fitting set falls under at least one named pattern.
+</ResponseField>
+
+### Methods
+
+#### `pt.transform()`
+
+```python
+pt.transform(X: Dataset) -> pd.DataFrame
+```
+
+Returns a boolean `DataFrame` of shape `(n_rows, n_patterns)`. Each column corresponds to one pattern (named by `FilterPattern.label`); a cell is `True` if that row matches that pattern. Rows can match multiple patterns simultaneously.
+
+<ParamField body="X" type="Dataset" required>
+  New data to score. Must be schema-compatible with the dataset used to fit the tracker.
+</ParamField>
+
+<ResponseField name="returns" type="pd.DataFrame">
+  Boolean DataFrame of shape `(n_rows, n_patterns)`. Column names match the `FilterPattern.label` values in `pt.patterns`.
+</ResponseField>
+
+#### `pt.distribution()`
+
+```python
+pt.distribution(X: Dataset) -> pd.Series
+```
+
+Returns match rates — the fraction of rows in `X` that match each pattern — as a `pd.Series` indexed by pattern label.
+
+<ParamField body="X" type="Dataset" required>
+  New data to score.
+</ParamField>
+
+<ResponseField name="returns" type="pd.Series">
+  Float Series of shape `(n_patterns,)`, indexed by `FilterPattern.label`. Values are in `[0, 1]`.
+</ResponseField>
+
+#### `pt.partition()`
+
+```python
+pt.partition(X: Dataset) -> dict[str, np.ndarray]
+```
+
+Returns a dict mapping each pattern label to the integer row indices in `X` that match it. Useful when you want to extract the actual rows belonging to each pattern segment.
+
+<ParamField body="X" type="Dataset" required>
+  New data to score.
+</ParamField>
+
+<ResponseField name="returns" type="dict[str, np.ndarray]">
+  Mapping from pattern label to a 1-D integer array of matching row indices. A row may appear under multiple pattern labels.
+</ResponseField>
+
+### Full usage example
+
+```python
+import outerproduct as op
+import pandas as pd
+
+op.init(api_key="your-api-key")
+
+# --- Fit ---
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()
+
+pt = op.reasoning.pattern_tracker.fit(
+    model,
+    dataset,
+    target_range=(0.5, None),
+).wait()
+
+# Inspect the discovered patterns
+print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
+for fp in pt.patterns:
+    print(f"  {fp.label}: precision={fp.precision:.2f}, lift={fp.lift:.2f}")
+
+# --- Apply to new data ---
+X_new = op.Dataset(pd.read_csv("new_customers.csv"))
+
+# Boolean match matrix
+match_matrix = pt.transform(X_new)
+print(match_matrix.head())
+
+# Match rates per pattern
+print(pt.distribution(X_new))
+
+# Row indices per pattern
+segments = pt.partition(X_new)
+for label, indices in segments.items():
+    print(f"{label}: {len(indices)} matching rows")
+```
+
+<Warning>
+  `transform()`, `distribution()`, and `partition()` require `X` to be schema-compatible with the dataset used during `pattern_tracker.fit()`. Mismatched column names will raise a local validation error before any network call is made.
+</Warning>
+
+---
+
+## FilterPattern
+
+A single named pattern discovered by the `PatternTracker`.
+
+<ResponseField name="label" type="str">
+  A human-readable name for the pattern, generated by OuterProduct to summarise the feature conditions that define it (e.g. `"high_credit_low_income"`).
+</ResponseField>
+
+<ResponseField name="precision" type="float">
+  Fraction of rows matching this pattern whose prediction also falls within `target_range`. Higher precision means the pattern is a more reliable indicator of the target cohort. Values are in `[0, 1]`.
+</ResponseField>
+
+<ResponseField name="lift" type="float">
+  Ratio of the pattern's precision to the base rate of `target_range` in the fitting dataset. A lift of `2.0` means rows matching this pattern are twice as likely to fall in the target band as a randomly chosen row.
+</ResponseField>
+
+```python
+for fp in pt.patterns:
+    print(f"{fp.label}")
+    print(f"  precision : {fp.precision:.2%}")
+    print(f"  lift      : {fp.lift:.2f}x")
+# high_credit_low_income
+#   precision : 91.30%
+#   lift      : 2.41x
+# recent_late_payments
+#   precision : 87.50%
+#   lift      : 2.31x
+```

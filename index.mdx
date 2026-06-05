@@ -1,0 +1,88 @@
+---
+title: "OuterProduct: Tabular ML with Built-in Explanations"
+sidebarTitle: "Home"
+description: "OuterProduct trains tabular ML models, generates predictions, and produces feature-level explanations — all from a small, typed Python SDK."
+---
+
+OuterProduct gives you a Python SDK and hosted API for training tabular ML models and making them explainable. From a single `pip install`, you can train a model, generate per-row predictions, and understand which features drive every decision — including counterfactual scenarios and population-level pattern analysis.
+
+<CardGroup cols={2}>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Train your first model and generate explanations in under five minutes.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Get your API key from the OuterProduct Console and configure the SDK.
+  </Card>
+  <Card title="Workflow Guide" icon="diagram-project" href="/guides/workflow">
+    Walk through the full lifecycle: data → training → predictions → explanations.
+  </Card>
+  <Card title="MCP Server" icon="robot" href="/mcp/overview">
+    Use OuterProduct directly from Claude, Cursor, and other MCP clients.
+  </Card>
+</CardGroup>
+
+## What you can build
+
+OuterProduct handles three layers of intelligence out of the box:
+
+<CardGroup cols={3}>
+  <Card title="Predictions" icon="chart-line" href="/guides/predictions">
+    Batch inference from any trained `Model` or `ReasoningModel`.
+  </Card>
+  <Card title="Explanations" icon="magnifying-glass" href="/guides/explanations">
+    Local attributions, global feature importance, and decision rules.
+  </Card>
+  <Card title="Counterfactuals" icon="arrows-rotate" href="/guides/counterfactuals">
+    Find the minimal changes that would flip a prediction.
+  </Card>
+  <Card title="Pattern Tracking" icon="filter" href="/guides/pattern-tracker">
+    Mine population-level patterns from model behavior on a prediction band.
+  </Card>
+  <Card title="Data Connectors" icon="database" href="/guides/connectors/overview">
+    Connect S3, Snowflake, Databricks, or upload files directly.
+  </Card>
+  <Card title="Model Distillation" icon="wand-magic-sparkles" href="/guides/training">
+    Wrap any external HTTP scorer and build a ReasoningModel on top of it.
+  </Card>
+</CardGroup>
+
+## Get started in three steps
+
+<Steps>
+  <Step title="Install the SDK">
+    ```bash
+    pip install outerproduct
+    ```
+  </Step>
+  <Step title="Set your API key">
+    ```bash
+    export OUTERPRODUCT_API_KEY="your-api-key"
+    ```
+    Get your key from the [OuterProduct Console](https://console.outerproduct.com).
+  </Step>
+  <Step title="Train and explain">
+    ```python
+    import outerproduct as op
+
+    op.init()
+
+    dataset = op.Dataset.from_csv("customers.csv")
+    model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+
+    predictions, reasoning = model.predict_and_explain(op.Dataset.from_csv("customers_test.csv"))
+    print(reasoning.feature_names)
+    print(reasoning.attributions.shape)
+    ```
+  </Step>
+</Steps>
+
+## Use cases
+
+<CardGroup cols={2}>
+  <Card title="Underwriting" icon="file-contract" href="/use-cases/underwriting">
+    Pair risk scores with audit-ready explanations and counterfactual recommendations.
+  </Card>
+  <Card title="Recommender Systems" icon="star" href="/use-cases/recommender">
+    Add personalized reasoning to approval-odds models in affiliate marketplaces.
+  </Card>
+</CardGroup>

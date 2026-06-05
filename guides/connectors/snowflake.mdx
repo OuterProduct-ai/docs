@@ -1,0 +1,63 @@
+---
+title: "Connect OuterProduct to Snowflake with a PAT Credential"
+sidebarTitle: "Snowflake"
+description: "Query Snowflake tables from OuterProduct using a stored Programmatic Access Token. No Snowflake credentials pass through the SDK — set up in minutes."
+---
+
+`SnowflakeConnector` lets OuterProduct read data from your Snowflake tables at training and inference time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK — the OuterProduct backend authenticates directly with Snowflake using the stored PAT.
+
+## Add a Snowflake credential in the Console
+
+Before using `SnowflakeConnector` from Python, create a credential in the OuterProduct Console and generate a Programmatic Access Token in Snowflake.
+
+<Steps>
+  <Step title="Open the New Connector wizard">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **Snowflake**.
+  </Step>
+  <Step title="Generate a Programmatic Access Token in Snowflake">
+    In Snowsight, navigate to **Governance & Security → Users & roles**. Select the user the token will be assigned to, then go to **Programmatic access tokens → Generate new token**. Copy the token — you'll need it in the next step.
+
+    <Note>
+      Assign the PAT to a Snowflake user that has `SELECT` access on the tables you want OuterProduct to read.
+    </Note>
+  </Step>
+  <Step title="Enter your Snowflake account information">
+    Paste your Snowflake account details and the PAT you just generated into the connector wizard.
+  </Step>
+  <Step title="Save the connector">
+    Click **Add connector**. Your credential is now stored in the Console and ready to use from the SDK.
+  </Step>
+</Steps>
+
+## Use it from Python
+
+Once your credential is saved in the Console, instantiate `SnowflakeConnector` with your account details and credential name, then call `.table()` with the name of the Snowflake table you want to use.
+
+```python
+import outerproduct as op
+
+connector = op.SnowflakeConnector(
+    account="xy12345",
+    database="MYDB",
+    schema_name="PUBLIC",
+    warehouse="COMPUTE_WH",
+    credential_name="prod-snowflake",
+)
+dataset = connector.table("CUSTOMERS")
+
+model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+```
+
+<Tip>
+  Snowflake identifiers are case-insensitive by default but are stored in uppercase. Pass table and column names in uppercase (e.g. `"CUSTOMERS"`) to avoid resolution errors.
+</Tip>
+
+<Warning>
+  The `credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
+</Warning>
+
+## Other connectors
+
+- [File Upload](/guides/connectors/file-upload)
+- [Amazon S3](/guides/connectors/s3)
+- [Databricks](/guides/connectors/databricks)

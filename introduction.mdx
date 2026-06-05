@@ -1,0 +1,41 @@
+---
+title: "OuterProduct: Tabular ML with Built-In Explainability"
+sidebarTitle: "Introduction"
+description: "OuterProduct is a Python SDK and hosted API for training tabular ML models with built-in explainability — predictions and feature-level reasoning."
+---
+
+OuterProduct gives you a small, typed Python surface for training tabular machine learning models, generating predictions, and producing feature-level explanations — all without managing infrastructure. You bring a tabular dataset and a label column; OuterProduct handles model search, training, and explainability.
+
+## Key capabilities
+
+OuterProduct centers on a handful of composable building blocks:
+
+- **ReasoningModel** — trains a model that produces both predictions *and* feature-level attributions explaining each prediction. This is the flagship capability.
+- **Trainer** — trains a model optimized for predictive accuracy when you need predictions only and do not require explanations.
+- **PatternTracker** — aggregates local explanations across a population to surface recurring patterns and segment-level drivers.
+- **Counterfactuals** — generate "what would need to change?" scenarios for any prediction, enabling actionable recommendations.
+- **Connectors** — load data directly from S3, Snowflake, or Databricks, or upload a local CSV or Parquet file. All connectors produce a typed `Dataset` handle.
+- **MCP server** — use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
+
+## How it fits your workflow
+
+OuterProduct sits between your raw tabular data and the decisions you want to make with it. You point it at a dataset and a label column, call `fit()`, and get back a model object. From there you call `predict()` for scores and `explain()` for attributions — both return structured, typed results you can log, visualize, or pass downstream.
+
+Training runs asynchronously on OuterProduct's hosted infrastructure. The `.wait()` helper blocks your script until the model is ready, or you can poll with `job.status()` and integrate the job into your own orchestration.
+
+## Start here
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="bolt" href="/quickstart">
+    Train your first model and generate explanations in a few lines of code.
+  </Card>
+  <Card title="Authentication" icon="key" href="/authentication">
+    Get your API key and configure the SDK.
+  </Card>
+  <Card title="Full Workflow Guide" icon="map" href="/guides/workflow">
+    Walk through the complete model lifecycle with detailed examples.
+  </Card>
+  <Card title="MCP Server" icon="server" href="/mcp/overview">
+    Use OuterProduct from Claude, Cursor, and other MCP clients.
+  </Card>
+</CardGroup>

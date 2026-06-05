@@ -1,0 +1,123 @@
+---
+title: "Feature Explanations with OuterProduct ReasoningModel"
+sidebarTitle: "Explanations"
+description: "Use ReasoningModel to get per-sample feature attributions, human-readable decision rules, and global feature importance across your entire trained model."
+---
+
+A `ReasoningModel` gives you everything a plain `Model` does — plus the ability to ask *why* the model made each prediction. You can inspect individual predictions through local explanations, understand the model's overall behavior through global feature importance, or retrieve both predictions and explanations in a single API call.
+
+## Train a ReasoningModel
+
+Explanations are only available on `ReasoningModel`, produced by `op.reasoning.fit()`.
+
+```python
+import outerproduct as op
+
+op.init()
+
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()  # ReasoningModel
+```
+
+See the [Training guide](/guides/training) for the full set of configuration options.
+
+## Local explanations
+
+`model.explain(dataset)` returns a `Reasoning` object with per-sample feature attributions for every row in your dataset.
+
+```python
+test_dataset = op.Dataset(X_new)
+reasoning = model.explain(test_dataset)
+```
+
+The `Reasoning` object contains:
+
+| Attribute | Type | Description |
+|---|---|---|
+| `reasoning.feature_names` | `list[str]` | Ordered list of feature names, matching training-time columns |
+| `reasoning.attributions` | `ndarray` shape `(n_samples, n_features)` | Per-sample contribution of each feature to the prediction |
+| `reasoning.rules` | `list[str] \| None` | Human-readable decision rules, if the model produces them |
+
+```python
+reasoning.feature_names    # ["age", "income", "credit_score", ...]
+reasoning.attributions     # ndarray of shape (n_samples, n_features)
+reasoning.rules            # ["age > 30 AND income > 60000 → positive", ...] or None
+```
+
+<Note>
+Attribution signs matter: a positive value means the feature pushed the prediction higher; a negative value means it pulled the prediction lower. Magnitudes reflect relative importance within each sample.
+</Note>
+
+## Predict and explain in one call
+
+When you need both prediction scores and attributions, use `predict_and_explain()`. It runs a single round-trip and guarantees the predictions and attributions correspond to the same forward pass.
+
+```python
+test_dataset = op.Dataset(X_new)
+predictions, reasoning = model.predict_and_explain(test_dataset)
+
+# predictions: numpy.ndarray of shape (n_samples,)
+# reasoning:   Reasoning object with .feature_names, .attributions, .rules
+```
+
+<Tip>
+Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately — it's faster and avoids any risk of the two calls returning results for different internal model states.
+</Tip>
+
+## Global feature importance
+
+`model.get_global_drivers()` returns a model-wide `Reasoning` object. Unlike local explanations, attributions here have shape `(n_features,)` — one importance score per feature across the entire model.
+
+```python
+reasoning = model.get_global_drivers()
+
+for name, importance in zip(reasoning.feature_names, reasoning.attributions):
+    print(f"{name}: {importance:.4f}")
+```
+
+Use global drivers to understand which features your model relies on most overall, independently of any specific input row.
+
+## Full example
+
+```python
+import outerproduct as op
+
+op.init()
+
+# Train
+dataset = op.Dataset.from_csv("loans.csv")
+model = op.reasoning.fit(
+    dataset, label_column="approved", task_type="binclass"
+).wait()
+
+# Inference dataset
+import pandas as pd
+X = pd.read_csv("new_applicants.csv")
+test_dataset = op.Dataset(X)
+
+# Global importance — inspect once after training
+global_reasoning = model.get_global_drivers()
+for name, score in zip(global_reasoning.feature_names, global_reasoning.attributions):
+    print(f"{name}: {score:.4f}")
+
+# Local explanations + predictions in one call
+predictions, reasoning = model.predict_and_explain(test_dataset)
+
+# Print the top driving feature for each sample
+import numpy as np
+for i, (pred, attribs) in enumerate(zip(predictions, reasoning.attributions)):
+    top_feature = reasoning.feature_names[np.argmax(np.abs(attribs))]
+    print(f"Sample {i}: pred={pred:.2f}, top driver={top_feature}")
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Counterfactuals" href="/guides/counterfactuals">
+    Find minimal input changes that would flip a prediction using `model.scenario()`.
+  </Card>
+  <Card title="Pattern Tracker" href="/guides/pattern-tracker">
+    Aggregate explanation patterns across a cohort with `op.reasoning.pattern_tracker.fit()`.
+  </Card>
+</CardGroup>

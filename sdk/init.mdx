@@ -1,0 +1,84 @@
+---
+title: "outerproduct.init — Initialize the OuterProduct SDK"
+sidebarTitle: "init()"
+description: "Initialize the OuterProduct SDK with your API key. Must be called before any other SDK operation — reads from environment or accepts a key directly."
+---
+
+The `outerproduct.init()` function is the entry point for every OuterProduct session. It authenticates the SDK against the OuterProduct API and must be called before you create datasets, configure trainers, or invoke any other SDK operation. You can supply your API key either through an environment variable (recommended for production) or by passing it directly in code.
+
+## Function Signature
+
+```python
+outerproduct.init(api_key=None)
+```
+
+## Parameters
+
+<ParamField query="api_key" type="string">
+  Your OuterProduct API key. If omitted, the SDK reads the key from the `OUTERPRODUCT_API_KEY` environment variable. Generate a key from the [OuterProduct Console](https://console.outerproduct.com).
+</ParamField>
+
+## Usage
+
+<CodeGroup>
+
+```python Environment Variable (Recommended)
+import outerproduct as op
+
+# Reads OUTERPRODUCT_API_KEY from the environment automatically.
+# Set it beforehand with: export OUTERPRODUCT_API_KEY="your-api-key"
+op.init()
+```
+
+```python Explicit API Key
+import outerproduct as op
+
+# Pass the key directly — useful for notebooks or dynamic configuration.
+op.init(api_key="your-api-key")
+```
+
+</CodeGroup>
+
+<Note>
+  The environment-variable approach is strongly recommended for production workloads. It keeps credentials out of source code and avoids accidental exposure in version-control history or notebook outputs.
+</Note>
+
+## Setting the environment variable
+
+Set `OUTERPRODUCT_API_KEY` in your shell before running your script, or add it to your `.env` file:
+
+```bash
+export OUTERPRODUCT_API_KEY="your-api-key"
+```
+
+If you are using a secrets manager or a CI/CD platform, inject the variable there rather than hard-coding the key in Python.
+
+<Warning>
+  Calling any SDK function before `op.init()` raises an `AuthenticationError`. Make sure `init()` is always the first call in your program.
+</Warning>
+
+## What happens at initialization
+
+When `init()` is called, the SDK:
+
+1. Resolves the API key — from the argument or the environment variable.
+2. Validates the key format locally.
+3. Establishes an authenticated session that all subsequent SDK calls reuse.
+
+No network round-trip is made during `init()` itself; the key is sent with the first API request.
+
+## Next steps
+
+Once initialized, you are ready to load data and start training:
+
+<Steps>
+  <Step title="Load your data">
+    Create a [`Dataset`](/sdk/dataset) from a CSV, DataFrame, Parquet file, or NumPy array.
+  </Step>
+  <Step title="Configure a Trainer">
+    Use [`Trainer.configure()`](/sdk/trainer) to select your target column, model families, and optimization metric.
+  </Step>
+  <Step title="Run training">
+    Call `.run().wait()` to submit the job and block until the trained model is returned.
+  </Step>
+</Steps>

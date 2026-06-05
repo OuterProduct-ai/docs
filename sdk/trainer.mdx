@@ -1,0 +1,319 @@
+---
+title: "outerproduct.Trainer — Model Training Configuration"
+sidebarTitle: "Trainer"
+description: "Train tabular ML models with outerproduct.Trainer. Configure model families, optimization metrics, search strategy, and knowledge distillation."
+---
+
+`outerproduct.Trainer` is the low-level training interface that gives you full control over the model-selection and hyperparameter search that runs on the OuterProduct platform. It coordinates a parallel search over model families, hyperparameter spaces, and metric weightings — all server-side. The result is a single trained `Model` representing the best configuration found. If you also need feature-level explanations, use `op.reasoning.fit()` instead, which runs the same search and returns a `ReasoningModel`.
+
+---
+
+## `Trainer.configure()`
+
+Class method that creates a configured `Trainer` ready to launch a training job.
+
+```python
+op.Trainer.configure(
+    dataset,
+    label_column=None,
+    model_types=None,
+    metric=None,
+    teacher=None,
+)
+```
+
+### Parameters
+
+<ParamField body="dataset" type="Dataset" required>
+  The training data. Pass an [`op.Dataset`](/sdk/dataset) built from any supported source (CSV, DataFrame, Parquet, or NumPy).
+</ParamField>
+
+<ParamField body="label_column" type="str | None">
+  Name of the target column within the dataset. Required for supervised training unless a `teacher` is provided — when a teacher is set, `label_column` is optional and the teacher's predictions are used as the training signal instead.
+</ParamField>
+
+<ParamField body="model_types" type="list[str] | None">
+  List of model family identifiers to include in the search, for example `["tabm", "xgboost"]`. All listed families are tuned **in parallel** in the same search pass — you do not pay an extra round-trip per family. If omitted, OuterProduct automatically selects a curated set appropriate for your dataset.
+</ParamField>
+
+<ParamField body="metric" type="Metric | list[Metric] | None">
+  The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a **Pareto sweep** — training then explores the full weighting space between all listed metrics and returns the best model found across that sweep. If omitted, a default metric is chosen based on the detected task type (classification or regression).
+
+  <Expandable title="Common metric names">
+    | Name | Task |
+    |------|------|
+    | `"auc"` | Binary classification |
+    | `"accuracy"` | Classification |
+    | `"logloss"` | Classification |
+    | `"f1"` | Classification |
+    | `"rmse"` | Regression |
+    | `"mae"` | Regression |
+  </Expandable>
+</ParamField>
+
+<ParamField body="teacher" type="Model | Predictor | None">
+  A teacher model for knowledge distillation. The teacher can be a trained `op.Model` returned by a previous job, or an `op.model.Predictor` wrapping an external HTTP endpoint. When a teacher is set, the student is trained to mimic the teacher's predictions rather than ground-truth labels.
+</ParamField>
+
+### Returns
+
+<ResponseField name="return value" type="Trainer">
+  A configured `Trainer` instance. Call `.run()` on it to submit the training job.
+</ResponseField>
+
+### Example
+
+```python
+import outerproduct as op
+
+op.init()
+dataset = op.Dataset.from_csv("customers.csv")
+
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="churn",
+    model_types=["tabm", "xgboost"],
+    metric=op.Metric("auc"),
+)
+```
+
+---
+
+## `trainer.run()`
+
+Submit the configured training job to the OuterProduct platform. Returns immediately with a `Job` handle — training runs asynchronously server-side.
+
+```python
+trainer.run(strategy="random", n_trials=None, grid_size=None)
+```
+
+### Parameters
+
+<ParamField body="strategy" type="string">
+  Hyperparameter search strategy. Options:
+  - `"random"` *(default)* — random search, fast and effective for most datasets.
+  - `"optuna"` — Bayesian optimization via Optuna, recommended when you want a thorough search and have more trial budget.
+</ParamField>
+
+<ParamField body="n_trials" type="int | None">
+  Per-family trial budget — the number of hyperparameter configurations to evaluate for each model family in `model_types`. If omitted, the platform uses a sensible default based on dataset size.
+</ParamField>
+
+<ParamField body="grid_size" type="float | None">
+  Resolution of the metric-weighting sweep when multiple metrics are passed to `Trainer.configure()`. A smaller value (e.g. `0.05`) means finer resolution and more combinations to evaluate. Only relevant for multi-metric Pareto sweeps; ignored when a single metric is used.
+</ParamField>
+
+### Returns
+
+<ResponseField name="return value" type="Job[Model]">
+  A non-blocking job handle. The job runs server-side; use the handle to poll status, block for the result, or retrieve the raw response payload.
+</ResponseField>
+
+---
+
+## The `Metric` Class
+
+Wrap a metric name in `op.Metric` to pass it to `Trainer.configure()`.
+
+```python
+op.Metric(name)
+```
+
+<ParamField body="name" type="string" required>
+  The metric identifier string. Common values:
+
+  | Name | Description |
+  |------|-------------|
+  | `"auc"` | Area under the ROC curve (binary classification) |
+  | `"accuracy"` | Fraction of correct predictions |
+  | `"logloss"` | Logarithmic loss |
+  | `"f1"` | F1 score |
+  | `"rmse"` | Root mean squared error (regression) |
+  | `"mae"` | Mean absolute error (regression) |
+</ParamField>
+
+```python
+metric = op.Metric("auc")
+```
+
+---
+
+## The `Job` Handle
+
+`trainer.run()` — and `op.reasoning.fit()` — return a `Job` handle immediately. Training runs asynchronously; use the handle to interact with it.
+
+### `job.status()`
+
+Poll the current state of the job without blocking.
+
+```python
+status = job.status()
+# Returns: "pending" | "running" | "completed" | "failed"
+```
+
+<ResponseField name="return value" type="str">
+  One of `"pending"`, `"running"`, `"completed"`, or `"failed"`.
+</ResponseField>
+
+### `job.wait()`
+
+Block the current thread until the job finishes, then return the trained model.
+
+```python
+model = job.wait()
+```
+
+<ResponseField name="return value" type="Model">
+  The trained `Model` once the job completes successfully. Raises if the job failed.
+</ResponseField>
+
+### `job.results()`
+
+Retrieve the raw result payload from the platform once the job has completed. Useful for inspecting job metadata, artifact URIs, or debugging.
+
+```python
+result = job.results()
+```
+
+<ResponseField name="return value" type="dict">
+  A dictionary containing the raw response from the OuterProduct API — includes job IDs, artifact URIs, and timing information. Only available after the job status is `"completed"`.
+</ResponseField>
+
+<Note>
+  `.wait()` is the simplest path for linear scripts. Use `.status()` and `.results()` when you want to run other work while training proceeds, or when you are managing jobs across multiple datasets.
+</Note>
+
+---
+
+## Code Examples
+
+<Tabs>
+  <Tab title="Basic training">
+
+```python
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_csv("loans.csv")
+
+trainer = op.Trainer.configure(dataset, label_column="approved")
+model = trainer.run().wait()
+
+print(model)
+```
+
+  </Tab>
+  <Tab title="Custom model types & strategy">
+
+```python
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_csv("loans.csv")
+
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="approved",
+    model_types=["tabm", "xgboost"],
+    metric=op.Metric("auc"),
+)
+
+# Bayesian search, 10 trials per family
+model = trainer.run(strategy="optuna", n_trials=10).wait()
+```
+
+  </Tab>
+  <Tab title="Multi-metric Pareto sweep">
+
+```python
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_csv("loans.csv")
+
+# Pass multiple metrics to trigger a Pareto sweep.
+# Training explores all weightings between AUC and accuracy,
+# then returns the best model found across the sweep.
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="approved",
+    model_types=["tabm", "xgboost"],
+    metric=[op.Metric("auc"), op.Metric("accuracy")],
+)
+
+model = trainer.run(
+    strategy="optuna",
+    n_trials=10,
+    grid_size=0.1,   # 10% resolution on the weighting sweep
+).wait()
+```
+
+  </Tab>
+  <Tab title="Non-blocking with polling">
+
+```python
+import time
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_csv("loans.csv")
+trainer = op.Trainer.configure(dataset, label_column="approved")
+
+# Submit and continue doing other work
+job = trainer.run(strategy="optuna", n_trials=20)
+
+while job.status() in ("pending", "running"):
+    print(f"Job status: {job.status()}")
+    time.sleep(10)
+
+if job.status() == "completed":
+    model = job.wait()
+    print("Training complete:", job.results())
+else:
+    print("Job failed.")
+```
+
+  </Tab>
+  <Tab title="Distillation">
+
+```python
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_csv("customers.csv")
+
+# Wrap an external model as the teacher
+teacher = op.model.Predictor(
+    "https://api.example.com/predict",
+    headers={"Authorization": "Bearer <token>"},
+)
+
+# label_column is optional when a teacher is set
+trainer = op.Trainer.configure(dataset, teacher=teacher)
+model = trainer.run().wait()
+```
+
+  </Tab>
+</Tabs>
+
+---
+
+## How the search works
+
+When you call `trainer.run()`, the OuterProduct platform:
+
+1. **Tunes all model families in parallel** — every family listed in `model_types` is explored concurrently, not sequentially.
+2. **Searches hyperparameter configurations** using the strategy you chose (`"random"` or `"optuna"`), up to the `n_trials` budget per family.
+3. **Sweeps metric weightings** (multi-metric only) at the resolution set by `grid_size`, evaluating each weighting as a separate optimization objective.
+4. **Returns a single model** — the best configuration found across all families, trials, and (if applicable) metric weightings.
+
+Parallelism and per-trial timeouts are managed server-side. There are no SDK-level threading or timeout knobs.
+
+<Tip>
+  Start with the default `strategy="random"` to get a quick baseline. Switch to `strategy="optuna"` with a higher `n_trials` budget when you need a more thorough search.
+</Tip>

@@ -1,0 +1,255 @@
+---
+title: "OuterProduct Model Lifecycle: A Complete Walkthrough"
+sidebarTitle: "Workflow"
+description: "A complete walkthrough of the OuterProduct lifecycle: build a dataset, train a model, generate predictions, explanations, counterfactuals, and patterns."
+---
+
+OuterProduct organizes ML work into a clear sequence of steps — from loading your data to extracting actionable insights. This guide walks you through every stage, so you know exactly what to call and when. Whether you need raw predictions or deep feature-level reasoning, the same workflow applies.
+
+<Steps>
+
+### Build a Dataset
+
+A `Dataset` is the typed handle to your data. It carries a per-column `Column` schema (inferred by default) and can be constructed from files, DataFrames, or arrays. The target column is named at fit time, not on the dataset itself.
+
+<CodeGroup>
+
+```python From CSV
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from environment
+
+dataset = op.Dataset.from_csv("customers.csv")
+```
+
+```python From pandas
+import pandas as pd
+import outerproduct as op
+
+op.init()
+
+df = pd.read_csv("loans.csv")
+dataset = op.Dataset.from_pandas(df)
+```
+
+```python From Parquet
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_parquet("loans.parquet")
+```
+
+```python From NumPy
+import outerproduct as op
+
+op.init()
+
+dataset = op.Dataset.from_numpy(
+    X, y,
+    feature_names=["sqft", "bedrooms", "bathrooms"],
+)
+```
+
+</CodeGroup>
+
+After loading, you can inspect the dataset before training:
+
+```python
+print(dataset.n_samples, dataset.n_features)
+print(dataset.feature_names)
+print(dataset.head())
+```
+
+### Register a Connector
+
+For larger datasets, register the source through a `Connector` so the same `Dataset` can be reused across training runs without re-uploading.
+
+```python
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+```
+
+<Note>
+`FileUploadConnector` sends your file to S3 via a presigned URL and returns a server-backed `Dataset`. `S3Connector`, `SnowflakeConnector`, and `DatabricksConnector` register external sources directly with the OuterProduct backend. See the Connectors guide for details.
+</Note>
+
+### Fit a Model
+
+Choose between two entry points depending on whether you need explanations alongside predictions.
+
+<Tabs>
+<Tab title="ReasoningModel (predictions + explanations)">
+
+`op.reasoning.fit()` is the canonical path when you want feature-level explanations. It runs the same model-family × hyperparameter × metric search as the Trainer, then returns a `ReasoningModel`.
+
+```python
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()  # ReasoningModel
+```
+
+</Tab>
+<Tab title="Plain Model (predictions only)">
+
+`Trainer.configure().run()` gives you full control over trial counts, ensembling, and cross-validation folds, and returns a plain `Model`.
+
+```python
+trainer = op.Trainer.configure(dataset, label_column="churn")
+model = trainer.run().wait()  # Model
+```
+
+</Tab>
+</Tabs>
+
+**Tuning the configuration:**
+
+```python
+# Trainer path — full HPO, multi-metric Pareto sweep, Optuna strategy:
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="churn",
+    model_types=["tabm", "xgboost"],
+    metric=[op.Metric("auc"), op.Metric("accuracy")],
+)
+model = trainer.run(strategy="optuna", n_trials=10, grid_size=0.1).wait()
+
+# Reasoning path — model selection and HPO:
+model = op.reasoning.fit(
+    dataset,
+    label_column="churn",
+    task_type="binclass",
+    model_types=["tabm", "xgboost"],
+    n_hyperopt_steps=10,
+).wait()
+```
+
+**Jobs API** — `run()` and `fit()` return a job handle immediately without blocking:
+
+```python
+job = trainer.run()
+job.status()    # "pending" | "running" | "completed" | "failed"
+model = job.wait()   # block until done, return the trained model
+job.results()        # raw result payload (ids, URIs) once completed
+```
+
+**Distillation** — train a student that mimics an external model's predictions:
+
+```python
+teacher = op.model.Predictor(
+    "https://api.example.com/predict",
+    headers={"Authorization": "Bearer ..."},
+)
+
+# Plain distilled Model:
+model = op.Trainer.configure(dataset, teacher=teacher).run().wait()
+
+# Distilled ReasoningModel that explains the teacher's behavior:
+reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
+```
+
+### Generate Predictions
+
+Wrap your inference rows in `op.Dataset()` before calling `predict()`. The SDK validates your dataset's columns against the model's training-time schema locally before the call goes out.
+
+```python
+test_dataset = op.Dataset(X_new)
+predictions = model.predict(test_dataset)  # numpy.ndarray
+```
+
+### Generate Explanations
+
+Explanations are available on any `ReasoningModel`. Call `explain()` for local per-sample attributions, `get_global_drivers()` for model-wide importance, or `predict_and_explain()` to get both in a single round-trip.
+
+```python
+# Local explanations
+test_dataset = op.Dataset(X_new)
+reasoning = model.explain(test_dataset)
+
+reasoning.feature_names    # list[str]
+reasoning.attributions     # ndarray, shape (n_samples, n_features)
+reasoning.rules            # list[str] | None
+
+# Single round-trip
+predictions, reasoning = model.predict_and_explain(test_dataset)
+
+# Global feature importance
+reasoning = model.get_global_drivers()
+for name, importance in zip(reasoning.feature_names, reasoning.attributions):
+    print(f"{name}: {importance:.4f}")
+```
+
+### Run Counterfactual Scenarios
+
+Ask "what minimal change would flip this prediction?" for any set of input rows. `model.scenario()` returns a `ScenarioResult` with one `QueryResult` per input row.
+
+```python
+queries = op.Dataset(X_query)
+result = model.scenario(queries, target_class=1, max_steps=10)
+
+for q in result.queries:
+    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
+    for cf in q.counterfactuals:
+        for feature, change in cf.changes.items():
+            print(f"  {feature}: {change.before} → {change.after}")
+```
+
+### Aggregate Prediction Patterns
+
+`PatternTracker` distills a `ReasoningModel`'s behavior on a target prediction band into named, executable filter patterns. Fit it on your training dataset, then apply it to any new data.
+
+```python
+pt = op.reasoning.pattern_tracker.fit(
+    model, dataset, target_range=(0.5, None)
+).wait()
+
+for fp in pt.patterns:
+    print(f"{fp.label}: precision={fp.precision:.2f} lift={fp.lift:.2f}")
+
+# Apply to new data
+pt.transform(X_new)      # bool DataFrame (n × n_patterns)
+```
+
+</Steps>
+
+## End-to-end example
+
+The following snippet chains all seven steps into a single script you can run against any labeled CSV.
+
+```python
+import outerproduct as op
+
+op.init()
+
+# 1. Load data
+dataset = op.Dataset.from_csv("loans.csv")
+
+# 2. Train with reasoning
+model = op.reasoning.fit(
+    dataset, label_column="approved", task_type="binclass"
+).wait()
+
+# 3. Prepare inference rows (drop the label column the model never saw)
+X = dataset.to_pandas().head(100).drop(columns=["approved"])
+test = op.Dataset(X)
+
+# 4. Global importance
+importance = model.get_global_drivers()
+for name, score in zip(importance.feature_names, importance.attributions):
+    print(f"{name}: {score:.4f}")
+
+# 5. Local explanations + predictions in one call
+predictions, reasoning = model.predict_and_explain(test)
+
+# 6. Counterfactuals: what would flip the denied loans to approved?
+denied_mask = predictions < 0.5
+denied = op.Dataset(X[denied_mask])
+scenarios = model.scenario(denied, target_class=1)
+
+# 7. Pattern aggregation across the denied cohort
+pt = op.reasoning.pattern_tracker.fit(
+    model, dataset, target_range=(None, 0.5)
+).wait()
+for fp in pt.patterns:
+    print(f"{fp.label}: precision={fp.precision:.2f}")
+```

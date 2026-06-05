@@ -1,0 +1,179 @@
+---
+title: "outerproduct.agentic — Document Tabularization API"
+sidebarTitle: "Agentic"
+description: "API reference for the agentic documents module — convert unstructured documents into typed tabular features ready for ReasoningModel training."
+---
+
+The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed tabular features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
+
+All public symbols for document tabularization live in the `outerproduct.agentic.documents` submodule.
+
+---
+
+## outerproduct.agentic.documents
+
+The `documents` submodule contains two functions — `induce_schema` and `tabularize` — that work together in a two-step pipeline:
+
+1. **`induce_schema`** analyzes a sample of your documents and returns a `DocumentSchema` describing the tabular columns to extract.
+2. **`tabularize`** applies that schema to your full document set and returns a `DocumentDataset` ready for training.
+
+<Tip>
+  You can customize which questions the agent tries to answer per document by passing a list of `DocumentQuestion` objects to `induce_schema`. When you do, the schema is built around your specific questions rather than inferred automatically from the document content.
+</Tip>
+
+### End-to-end example
+
+The snippet below shows the complete flow from a list of raw documents to a trained `ReasoningModel`.
+
+```python
+import outerproduct as op
+from outerproduct.agentic import documents
+
+# 1. Optionally define the questions you care about
+questions = [
+    documents.DocumentQuestion(
+        question="What is the contract value in USD?",
+        column_name="contract_value_usd",
+    ),
+    documents.DocumentQuestion(
+        question="What is the contract end date?",
+        column_name="contract_end_date",
+    ),
+    documents.DocumentQuestion(
+        question="Is there an auto-renewal clause?",
+        column_name="has_auto_renewal",
+    ),
+]
+
+# 2. Infer the tabular schema from a sample of documents
+schema = documents.induce_schema(raw_documents, questions=questions)
+
+# 3. Tabularize the full document set using the schema
+dataset = documents.tabularize(raw_documents, schema=schema)
+
+# 4. Train a ReasoningModel on the resulting tabular dataset
+model = op.reasoning.fit(
+    dataset,
+    label_column="has_auto_renewal",
+    task_type="binclass",
+).wait()
+```
+
+---
+
+## Functions
+
+### `induce_schema`
+
+```python
+outerproduct.agentic.documents.induce_schema(documents, questions=None) -> DocumentSchema
+```
+
+Analyzes a collection of documents and returns a `DocumentSchema` that describes the tabular columns to extract. When `questions` is provided, the schema is built around those specific questions; otherwise the agent infers a useful column set from the document content.
+
+<ParamField body="documents" type="list" required>
+  The documents to analyze. Each element may be a string (raw text) or a supported document object. The agent reads a representative sample to determine the schema.
+</ParamField>
+
+<ParamField body="questions" type="list[DocumentQuestion] | None" default="None">
+  An optional list of `DocumentQuestion` objects that specify exactly which questions the agent should answer for each document and what the resulting column should be named. When `None`, the agent infers its own set of questions from the document content.
+</ParamField>
+
+<ResponseField name="DocumentSchema" type="DocumentSchema">
+  A `DocumentSchema` object describing the inferred (or question-driven) tabular structure. Pass this to `tabularize()` to extract the columns from your full document set.
+
+  <Expandable title="DocumentSchema fields">
+    <ResponseField name="questions" type="list[DocumentQuestion]">
+      The ordered list of `DocumentQuestion` objects that define the columns in the schema. Each question maps to exactly one output column in the tabularized dataset.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+---
+
+### `tabularize`
+
+```python
+outerproduct.agentic.documents.tabularize(documents, schema) -> DocumentDataset
+```
+
+Applies a `DocumentSchema` to a collection of documents and returns a `DocumentDataset` — a typed tabular dataset where each row corresponds to one document and each column corresponds to a `DocumentQuestion` in the schema.
+
+<ParamField body="documents" type="list" required>
+  The full collection of documents to tabularize. These can be the same documents passed to `induce_schema` or a larger dataset that shares the same structure.
+</ParamField>
+
+<ParamField body="schema" type="DocumentSchema" required>
+  The `DocumentSchema` returned by `induce_schema()`. Defines the columns the agent will extract from each document.
+</ParamField>
+
+<ResponseField name="DocumentDataset" type="DocumentDataset">
+  A typed tabular dataset derived from the source documents. Each row represents one document; each column represents one answered `DocumentQuestion`. Extends `Dataset`, so it can be passed directly to `op.reasoning.fit()` or `Trainer.configure()`.
+</ResponseField>
+
+---
+
+## Classes
+
+### `DocumentQuestion`
+
+Represents a single question that the agent answers for each document, and the name to give the resulting column in the tabular output.
+
+```python
+from outerproduct.agentic.documents import DocumentQuestion
+
+q = DocumentQuestion(
+    question="What is the contract value in USD?",
+    column_name="contract_value_usd",
+)
+```
+
+<ParamField body="question" type="str" required>
+  The natural-language question the agent answers for every document in the dataset (e.g. `"What is the contract value in USD?"`). Phrase this as a specific, answerable question about the document content.
+</ParamField>
+
+<ParamField body="column_name" type="str" required>
+  The name to assign to the output column in the tabularized dataset (e.g. `"contract_value_usd"`). Use lowercase snake_case for best compatibility with downstream tooling.
+</ParamField>
+
+---
+
+### `DocumentSchema`
+
+Describes the full set of columns to extract from a document collection. Returned by `induce_schema()` and consumed by `tabularize()`.
+
+```python
+from outerproduct.agentic import documents
+
+schema = documents.induce_schema(raw_documents, questions=my_questions)
+print(schema.questions)  # list[DocumentQuestion]
+```
+
+<ResponseField name="questions" type="list[DocumentQuestion]">
+  The ordered list of `DocumentQuestion` objects that define the schema's columns. Each entry maps to one output column in the `DocumentDataset`. When you pass explicit questions to `induce_schema`, this list mirrors them; when you let the agent infer the schema, it is populated automatically.
+</ResponseField>
+
+---
+
+### `DocumentDataset`
+
+A typed tabular dataset produced by `tabularize()`. Extends the base `Dataset` class, so every method available on a `Dataset` — including passing it to `op.reasoning.fit()` or `Trainer.configure()` — works without any conversion step.
+
+```python
+dataset = documents.tabularize(raw_documents, schema=schema)
+
+# Use it exactly like any other Dataset
+model = op.reasoning.fit(
+    dataset,
+    label_column="has_auto_renewal",
+    task_type="binclass",
+).wait()
+```
+
+<ResponseField name="DocumentDataset" type="Dataset (extended)">
+  Inherits all properties and methods of `Dataset`. Each row corresponds to one source document; each column corresponds to one `DocumentQuestion` in the schema used to create it.
+</ResponseField>
+
+<Note>
+  `DocumentDataset` is a drop-in replacement for any `Dataset` argument across the OuterProduct SDK. You can pass it directly to `op.reasoning.fit()`, `Trainer.configure()`, or any other API that accepts a `Dataset`.
+</Note>

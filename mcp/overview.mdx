@@ -1,0 +1,136 @@
+---
+title: "Use OuterProduct from Claude, Cursor, and MCP Clients"
+sidebarTitle: "MCP Server"
+description: "Connect the OuterProduct MCP server to Claude, Cursor, or any MCP client and train models, explain predictions, and run counterfactuals in plain English."
+---
+
+The OuterProduct MCP server bridges your favourite LLM interface and the OuterProduct platform. Once you add a single URL, the assistant can train tabular ML models, generate predictions, produce per-feature explanations, run counterfactuals, and mine decision-pattern aggregates — all without leaving your chat window.
+
+## What the server exposes
+
+When connected, the assistant gains access to five categories of tools:
+
+<CardGroup cols={2}>
+  <Card title="Training" icon="brain">
+    Fit a model on any tabular dataset you upload or reference.
+  </Card>
+  <Card title="Prediction" icon="bolt">
+    Score new rows against a trained model.
+  </Card>
+  <Card title="Explanation" icon="magnifying-glass">
+    Get per-feature importance for any individual prediction.
+  </Card>
+  <Card title="Counterfactual" icon="arrow-right-arrow-left">
+    Find the minimal realistic changes that flip an outcome.
+  </Card>
+  <Card title="Upload" icon="arrow-up-from-bracket">
+    Send CSV data straight from the conversation.
+  </Card>
+  <Card title="Pattern aggregates" icon="chart-bar">
+    Mine decision-pattern summaries across a dataset.
+  </Card>
+</CardGroup>
+
+## Server details
+
+| Property | Value |
+|---|---|
+| Server URL | `https://mcp.outerproduct.com/mcp` |
+| Authentication | OAuth 2.1 — no API key required |
+| Hosting | Remote (no local process to manage) |
+
+## Authentication
+
+The server uses **OAuth 2.1**, so there is no API key to copy and paste. Modern MCP clients — Claude Desktop, Claude Code, and Cursor — drive the authentication flow automatically. You add the server URL, click **Authenticate**, sign in to OuterProduct in your browser, and you're done.
+
+## Connect your client
+
+Choose the tab for the client you are using.
+
+<Tabs>
+  <Tab title="Claude Desktop">
+    <Steps>
+      <Step title="Open Settings">
+        In Claude Desktop, go to **Settings → Connectors → Add custom connector**.
+      </Step>
+      <Step title="Paste the server URL">
+        Enter the following URL and confirm:
+
+        ```
+        https://mcp.outerproduct.com/mcp
+        ```
+      </Step>
+      <Step title="Authenticate">
+        Claude Desktop opens a browser tab. Sign in to OuterProduct and grant access. You are redirected back to Claude Desktop automatically.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Claude Code">
+    <Steps>
+      <Step title="Register the server">
+        Run this command in your terminal:
+
+        ```bash
+        claude mcp add --transport http outerproduct https://mcp.outerproduct.com/mcp
+        ```
+      </Step>
+      <Step title="Authenticate">
+        Inside Claude Code, run `/mcp`, select **outerproduct** from the list, then choose **Authenticate**. Claude Code opens a browser tab to complete the sign-in. The same flow triggers automatically the first time the assistant calls an OuterProduct tool.
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Cursor">
+    <Steps>
+      <Step title="Edit mcp.json">
+        Open `~/.cursor/mcp.json` in any text editor and add the `outerproduct` entry:
+
+        ```json
+        {
+          "mcpServers": {
+            "outerproduct": {
+              "url": "https://mcp.outerproduct.com/mcp"
+            }
+          }
+        }
+        ```
+
+        <Note>
+          If the file does not exist yet, create it with the content above.
+        </Note>
+      </Step>
+      <Step title="Restart Cursor">
+        Quit and relaunch Cursor so it picks up the new configuration.
+      </Step>
+      <Step title="Authenticate">
+        Navigate to **Settings → MCP → outerproduct** and click **Authenticate**. Cursor opens a browser tab where you sign in to OuterProduct.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Verify the connection
+
+Once authentication completes, ask the assistant:
+
+> What MCP tools do you have available from `outerproduct`?
+
+A healthy connection returns a list that includes training, prediction, explanation, counterfactual, and upload tools. Anything you can do in Python with the OuterProduct SDK, you can now ask the assistant to do in plain English.
+
+<Tip>
+  If the assistant does not list OuterProduct tools, confirm that you completed the **Authenticate** step for your client and that you are signed in to the correct OuterProduct account.
+</Tip>
+
+## Built-in workflows
+
+OuterProduct ships pre-built workflows for common real-world use cases. When your prompt matches a recognised scenario, the assistant follows the workflow automatically — no extra installation needed.
+
+<CardGroup cols={2}>
+  <Card title="Suspicious Activity Reports (SAR)" icon="shield-halved">
+    Helps fraud and compliance teams draft a SAR grounded in model-level evidence from your transaction data.
+  </Card>
+  <Card title="Churn Winback Briefings" icon="users">
+    Produces a retention brief for customer success teams, ranking at-risk customers and surfacing actionable levers.
+  </Card>
+</CardGroup>
+
+For sample prompts that trigger these workflows and more, see [Sample Prompts](/mcp/prompts).

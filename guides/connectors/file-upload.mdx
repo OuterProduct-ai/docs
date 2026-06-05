@@ -1,0 +1,68 @@
+---
+title: "Upload Files to OuterProduct with FileUploadConnector"
+sidebarTitle: "File Upload"
+description: "Upload a local CSV or Parquet file to OuterProduct via a presigned URL with no console setup. Get a Dataset back and pass it straight to training."
+---
+
+`FileUploadConnector` is the fastest way to get data into OuterProduct. It uploads a local CSV or Parquet file through a presigned URL and returns a `Dataset` object you can pass directly to training or inference. The connector is completely stateless — there is no credential to configure in the Console, and it works the moment you install the SDK.
+
+## Supported formats
+
+`FileUploadConnector` accepts **CSV** and **Parquet** files. Parquet support requires the optional `parquet` extra:
+
+```bash
+pip install "outerproduct[parquet]"
+```
+
+CSV files work with the standard `outerproduct` install and need no additional dependencies.
+
+## Upload a file and train a model
+
+<Steps>
+  <Step title="Create the connector">
+    Instantiate `FileUploadConnector` with no arguments.
+
+    ```python
+    import outerproduct as op
+
+    connector = op.FileUploadConnector()
+    ```
+  </Step>
+  <Step title="Upload your file">
+    Call `connector.upload()` with the path to your local file. OuterProduct uploads it via a presigned URL and returns a `Dataset`.
+
+    ```python
+    dataset = connector.upload("customers.csv")
+    ```
+  </Step>
+  <Step title="Train a model">
+    Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
+
+    ```python
+    model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+    ```
+  </Step>
+</Steps>
+
+## Complete example
+
+```python
+import outerproduct as op
+
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+
+model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+```
+
+<Tip>
+  Use a Parquet file instead of CSV when your dataset is large. Parquet files are compressed and columnar, so they upload faster and consume less bandwidth.
+</Tip>
+
+## Other connectors
+
+If your data lives in a cloud data store rather than on your local machine, use one of the cloud connectors instead:
+
+- [Amazon S3](/guides/connectors/s3)
+- [Snowflake](/guides/connectors/snowflake)
+- [Databricks](/guides/connectors/databricks)

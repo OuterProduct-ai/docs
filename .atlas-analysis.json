@@ -1,0 +1,124 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "OuterProduct",
+  "projectDescription": "OuterProduct is a Python SDK and API for training tabular ML models, generating predictions, and producing feature-level explanations — including counterfactuals and pattern aggregation — from a typed, minimal interface.",
+  "theme": "luma",
+  "primaryColor": "#7c7c7c",
+  "lightColor": "#1b1b1b",
+  "darkColor": "#f2f2f2",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/workflow",
+              "guides/training",
+              "guides/predictions",
+              "guides/explanations",
+              "guides/counterfactuals",
+              "guides/pattern-tracker"
+            ]
+          },
+          {
+            "group": "Data Connectors",
+            "pages": [
+              "guides/connectors/overview",
+              "guides/connectors/file-upload",
+              "guides/connectors/s3",
+              "guides/connectors/snowflake",
+              "guides/connectors/databricks"
+            ]
+          },
+          {
+            "group": "MCP Server",
+            "pages": [
+              "mcp/overview",
+              "mcp/prompts"
+            ]
+          },
+          {
+            "group": "Use Cases",
+            "pages": [
+              "use-cases/underwriting",
+              "use-cases/recommender"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "sdk/init",
+              "sdk/dataset",
+              "sdk/trainer"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "sdk/model",
+              "sdk/reasoning"
+            ]
+          },
+          {
+            "group": "Connectors",
+            "pages": [
+              "sdk/connectors"
+            ]
+          },
+          {
+            "group": "Agentic",
+            "pages": [
+              "sdk/agentic"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Train tabular ML models with automated hyperparameter search across multiple model families",
+    "Feature-level explanations (local attributions, global drivers, and decision rules) via ReasoningModel",
+    "Counterfactual scenario analysis — find minimal feature changes that flip a prediction",
+    "PatternTracker for population-level pattern aggregation and cohort fingerprinting",
+    "Model distillation — wrap any external HTTP scorer as a teacher and distill it into a ReasoningModel",
+    "Data connectors for S3, Snowflake, Databricks, and local file upload",
+    "Remotely hosted MCP server at mcp.outerproduct.com for Claude, Cursor, and other LLM clients",
+    "Async job API — all training and fitting calls return non-blocking job handles"
+  ],
+  "publicApiSurface": [
+    "outerproduct.init(api_key=...)",
+    "outerproduct.Dataset.from_csv / from_pandas / from_parquet / from_numpy",
+    "outerproduct.Trainer.configure(dataset, label_column=..., model_types=..., metric=...)",
+    "Trainer.run(strategy=..., n_trials=...) -> Job",
+    "outerproduct.reasoning.fit(dataset, label_column=..., task_type=...) -> Job[ReasoningModel]",
+    "ReasoningModel.predict(dataset) -> ndarray",
+    "ReasoningModel.explain(dataset) -> Reasoning",
+    "ReasoningModel.predict_and_explain(dataset) -> (ndarray, Reasoning)",
+    "ReasoningModel.get_global_drivers() -> Reasoning",
+    "ReasoningModel.scenario(dataset, target_class=..., max_steps=...) -> ScenarioResult",
+    "outerproduct.reasoning.pattern_tracker.fit(model, dataset, target_range=...) -> Job[PatternTracker]",
+    "PatternTracker.transform(X) / .distribution(X) / .partition(X)",
+    "outerproduct.FileUploadConnector().upload(path)",
+    "outerproduct.S3Connector(credential_name=...).table(uri)",
+    "outerproduct.SnowflakeConnector(...).table(table_name)",
+    "outerproduct.DatabricksConnector(...).table(table_name)",
+    "outerproduct.model.Predictor(url, headers=...)",
+    "outerproduct.agentic.documents.induce_schema()",
+    "outerproduct.agentic.documents.tabularize()"
+  ]
+}

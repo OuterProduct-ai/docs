@@ -1,0 +1,126 @@
+---
+title: "OuterProduct Quickstart: Train and Explain a Model"
+sidebarTitle: "Quickstart"
+description: "Install the OuterProduct SDK, connect your data, train a ReasoningModel, and generate predictions and feature-level explanations in minutes."
+---
+
+This guide walks you through installing OuterProduct, authenticating, and training your first model — from raw CSV to feature-level explanations in under ten lines of Python. Before you begin, make sure you have Python 3.12 or newer and an OuterProduct API key from [console.outerproduct.com](https://console.outerproduct.com).
+
+<Steps>
+
+### Install the SDK
+
+Install the `outerproduct` package from PyPI using your preferred tool:
+
+<CodeGroup>
+
+```bash pip
+pip install outerproduct
+```
+
+```bash uv
+uv add outerproduct
+```
+
+</CodeGroup>
+
+Verify the installation:
+
+```bash
+python -c "import outerproduct; print(outerproduct.__version__)"
+```
+
+### Set your API key
+
+Set your API key as an environment variable so the SDK can pick it up automatically:
+
+```bash
+export OUTERPRODUCT_API_KEY="your-api-key"
+```
+
+Then initialize the SDK at the top of your script:
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+```
+
+See the [Authentication](/authentication) page for alternative methods, including passing the key directly.
+
+### Build a Dataset
+
+Create a typed `Dataset` handle from your training CSV:
+
+```python
+dataset = op.Dataset.from_csv("customers.csv")
+```
+
+OuterProduct also supports Parquet files, Pandas DataFrames, NumPy arrays, and cloud connectors for S3, Snowflake, and Databricks.
+
+### Train a ReasoningModel
+
+Fit a `ReasoningModel` by passing your dataset and the name of the column you want to predict:
+
+```python
+model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+```
+
+<Note>
+  `.wait()` blocks your script until training is complete on OuterProduct's hosted infrastructure. If you prefer non-blocking behavior, drop `.wait()` — `fit()` returns a job handle you can poll with `job.status()` and resolve later with `job.result()`.
+</Note>
+
+### Generate predictions and explanations
+
+Load your held-out test data, then call `predict()` for scores and `explain()` for feature-level attributions:
+
+```python
+test_dataset = op.Dataset.from_csv("customers_test.csv")
+predictions = model.predict(test_dataset)
+reasoning = model.explain(test_dataset)
+
+print(reasoning.feature_names)         # list of attributed column names
+print(reasoning.attributions.shape)    # (n_samples, n_features)
+```
+
+Each row in `reasoning.attributions` shows how much each feature pushed the prediction up or down for that sample — positive values increase the predicted probability, negative values decrease it.
+
+</Steps>
+
+## Putting it all together
+
+Here is the complete working example:
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from environment
+
+dataset = op.Dataset.from_csv("customers.csv")
+model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+
+test_dataset = op.Dataset.from_csv("customers_test.csv")
+predictions = model.predict(test_dataset)
+reasoning = model.explain(test_dataset)
+
+print(reasoning.feature_names)
+print(reasoning.attributions.shape)  # (n_samples, n_features)
+```
+
+<Tip>
+  Use `task_type="regression"` for continuous targets or `task_type="multiclass"` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
+</Tip>
+
+## What's next
+
+<CardGroup cols={3}>
+  <Card title="Full Workflow Guide" icon="map" href="/guides/workflow">
+    Explore the complete model lifecycle with branching examples.
+  </Card>
+  <Card title="Training Options" icon="sliders" href="/guides/training">
+    Control model types, evaluation metrics, and search strategy.
+  </Card>
+  <Card title="Explanations" icon="magnifying-glass" href="/guides/explanations">
+    Dive into local attributions, global importance, and decision rules.
+  </Card>
+</CardGroup>

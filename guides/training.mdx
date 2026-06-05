@@ -1,0 +1,189 @@
+---
+title: "OuterProduct Training: HPO, Metrics, and Distillation"
+sidebarTitle: "Training"
+description: "Train tabular ML models using op.reasoning.fit() for a ReasoningModel or Trainer.configure().run() for a plain Model, with full HPO and metric control."
+---
+
+Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics — you describe what you want, submit the job, and retrieve the best model the search found. This guide covers both entry points, all major configuration options, and the Jobs API that keeps your process unblocked while training runs.
+
+<Tabs>
+<Tab title="ReasoningModel path">
+
+`op.reasoning.fit()` is the fastest path to a model that produces both predictions and feature-level explanations. The same model-family × hyperparameter × metric search runs on your behalf.
+
+```python
+import outerproduct as op
+
+op.init()
+
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()  # ReasoningModel
+```
+
+Use this path when you need `model.explain()`, `model.get_global_drivers()`, or `model.scenario()`.
+
+</Tab>
+<Tab title="Trainer path">
+
+`Trainer.configure().run()` returns a plain `Model` (predictions only) and exposes the full set of search knobs: trial counts, ensembling, cross-validation folds, and multi-metric Pareto sweeps.
+
+```python
+import outerproduct as op
+
+op.init()
+
+trainer = op.Trainer.configure(dataset, label_column="churn")
+model = trainer.run().wait()  # Model
+```
+
+Use this path when you need finer control over the search and don't require explanation methods.
+
+</Tab>
+</Tabs>
+
+## How the Trainer works
+
+`Trainer` is not just a model fitter — it coordinates a search over **model families × hyperparameters × metrics**, all explored together server-side. When you call `run()`:
+
+- All candidate model families are tuned in **parallel**, not one at a time.
+- Each family's hyperparameters are searched with the strategy you select.
+- When you pass multiple metrics, the search explores the weighting between them rather than treating one as primary — so you don't have to guess the right trade-off up front.
+- Parallelism and per-trial timeouts are managed server-side; there are no SDK-level knobs.
+
+The result is a single trained model representing the best configuration found. `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
+
+## Building a Dataset for training
+
+Use `FileUploadConnector` for production datasets — it sends your file to S3 via a presigned URL and returns a server-backed `Dataset` the trainer reads at training time.
+
+```python
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+```
+
+For quick experiments with smaller data, build a dataset in memory:
+
+```python
+# From a pandas DataFrame
+dataset = op.Dataset.from_pandas(df)
+
+# From a CSV (loaded locally)
+dataset = op.Dataset.from_csv("customers.csv")
+
+# From NumPy arrays
+dataset = op.Dataset.from_numpy(X, y, feature_names=["sqft", "bedrooms"])
+```
+
+<Note>
+Each column carries a `Column` schema. The schema is inferred automatically by default; override it via the `columns=` argument when needed. The target column is always specified at fit time via `label_column=`, not on the dataset itself.
+</Note>
+
+## Default training call
+
+The smallest valid call accepts a dataset and the target column name:
+
+```python
+# ReasoningModel (predictions + explanations)
+model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()
+
+# Plain Model (predictions only)
+trainer = op.Trainer.configure(dataset, label_column="churn")
+model = trainer.run().wait()
+```
+
+## Choosing model types
+
+Pass `model_types` as a list of string identifiers resolved server-side. If you omit it, OuterProduct selects a curated set based on your dataset. All listed families are tuned together in the same search — you don't pay an extra round-trip per family.
+
+```python
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="churn",
+    model_types=["tabm", "xgboost"],
+)
+model = trainer.run().wait()
+```
+
+## Metrics
+
+Pass a single `op.Metric()` or a list. With a single metric, training optimizes it directly. With multiple metrics, the search explores all weightings between them and returns the best model found across the full Pareto front.
+
+```python
+trainer = op.Trainer.configure(
+    dataset,
+    label_column="churn",
+    metric=[op.Metric("auc"), op.Metric("accuracy")],
+)
+model = trainer.run().wait()
+```
+
+<Tip>
+Multi-metric sweeps are especially useful when you care about both calibration and ranking quality — you get the best achievable trade-off without having to pick a fixed weighting up front.
+</Tip>
+
+## Search strategy
+
+`Trainer.run()` accepts a `strategy` string. Use `"random"` (the default) for fast exploration or `"optuna"` for serious tuning.
+
+```python
+model = trainer.run(strategy="optuna", n_trials=50, grid_size=0.1).wait()
+```
+
+- `n_trials` — per-family trial budget.
+- `grid_size` — resolution of the metric-weighting sweep when you pass multiple metrics.
+
+For `op.reasoning.fit()`, control search depth via `n_hyperopt_steps`:
+
+```python
+model = op.reasoning.fit(
+    dataset,
+    label_column="churn",
+    task_type="binclass",
+    model_types=["tabm", "xgboost"],
+    n_hyperopt_steps=10,
+).wait()
+```
+
+## Jobs API
+
+`run()` and `fit()` submit work and return a **job handle** immediately — neither call blocks. Retrieve the trained model when you need it.
+
+```python
+job = trainer.run()
+
+job.status()    # "pending" | "running" | "completed" | "failed"
+model = job.wait()   # block until done, return the trained model
+job.results()        # raw result payload (ids, URIs) once completed
+```
+
+<Note>
+`.wait()` is the blocking convenience used throughout these examples. Use `.status()` or `.results()` to poll or fetch the outcome without blocking your process.
+</Note>
+
+## Distillation
+
+Pass a `teacher` to train a student model that mimics an external model's predictions. The teacher can be a trained `Model` or a `Predictor` wrapping an HTTP endpoint.
+
+```python
+teacher = op.model.Predictor(
+    "https://api.example.com/predict",
+    headers={"Authorization": "Bearer ..."},
+)
+
+# Plain distilled Model (label_column is optional when a teacher is set):
+trainer = op.Trainer.configure(dataset, teacher=teacher)
+model = trainer.run().wait()
+```
+
+To get a distilled student that also explains the teacher's behavior, use `op.reasoning.fit()`:
+
+```python
+reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
+```
+
+<Warning>
+The teacher endpoint must return predictions in the same format the trainer expects. Mismatched output shapes will cause the distillation job to fail.
+</Warning>

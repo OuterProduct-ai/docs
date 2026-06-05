@@ -1,0 +1,127 @@
+---
+title: "Counterfactual Scenarios: What Would Flip a Prediction?"
+sidebarTitle: "Counterfactuals"
+description: "Use model.scenario() on a ReasoningModel to find minimal changes that flip a prediction to a target class, returned as structured ScenarioResult objects."
+---
+
+Counterfactual analysis answers a concrete question: *"What is the smallest change to this input that would flip the model's prediction?"* Instead of just knowing that a loan application was denied, you can tell the applicant exactly what would need to change — credit score up by 40 points, income above a threshold — to receive a different outcome.
+
+`model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate counterfactual edits found by the search.
+
+## Basic scenario
+
+Wrap your query rows in an `op.Dataset` and call `model.scenario()` with the desired `target_class`.
+
+```python
+import outerproduct as op
+import pandas as pd
+
+queries_df = pd.DataFrame([
+    {"age": 25, "income": 50000, "credit_score": 620},
+    {"age": 40, "income": 85000, "credit_score": 710},
+])
+
+result = model.scenario(op.Dataset(queries_df), target_class=1)
+
+for q in result.queries:
+    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
+    if q.already_at_desired_class:
+        print("  Already at target class; no change needed.")
+        continue
+    for cf in q.counterfactuals:
+        print(f"  Candidate ({cf.n_changes} changes):")
+        for feature, change in cf.changes.items():
+            print(f"    {feature}: {change.before} → {change.after}")
+```
+
+## Understanding the result structure
+
+`model.scenario()` returns a `ScenarioResult`. Iterating over `result.queries` gives you one `QueryResult` per input row:
+
+<Accordion title="ScenarioResult">
+  The top-level container. Access all query results via `result.queries`.
+</Accordion>
+
+<Accordion title="QueryResult">
+  One per input row. Contains:
+  - `q.query_index` — position of this row in your input dataset.
+  - `q.baseline_prediction` — the model's original prediction for this row.
+  - `q.already_at_desired_class` — `True` if the row is already classified as `target_class`; no counterfactual is needed.
+  - `q.counterfactuals` — list of `Counterfactual` candidates found by the search.
+</Accordion>
+
+<Accordion title="Counterfactual">
+  One candidate set of edits. Contains:
+  - `cf.n_changes` — number of features changed.
+  - `cf.changes` — `dict[str, Change]` mapping each changed feature name to a `Change` object with `.before` and `.after` values.
+</Accordion>
+
+## Tuning the search
+
+By default `target_class` is `1`. Control the search budget with `n_trials` and `max_steps`:
+
+```python
+result = model.scenario(
+    op.Dataset(queries_df),
+    target_class=1,
+    n_trials=200,   # number of attempts per query row
+    max_steps=20,   # maximum number of edit steps per attempt
+)
+```
+
+<Tip>
+Increase `n_trials` when the default search misses plausible counterfactuals for complex, high-dimensional inputs. Increase `max_steps` when you're willing to accept counterfactuals that require more simultaneous changes.
+</Tip>
+
+## Full example: flipping denied loan applications
+
+```python
+import outerproduct as op
+import pandas as pd
+
+op.init()
+
+# Train a model
+dataset = op.Dataset.from_csv("loans.csv")
+model = op.reasoning.fit(
+    dataset, label_column="approved", task_type="binclass"
+).wait()
+
+# Predict on new applicants
+X_new = pd.read_csv("new_applicants.csv")
+test_dataset = op.Dataset(X_new)
+predictions = model.predict(test_dataset)
+
+# Run counterfactuals only for denied applicants
+import numpy as np
+denied_mask = predictions < 0.5
+denied_df = X_new[denied_mask].reset_index(drop=True)
+denied_dataset = op.Dataset(denied_df)
+
+result = model.scenario(denied_dataset, target_class=1, n_trials=100, max_steps=10)
+
+for q in result.queries:
+    print(f"\nApplicant {q.query_index} (baseline={q.baseline_prediction:.2f}):")
+    if q.already_at_desired_class:
+        print("  Already approved — no changes needed.")
+        continue
+    if not q.counterfactuals:
+        print("  No counterfactual found within search budget.")
+        continue
+    # Show the simplest counterfactual (fewest changes)
+    simplest = min(q.counterfactuals, key=lambda cf: cf.n_changes)
+    print(f"  Simplest path to approval ({simplest.n_changes} change(s)):")
+    for feature, change in simplest.changes.items():
+        print(f"    {feature}: {change.before} → {change.after}")
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Explanations" href="/guides/explanations">
+    Understand which features drive each prediction before running counterfactuals.
+  </Card>
+  <Card title="Pattern Tracker" href="/guides/pattern-tracker">
+    Aggregate patterns across an entire cohort rather than row by row.
+  </Card>
+</CardGroup>

@@ -1,0 +1,109 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "OuterProduct",
+  "theme": "luma",
+  "logo": {
+    "light": "https://media.brand.dev/1779ce27-9765-4d2e-8dd4-6288d0dc331e.svg",
+    "dark": "https://media.brand.dev/1779ce27-9765-4d2e-8dd4-6288d0dc331e.svg"
+  },
+  "favicon": "https://media.brand.dev/4c867f4a-820b-43e1-965e-7f8826b13359.svg",
+  "colors": {
+    "primary": "#7c7c7c",
+    "light": "#1b1b1b",
+    "dark": "#f2f2f2"
+  },
+  "navbar": {
+    "primary": {
+      "type": "github",
+      "href": "https://github.com/OuterProduct-ai"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/workflow",
+              "guides/training",
+              "guides/predictions",
+              "guides/explanations",
+              "guides/counterfactuals",
+              "guides/pattern-tracker"
+            ]
+          },
+          {
+            "group": "Data Connectors",
+            "pages": [
+              "guides/connectors/overview",
+              "guides/connectors/file-upload",
+              "guides/connectors/s3",
+              "guides/connectors/snowflake",
+              "guides/connectors/databricks"
+            ]
+          },
+          {
+            "group": "MCP Server",
+            "pages": [
+              "mcp/overview",
+              "mcp/prompts"
+            ]
+          },
+          {
+            "group": "Use Cases",
+            "pages": [
+              "use-cases/underwriting",
+              "use-cases/recommender"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "SDK Reference",
+        "groups": [
+          {
+            "group": "Core",
+            "pages": [
+              "sdk/init",
+              "sdk/dataset",
+              "sdk/trainer"
+            ]
+          },
+          {
+            "group": "Models",
+            "pages": [
+              "sdk/model",
+              "sdk/reasoning"
+            ]
+          },
+          {
+            "group": "Connectors",
+            "pages": [
+              "sdk/connectors"
+            ]
+          },
+          {
+            "group": "Agentic",
+            "pages": [
+              "sdk/agentic"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "openapi": "https://api.outerproduct.com/openapi.json"
+      }
+    ]
+  }
+}

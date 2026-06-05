@@ -1,0 +1,102 @@
+---
+title: "OuterProduct MCP Server: Sample Prompts and Workflows"
+sidebarTitle: "Sample Prompts"
+description: "Copy-paste prompts for Claude, Cursor, and other MCP clients that put OuterProduct's training, explanation, and counterfactual tools to work immediately."
+---
+
+Once you have [connected the OuterProduct MCP server](/mcp/overview), you can drive the full platform — model training, per-feature explanations, counterfactuals, and more — using plain English. The prompts below are ready to paste into Claude, Cursor, or any other MCP-compatible client.
+
+## Built-in workflows
+
+OuterProduct ships two pre-built, end-to-end workflows. When your prompt matches a workflow, the assistant follows it automatically without any extra setup on your part.
+
+<CardGroup cols={2}>
+  <Card title="Suspicious Activity Reports (SAR)" icon="shield-halved" href="https://github.com/OuterProduct-ai/outerproduct-skills">
+    For fraud and compliance teams. Produces a structured SAR backed by model-level evidence.
+  </Card>
+  <Card title="Churn Winback Briefings" icon="users" href="https://github.com/OuterProduct-ai/outerproduct-skills">
+    For customer success teams. Ranks at-risk customers and surfaces realistic retention levers.
+  </Card>
+</CardGroup>
+
+Browse the full collection of skills in the [outerproduct-skills repository](https://github.com/OuterProduct-ai/outerproduct-skills).
+
+## Ready-to-use prompts
+
+<Accordion title="Customer churn analysis">
+  Paste this prompt into your MCP client, then attach or describe the path to your CSV:
+
+  > I have a CSV of customer subscription data with a `churn` column.
+  > Tell me which behaviors most predict churn, and for an at-risk
+  > customer, what realistic changes would lower their churn
+  > probability? Wrap it up as a high-level summary I can share with my VP.
+
+  **What the assistant does:**
+
+  <Steps>
+    <Step title="Upload">
+      Sends your CSV to OuterProduct using the upload tool.
+    </Step>
+    <Step title="Train">
+      Fits a classification model on your subscription data with `churn` as the target column.
+    </Step>
+    <Step title="Rank features">
+      Calls the explanation tool to identify which behaviours — login frequency, plan tier, support tickets, and so on — most strongly predict churn across the dataset.
+    </Step>
+    <Step title="Run counterfactual">
+      Selects an at-risk customer and finds the smallest realistic changes that would flip their predicted outcome from churned to retained.
+    </Step>
+    <Step title="Report">
+      Produces a plain-English summary suitable for sharing with a VP or non-technical stakeholder.
+    </Step>
+  </Steps>
+</Accordion>
+
+<Accordion title="Fraud investigation">
+  Paste this prompt and point the assistant at your transaction history file:
+
+  > Train a fraud-detection model on this transaction history, then walk me
+  > through why transaction `txn_4582` was flagged as suspicious. Which
+  > signals contributed the most?
+
+  **What the assistant does:**
+
+  <Steps>
+    <Step title="Train">
+      Fits a fraud-detection model on your transaction history.
+    </Step>
+    <Step title="Explain">
+      Calls the per-feature explanation tool for transaction `txn_4582`, quantifying exactly how much each signal — amount, merchant category, time of day, velocity, and so on — contributed to the suspicious-activity score.
+    </Step>
+    <Step title="Narrate">
+      Translates the feature scores into a plain-English walkthrough that an analyst or auditor can read and act on.
+    </Step>
+  </Steps>
+
+  <Tip>
+    This prompt pairs naturally with the built-in SAR workflow. Ask the assistant to "draft a Suspicious Activity Report for `txn_4582`" after the explanation step to get a compliance-ready document automatically.
+  </Tip>
+</Accordion>
+
+## More prompt ideas to try
+
+These starting points cover other domains where OuterProduct's explain-and-act loop adds immediate value.
+
+<CardGroup cols={2}>
+  <Card title="Credit underwriting" icon="file-contract">
+    > Train a loan-default model on this application dataset, then explain why applicant `A-10293` was declined and what they could realistically change to qualify.
+  </Card>
+  <Card title="Recommender quality audit" icon="star">
+    > Build a purchase-propensity model from this user-event log, then tell me which engagement signals drive recommendations most — and which ones I should stop collecting.
+  </Card>
+  <Card title="Equipment maintenance" icon="wrench">
+    > Fit a failure-prediction model on this sensor log, rank the readings that most predict a breakdown, and tell me which thresholds I should alert on.
+  </Card>
+  <Card title="HR attrition" icon="person-walking-arrow-right">
+    > Train an attrition model on this HR dataset, identify the top drivers of voluntary departure, and produce a brief I can bring to the People team.
+  </Card>
+</CardGroup>
+
+<Note>
+  All prompts assume the OuterProduct MCP server is already connected and authenticated. If you haven't set that up yet, start with the [MCP Server overview](/mcp/overview).
+</Note>

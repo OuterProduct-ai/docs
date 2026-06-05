@@ -1,0 +1,142 @@
+---
+title: "Aggregate Model Prediction Patterns with PatternTracker"
+sidebarTitle: "Pattern Tracker"
+description: "Fit a PatternTracker to distill a ReasoningModel's behavior on a prediction band into named, executable filter patterns you can apply to any new dataset."
+---
+
+Individual explanations tell you why the model made a specific prediction. `PatternTracker` takes that one step further: it distills a `ReasoningModel`'s behavior across an entire prediction band into a small set of named, executable conjunctive filter patterns — and once fitted, you can apply those patterns to any schema-compatible dataset to measure how often each pattern fires.
+
+## Fit a PatternTracker
+
+`op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `Dataset`, and a `target_range` that defines which prediction band to analyze. Call `.wait()` on the returned job handle to block until the tracker is ready.
+
+```python
+import outerproduct as op
+
+op.init(api_key="...")
+
+connector = op.FileUploadConnector()
+dataset = connector.upload("customers.csv")
+
+reasoning_model = op.reasoning.fit(
+    dataset, label_column="churn", task_type="binclass"
+).wait()
+
+pt = op.reasoning.pattern_tracker.fit(
+    reasoning_model,
+    dataset,
+    target_range=(0.5, None),  # analyze rows where pred >= 0.5
+).wait()
+
+print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
+for fp in pt.patterns:
+    print(f"  {fp.label}: precision={fp.precision:.2f}, lift={fp.lift:.2f}")
+```
+
+### Choosing a target_range
+
+`target_range=(lo, hi)` is the inclusive prediction band that defines the cohort to analyze. Either bound may be `None` for an open side; at least one bound must be set.
+
+| `target_range` | Selects |
+|---|---|
+| `(0.5, None)` | `pred >= 0.5` — likely-positive cohort |
+| `(None, 0.5)` | `pred <= 0.5` — likely-negative cohort |
+| `(0.4, 0.6)` | Borderline / uncertain band |
+
+## Pattern attributes
+
+Each pattern in `pt.patterns` is a `FilterPattern` with three key attributes:
+
+| Attribute | Description |
+|---|---|
+| `fp.label` | Human-readable name for the pattern (e.g., `"high_income_young"`) |
+| `fp.precision` | Fraction of rows matching this pattern that fall in the target prediction band |
+| `fp.lift` | How much more likely a pattern-matching row is to fall in the band vs. the dataset base rate |
+
+## Applying a fitted tracker
+
+Three methods let you score new data against the fitted patterns. A row can match multiple patterns simultaneously — coverage is overlapping, not a strict partition.
+
+```python
+# Boolean DataFrame: shape (n_samples, n_patterns)
+# True where each row matches each pattern
+matches = pt.transform(X_new)
+
+# pd.Series: match rate per pattern label across X_new
+rates = pt.distribution(X_new)
+
+# dict[label, np.ndarray of row indices] — which rows match each pattern
+groups = pt.partition(X_new)
+```
+
+<Note>
+`pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array — you do not need to wrap them in `op.Dataset()`.
+</Note>
+
+## Jobs API
+
+`fit()` submits the work and returns a **job handle** immediately — it does not block. For large datasets, poll the handle rather than waiting if you have other work to do.
+
+```python
+job = op.reasoning.pattern_tracker.fit(
+    model, dataset, target_range=(0.5, None),
+)
+
+job.status()    # "pending" | "running" | "completed" | "failed"
+pt = job.wait() # block until done, return the PatternTracker
+job.results()   # raw result payload once completed
+```
+
+## Full example
+
+```python
+import outerproduct as op
+import pandas as pd
+
+op.init()
+
+# Build dataset and train
+connector = op.FileUploadConnector()
+dataset = connector.upload("loans.csv")
+
+model = op.reasoning.fit(
+    dataset, label_column="approved", task_type="binclass"
+).wait()
+
+# Fit a PatternTracker on the likely-denied cohort
+pt = op.reasoning.pattern_tracker.fit(
+    model,
+    dataset,
+    target_range=(None, 0.5),  # pred <= 0.5 — denied applicants
+).wait()
+
+print(f"Found {len(pt.patterns)} denial patterns (coverage={pt.coverage_fit:.0%})")
+for fp in pt.patterns:
+    print(f"  [{fp.label}]  precision={fp.precision:.2f}  lift={fp.lift:.2f}")
+
+# Apply to a new batch of applicants
+X_new = pd.read_csv("new_applicants.csv")
+
+# Which patterns fire for each applicant?
+match_df = pt.transform(X_new)
+print(match_df.head())
+
+# Overall match rate per pattern
+print(pt.distribution(X_new))
+
+# Group applicants by which pattern matched them
+groups = pt.partition(X_new)
+for label, indices in groups.items():
+    print(f"Pattern '{label}' matched {len(indices)} applicants: {indices[:5]}")
+```
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Explanations" href="/guides/explanations">
+    Explore per-sample attributions that PatternTracker aggregates into patterns.
+  </Card>
+  <Card title="Counterfactuals" href="/guides/counterfactuals">
+    Find minimal input changes that would move an individual prediction to a target class.
+  </Card>
+</CardGroup>

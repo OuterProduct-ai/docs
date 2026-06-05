@@ -1,0 +1,60 @@
+---
+title: "Connect OuterProduct to Amazon S3 with IAM Role Auth"
+sidebarTitle: "Amazon S3"
+description: "Reference files in your Amazon S3 bucket from OuterProduct using a stored IAM credential. No AWS keys pass through the SDK — setup takes minutes."
+---
+
+`S3Connector` lets OuterProduct read data directly from your Amazon S3 bucket at training and inference time. You store your AWS credential once in the [OuterProduct Console](https://console.outerproduct.com) and reference it by name in the SDK. No AWS access keys or secrets are ever passed through the SDK — the OuterProduct backend assumes a cross-account IAM role you create in your AWS account.
+
+## Add an S3 credential in the Console
+
+Before using `S3Connector` from Python, create a credential in the OuterProduct Console and set up the corresponding IAM role in AWS.
+
+<Steps>
+  <Step title="Open the New Connector wizard">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **S3**.
+  </Step>
+  <Step title="Enter your S3 bucket information">
+    Paste your S3 bucket details into the first page of the wizard, then click **Next**.
+  </Step>
+  <Step title="Create an IAM role with a Custom Trust Policy">
+    The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
+
+    <Note>
+      This trust policy allows the OuterProduct backend to assume the new role — it does not grant any resource access on its own.
+    </Note>
+  </Step>
+  <Step title="Attach an inline permissions policy">
+    After creating the role, open it in AWS and select **Edit role → Add permissions → Create inline policy**. Toggle to **JSON** format and paste the permissions policy displayed in the OuterProduct Console. Save the policy.
+  </Step>
+  <Step title="Save the connector">
+    Return to the OuterProduct Console and complete the wizard. Your connector is now ready to use from the SDK.
+  </Step>
+</Steps>
+
+## Use it from Python
+
+Once your credential is saved in the Console, instantiate `S3Connector` with your credential name and AWS region, then call `.table()` with the full S3 URI of your file.
+
+```python
+import outerproduct as op
+
+connector = op.S3Connector(credential_name="prod-aws", region="us-east-1")
+dataset = connector.table("s3://my-bucket/data/customers.parquet")
+
+model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+```
+
+<Tip>
+  The `credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
+</Tip>
+
+<Warning>
+  OuterProduct assumes the IAM role at training time. Make sure the role's trust policy and inline permissions policy are both saved in AWS before you call `.table()`.
+</Warning>
+
+## Other connectors
+
+- [File Upload](/guides/connectors/file-upload)
+- [Snowflake](/guides/connectors/snowflake)
+- [Databricks](/guides/connectors/databricks)
