@@ -1,41 +1,44 @@
 ---
-title: "OuterProduct: AI Reasoning for Structured Data"
+title: "AI Reasoning for Structured Data"
 sidebarTitle: "Introduction"
 icon: "book-open"
-description: "OuterProduct is a Python SDK and hosted API for AI reasoning on structured data — models that produce predictions alongside traceable, feature-level reasoning."
+description: "OuterProduct is a Python SDK and hosted API for AI reasoning on structured data."
 ---
 
-OuterProduct gives you a small, typed Python surface for AI reasoning on structured data — training models, generating predictions, and producing feature-level reasoning — all without managing infrastructure. You bring a structured dataset and a label column; OuterProduct handles model search, training, and the reasoning that grounds every decision.
+OuterProduct gives you a small, typed Python surface for AI reasoning on structured data, training models, generating predictions, and producing feature-level reasoning on our infrastructure. 
 
 ## Key capabilities
 
 OuterProduct centers on a handful of composable building blocks:
 
-- **ReasoningModel** — trains a model that produces both predictions *and* feature-level reasoning for each prediction. This is the flagship capability.
-- **Trainer** — trains a model optimized for predictive accuracy when you need predictions only and don't need the reasoning layer.
-- **PatternTracker** — aggregates local reasoning across a population to surface recurring patterns and segment-level drivers.
-- **Counterfactuals** — generate "what would need to change?" scenarios for any prediction, enabling actionable recommendations.
-- **Connectors** — load data directly from S3, Snowflake, or Databricks, or upload a local CSV or Parquet file. All connectors produce a typed `Dataset` handle.
-- **MCP server** — use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
+- **ReasoningModel** - trains a model that produces both predictions _and_ feature-level reasoning for each prediction.
+- **Trainer** - trains a model optimized across one or multiple metrics of interest.
+- **PatternTracker** - aggregates local reasoning across a population to surface recurring patterns and segment-level drivers.
+- **Counterfactuals** - generate realistic, minimal interventions that would flip the predicted label.
+- **Connectors** - load data directly from S3, Snowflake, or Databricks, or upload local data.
+- **MCP server** - use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
 
 ## How it fits your workflow
 
 OuterProduct sits between your raw structured data and the decisions you want to make with it. You point it at a dataset and a label column, call `fit()`, and get back a model object. From there you call `predict()` for scores and `explain()` for the reasoning behind them — both return structured, typed results you can log, visualize, or pass downstream.
 
-Training runs asynchronously on OuterProduct's hosted infrastructure. The `.wait()` helper blocks your script until the model is ready, or you can poll with `job.status()` and integrate the job into your own orchestration.
+Our computations run asynchronously on OuterProduct's hosted infrastructure. The `.wait()` helper blocks your script until the model is ready, or you can poll with `job.status()` and integrate the job into your own orchestration.
 
 ## Start here
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="bolt" href="/quickstart">
-    Train your first model and generate explanations in a few lines of code.
+    Train your first model and generate explanations.
   </Card>
+
   <Card title="Authentication" icon="key" href="/authentication">
     Get your API key and configure the SDK.
   </Card>
+
   <Card title="Full Workflow Guide" icon="map" href="/guides/workflow">
     Walk through the complete model lifecycle with detailed examples.
   </Card>
+
   <Card title="MCP Server" icon="server" href="/mcp/overview">
     Use OuterProduct from Claude, Cursor, and other MCP clients.
   </Card>
