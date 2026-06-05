@@ -1,10 +1,10 @@
 ---
 title: "outerproduct.connector — Data Source Connectors API"
 sidebarTitle: "Connectors"
-description: "API reference for FileUploadConnector, S3Connector, SnowflakeConnector, and DatabricksConnector — bring your data into OuterProduct from any source."
+description: "API reference for S3Connector, SnowflakeConnector, and DatabricksConnector. For local files and in-memory frames, use LocalDataset.upload()."
 ---
 
-The `outerproduct.connector` module provides four connector classes for loading tabular data into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer` — no intermediate download or local processing required.
+The `outerproduct.connector` module provides three connector classes for loading tabular data from external sources into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer` — no intermediate download or local processing required. For local files and in-memory frames, build a `Dataset` with [`op.LocalDataset.from_*(...).upload()`](/sdk/dataset) instead.
 
 <Note>
   For all external connectors (S3, Snowflake, and Databricks), your cloud credentials are **never** passed through the SDK. You store them once in the [OuterProduct Console](https://console.outerproduct.com) under **Connectors**, and the SDK references them by the name you assigned. The OuterProduct backend uses those stored credentials at training and inference time.
@@ -12,40 +12,19 @@ The `outerproduct.connector` module provides four connector classes for loading 
 
 ---
 
-## FileUploadConnector
+## Local files and in-memory data
 
-`op.FileUploadConnector` is the simplest way to get data into OuterProduct. It requires no Console setup — just point it at a local CSV or Parquet file and call `.upload()`.
+Local files and in-memory frames are **not** connectors. Stage them with `op.LocalDataset`, which runs the presigned-URL upload and returns a `Dataset` — no Console setup or credential required.
 
 ```python
 import outerproduct as op
 
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
 ```
 
-### Constructor
-
-```python
-op.FileUploadConnector()
-```
-
-`FileUploadConnector` takes no constructor arguments.
-
-### Methods
-
-#### `.upload(path) -> Dataset`
-
-Uploads a local file to OuterProduct via a presigned URL and returns a server-backed `Dataset`.
-
-<ParamField path="path" type="str" required>
-  The path to the local CSV or Parquet file you want to upload. Both formats are supported.
-</ParamField>
-
-<ResponseField name="Dataset" type="Dataset">
-  A server-backed Dataset object representing the uploaded data. Pass it directly to `op.reasoning.fit()` or `Trainer.configure()`.
-</ResponseField>
+`LocalDataset` builds from CSV, Parquet, pandas, polars, or NumPy via `from_csv` / `from_parquet` / `from_pandas` / `from_polars` / `from_numpy`; `.upload()` (or `.aupload()` for async) returns the `Dataset`. See the [Dataset reference](/sdk/dataset) for the full API.
 
 ---
 

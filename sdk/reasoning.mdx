@@ -87,8 +87,7 @@ import outerproduct as op
 
 op.init(api_key="your-api-key")
 
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
     dataset,
@@ -189,8 +188,7 @@ import outerproduct as op
 
 op.init(api_key="your-api-key")
 
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
     dataset, label_column="churn", task_type="binclass"
@@ -280,8 +278,7 @@ import pandas as pd
 op.init(api_key="your-api-key")
 
 # --- Fit ---
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
     dataset, label_column="churn", task_type="binclass"

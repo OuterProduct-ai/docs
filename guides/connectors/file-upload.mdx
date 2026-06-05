@@ -1,15 +1,15 @@
 ---
-title: "Upload Files to OuterProduct with FileUploadConnector"
+title: "Upload Local Files to OuterProduct with LocalDataset"
 sidebarTitle: "File Upload"
 icon: "file-arrow-up"
 description: "Upload a local CSV or Parquet file to OuterProduct via a presigned URL with no console setup. Get a Dataset back and pass it straight to training."
 ---
 
-`FileUploadConnector` is the fastest way to get data into OuterProduct. It uploads a local CSV or Parquet file through a presigned URL and returns a `Dataset` object you can pass directly to training or inference. The connector is completely stateless — there is no credential to configure in the Console, and it works the moment you install the SDK.
+`op.LocalDataset` is the fastest way to get local data into OuterProduct. Build one from a CSV or Parquet file (or an in-memory frame), then call `.upload()` to stage it through a presigned URL and get back a `Dataset` you can pass directly to training or inference. It is completely stateless — there is no credential to configure in the Console, and it works the moment you install the SDK.
 
 ## Supported formats
 
-`FileUploadConnector` accepts **CSV** and **Parquet** files. Parquet support requires the optional `parquet` extra:
+`LocalDataset.from_csv` and `LocalDataset.from_parquet` accept **CSV** and **Parquet** files. Parquet support requires the optional `parquet` extra:
 
 ```bash
 pip install "outerproduct[parquet]"
@@ -20,20 +20,20 @@ CSV files work with the standard `outerproduct` install and need no additional d
 ## Upload a file and train a model
 
 <Steps>
-  <Step title="Create the connector">
-    Instantiate `FileUploadConnector` with no arguments.
+  <Step title="Build a LocalDataset">
+    Create a `LocalDataset` from your file with `from_csv` (or `from_parquet`).
 
     ```python
     import outerproduct as op
 
-    connector = op.FileUploadConnector()
+    local = op.LocalDataset.from_csv("customers.csv")
     ```
   </Step>
-  <Step title="Upload your file">
-    Call `connector.upload()` with the path to your local file. OuterProduct uploads it via a presigned URL and returns a `Dataset`.
+  <Step title="Upload it">
+    Call `.upload()` to stage the rows. OuterProduct uploads them via a presigned URL and returns a `Dataset`.
 
     ```python
-    dataset = connector.upload("customers.csv")
+    dataset = local.upload()
     ```
   </Step>
   <Step title="Train a model">
@@ -50,8 +50,7 @@ CSV files work with the standard `outerproduct` install and need no additional d
 ```python
 import outerproduct as op
 
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
 ```

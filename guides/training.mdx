@@ -56,11 +56,10 @@ The result is a single trained model representing the best configuration found. 
 
 ## Building a Dataset for training
 
-Use `FileUploadConnector` for production datasets — it sends your file to S3 via a presigned URL and returns a server-backed `Dataset` the trainer reads at training time.
+Use `op.LocalDataset.upload()` for production datasets — it sends your file to OuterProduct via a presigned URL and returns a server-backed `Dataset` the trainer reads at training time.
 
 ```python
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 ```
 
 For quick experiments with smaller data, build a dataset in memory:

@@ -7,7 +7,7 @@ description: "Connectors point OuterProduct at your data sources and return a Da
 
 Connectors are the bridge between your data and OuterProduct's training and inference pipelines. Each connector points OuterProduct at a data source — whether that's a file on your local machine or a table in a cloud data warehouse — and returns a `Dataset` object you pass directly to `op.reasoning.fit()` or other model operations.
 
-OuterProduct offers four connector types. For cloud data sources (S3, Snowflake, and Databricks), you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself — the OuterProduct backend retrieves your data at training time using the stored credential.
+OuterProduct supports four data sources — local files plus S3, Snowflake, and Databricks. For cloud data sources (S3, Snowflake, and Databricks), you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself — the OuterProduct backend retrieves your data at training time using the stored credential.
 
 <CardGroup cols={2}>
   <Card title="File Upload" icon="arrow-up-from-bracket" href="/guides/connectors/file-upload">
@@ -28,11 +28,11 @@ OuterProduct offers four connector types. For cloud data sources (S3, Snowflake,
 
 | Connector | Setup required | Data location |
 |---|---|---|
-| `FileUploadConnector` | None | Local CSV or Parquet file |
+| `LocalDataset.upload()` | None | Local file or in-memory frame |
 | `S3Connector` | Console + AWS IAM role | Amazon S3 bucket |
 | `SnowflakeConnector` | Console + Snowflake PAT | Snowflake table |
 | `DatabricksConnector` | Console + Databricks PAT | Databricks SQL warehouse or cluster |
 
 <Note>
-  Cloud connectors (S3, Snowflake, Databricks) require you to add a credential in the [OuterProduct Console](https://console.outerproduct.com) before using them from the SDK. The `FileUploadConnector` is stateless and works immediately with no prior setup.
+  Cloud connectors (S3, Snowflake, Databricks) require you to add a credential in the [OuterProduct Console](https://console.outerproduct.com) before using them from the SDK. Local uploads via `op.LocalDataset.upload()` are stateless and work immediately with no prior setup.
 </Note>

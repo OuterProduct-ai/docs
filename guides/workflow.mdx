@@ -62,17 +62,16 @@ print(dataset.feature_names)
 print(dataset.head())
 ```
 
-### Register a Connector
+### Upload a Dataset
 
-For larger datasets, register the source through a `Connector` so the same `Dataset` can be reused across training runs without re-uploading.
+For larger datasets, upload the file once with `LocalDataset.upload()` and reuse the returned `Dataset` across training runs without re-uploading.
 
 ```python
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 ```
 
 <Note>
-`FileUploadConnector` sends your file to S3 via a presigned URL and returns a server-backed `Dataset`. `S3Connector`, `SnowflakeConnector`, and `DatabricksConnector` register external sources directly with the OuterProduct backend. See the Connectors guide for details.
+`LocalDataset.upload()` sends your file to OuterProduct via a presigned URL and returns a server-backed `Dataset`. `S3Connector`, `SnowflakeConnector`, and `DatabricksConnector` register external sources directly with the OuterProduct backend. See the Connectors guide for details.
 </Note>
 
 ### Fit a Model

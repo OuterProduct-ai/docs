@@ -16,8 +16,7 @@ import outerproduct as op
 
 op.init(api_key="...")
 
-connector = op.FileUploadConnector()
-dataset = connector.upload("customers.csv")
+dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 reasoning_model = op.reasoning.fit(
     dataset, label_column="churn", task_type="binclass"
@@ -97,8 +96,7 @@ import pandas as pd
 op.init()
 
 # Build dataset and train
-connector = op.FileUploadConnector()
-dataset = connector.upload("loans.csv")
+dataset = op.LocalDataset.from_csv("loans.csv").upload()
 
 model = op.reasoning.fit(
     dataset, label_column="approved", task_type="binclass"
