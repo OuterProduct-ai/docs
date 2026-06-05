@@ -1,5 +1,5 @@
 ---
-title: "outerproduct.model: Model, ReasoningModel, Predictor"
+title: "outerproduct.model"
 sidebarTitle: "Model"
 description: "API reference for Model, ReasoningModel, ScenarioResult, and Predictor: the core objects returned by OuterProduct training and distillation flows."
 ---
@@ -86,9 +86,11 @@ Returns per-sample feature attributions for every row in `dataset`. Each attribu
     <ResponseField name="feature_names" type="list[str]">
       Ordered list of feature names corresponding to the columns in `attributions`.
     </ResponseField>
+
     <ResponseField name="attributions" type="numpy.ndarray">
       Array of shape `(n_samples, n_features)`. Each row gives the per-feature attribution for the corresponding input row. Positive values indicate the feature pushed the prediction toward the positive class; negative values push it away.
     </ResponseField>
+
     <ResponseField name="rules" type="list[str] | None">
       Human-readable decision rules summarising the model's logic for the queried rows, or `None` if the model type does not support rule extraction.
     </ResponseField>
@@ -186,7 +188,7 @@ Runs a counterfactual search for each row in `dataset`, finding the minimal feat
   Query rows to analyse. Each row receives its own set of counterfactual candidates.
 </ParamField>
 
-<ParamField body="target_class" type="int" default="1">
+<ParamField body="target_class" default="1" type="int">
   The class label you want the counterfactual to reach. Defaults to `1` (the positive class in binary classification).
 </ParamField>
 

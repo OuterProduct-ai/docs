@@ -1,7 +1,7 @@
 ---
-title: "outerproduct.agentic: Document Tabularization API"
+title: "outerproduct.agentic"
 sidebarTitle: "Agentic"
-description: "API reference for the agentic documents module: convert unstructured documents into typed structured features ready for ReasoningModel training."
+description: "API reference for the agentic documents module — convert unstructured documents into typed structured features ready for ReasoningModel training."
 ---
 
 The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed structured features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
@@ -74,7 +74,7 @@ Analyzes a collection of documents and returns a `DocumentSchema` that describes
   The documents to analyze. Each element may be a string (raw text) or a supported document object. The agent reads a representative sample to determine the schema.
 </ParamField>
 
-<ParamField body="questions" type="list[DocumentQuestion] | None" default="None">
+<ParamField body="questions" default="None" type="list[DocumentQuestion] | None">
   An optional list of `DocumentQuestion` objects that specify exactly which questions the agent should answer for each document and what the resulting column should be named. When `None`, the agent infers its own set of questions from the document content.
 </ParamField>
 
@@ -132,7 +132,7 @@ q = DocumentQuestion(
 </ParamField>
 
 <ParamField body="column_name" type="str" required>
-  The name to assign to the output column in the tabularized dataset (e.g. `"contract_value_usd"`). Use lowercase snake_case for best compatibility with downstream tooling.
+  The name to assign to the output column in the tabularized dataset (e.g. `"contract_value_usd"`). Use lowercase snake\_case for best compatibility with downstream tooling.
 </ParamField>
 
 ---

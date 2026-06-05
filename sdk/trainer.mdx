@@ -1,5 +1,5 @@
 ---
-title: "outerproduct.Trainer: Model Training Configuration"
+title: "outerproduct.Trainer"
 sidebarTitle: "Trainer"
 description: "Train models on structured data with outerproduct.Trainer. Configure model families, optimization metrics, search strategy, and knowledge distillation."
 ---
@@ -41,7 +41,7 @@ op.Trainer.configure(
 
   <Expandable title="Common metric names">
     | Name | Task |
-    |------|------|
+    | --- | --- |
     | `"auc"` | Binary classification |
     | `"accuracy"` | Classification |
     | `"logloss"` | Classification |
@@ -91,7 +91,8 @@ trainer.run(strategy="random", n_trials=None, grid_size=None)
 
 <ParamField body="strategy" type="string">
   Hyperparameter search strategy. Options:
-  - `"random"` *(default)*: random search, fast and effective for most datasets.
+
+  - `"random"` _(default)_: random search, fast and effective for most datasets.
   - `"optuna"`: Bayesian optimization via Optuna, recommended when you want a thorough search and have more trial budget.
 </ParamField>
 
@@ -123,7 +124,7 @@ op.Metric(name)
   The metric identifier string. Common values:
 
   | Name | Description |
-  |------|-------------|
+  | --- | --- |
   | `"auc"` | Area under the ROC curve (binary classification) |
   | `"accuracy"` | Fraction of correct predictions |
   | `"logloss"` | Logarithmic loss |
@@ -189,115 +190,105 @@ result = job.results()
 
 <Tabs>
   <Tab title="Basic training">
-
-```python
-import outerproduct as op
-
-op.init()
-
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
-
-trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
-model = trainer.run().wait()
-
-print(model)
-```
-
+    ```python
+    import outerproduct as op
+    
+    op.init()
+    
+    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    
+    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
+    model = trainer.run().wait()
+    
+    print(model)
+    ```
   </Tab>
   <Tab title="Custom model types & strategy">
-
-```python
-import outerproduct as op
-
-op.init()
-
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
-
-trainer = op.Trainer.configure(
-    dataset,
-    task=op.Binclass(label_column="approved"),
-    model_types=["tabm", "xgboost"],
-    metric=op.Metric("auc"),
-)
-
-# Bayesian search, 10 trials per family
-model = trainer.run(strategy="optuna", n_trials=10).wait()
-```
-
+    ```python
+    import outerproduct as op
+    
+    op.init()
+    
+    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    
+    trainer = op.Trainer.configure(
+        dataset,
+        task=op.Binclass(label_column="approved"),
+        model_types=["tabm", "xgboost"],
+        metric=op.Metric("auc"),
+    )
+    
+    # Bayesian search, 10 trials per family
+    model = trainer.run(strategy="optuna", n_trials=10).wait()
+    ```
   </Tab>
   <Tab title="Multi-metric Pareto sweep">
-
-```python
-import outerproduct as op
-
-op.init()
-
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
-
-# Pass multiple metrics to trigger a Pareto sweep.
-# Training explores all weightings between AUC and accuracy,
-# then returns the best model found across the sweep.
-trainer = op.Trainer.configure(
-    dataset,
-    task=op.Binclass(label_column="approved"),
-    model_types=["tabm", "xgboost"],
-    metric=[op.Metric("auc"), op.Metric("accuracy")],
-)
-
-model = trainer.run(
-    strategy="optuna",
-    n_trials=10,
-    grid_size=0.1,   # 10% resolution on the weighting sweep
-).wait()
-```
-
+    ```python
+    import outerproduct as op
+    
+    op.init()
+    
+    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    
+    # Pass multiple metrics to trigger a Pareto sweep.
+    # Training explores all weightings between AUC and accuracy,
+    # then returns the best model found across the sweep.
+    trainer = op.Trainer.configure(
+        dataset,
+        task=op.Binclass(label_column="approved"),
+        model_types=["tabm", "xgboost"],
+        metric=[op.Metric("auc"), op.Metric("accuracy")],
+    )
+    
+    model = trainer.run(
+        strategy="optuna",
+        n_trials=10,
+        grid_size=0.1,   # 10% resolution on the weighting sweep
+    ).wait()
+    ```
   </Tab>
   <Tab title="Non-blocking with polling">
-
-```python
-import time
-import outerproduct as op
-
-op.init()
-
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
-trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
-
-# Submit and continue doing other work
-job = trainer.run(strategy="optuna", n_trials=20)
-
-while job.status() in ("pending", "running"):
-    print(f"Job status: {job.status()}")
-    time.sleep(10)
-
-if job.status() == "completed":
-    model = job.wait()
-    print("Training complete:", job.results())
-else:
-    print("Job failed.")
-```
-
+    ```python
+    import time
+    import outerproduct as op
+    
+    op.init()
+    
+    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
+    
+    # Submit and continue doing other work
+    job = trainer.run(strategy="optuna", n_trials=20)
+    
+    while job.status() in ("pending", "running"):
+        print(f"Job status: {job.status()}")
+        time.sleep(10)
+    
+    if job.status() == "completed":
+        model = job.wait()
+        print("Training complete:", job.results())
+    else:
+        print("Job failed.")
+    ```
   </Tab>
   <Tab title="Distillation">
-
-```python
-import outerproduct as op
-
-op.init()
-
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
-
-# Wrap an external model as the teacher
-teacher = op.model.Predictor(
-    "https://api.example.com/predict",
-    headers={"Authorization": "Bearer <token>"},
-)
-
-# task is optional when a teacher is set
-trainer = op.Trainer.configure(dataset, teacher=teacher)
-model = trainer.run().wait()
-```
-
+    ```python
+    import outerproduct as op
+    
+    op.init()
+    
+    dataset = op.LocalDataset.from_csv("customers.csv").upload()
+    
+    # Wrap an external model as the teacher
+    teacher = op.model.Predictor(
+        "https://api.example.com/predict",
+        headers={"Authorization": "Bearer <token>"},
+    )
+    
+    # task is optional when a teacher is set
+    trainer = op.Trainer.configure(dataset, teacher=teacher)
+    model = trainer.run().wait()
+    ```
   </Tab>
 </Tabs>
 

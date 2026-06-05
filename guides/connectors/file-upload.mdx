@@ -1,5 +1,5 @@
 ---
-title: "Upload Local Files to OuterProduct with LocalDataset"
+title: "Upload Local Files with LocalDataset"
 sidebarTitle: "File Upload"
 icon: "file-arrow-up"
 description: "Upload a local CSV or Parquet file to OuterProduct via a presigned URL with no console setup. Get a Dataset back and pass it straight to training."
@@ -34,6 +34,13 @@ CSV files work with the standard `outerproduct` install and need no additional d
 
     ```python
     dataset = local.upload()
+    ```
+  </Step>
+  <Step title="Train a model">
+    Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
+
+    ```python
+    model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
     ```
   </Step>
   <Step title="Train a model">

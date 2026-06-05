@@ -1,5 +1,5 @@
 ---
-title: "outerproduct.reasoning: Reasoning Model Training"
+title: "outerproduct.reasoning"
 sidebarTitle: "Reasoning"
 description: "API reference for op.reasoning.fit() and PatternTracker: train reasoning models and distil population-level patterns from their predictions."
 ---
@@ -32,7 +32,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   The supervised learning task, which carries the target `label_column`. Pass the config that matches your problem:
 
   | Config | Use when |
-  |---|---|
+  | --- | --- |
   | `op.Binclass(label_column=...)` | Binary classification (e.g. churn, fraud, approval) |
   | `op.Multiclass(label_column=...)` | Multi-class classification (three or more discrete classes) |
   | `op.Regression(label_column=...)` | Continuous numerical target |
@@ -52,11 +52,11 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a Pareto sweep across their weightings. When `None`, OuterProduct picks a sensible default for the task.
 </ParamField>
 
-<ParamField body="n_hyperopt_steps" type="int" default="5">
+<ParamField body="n_hyperopt_steps" default="5" type="int">
   Number of hyperparameter optimisation trials to run. Higher values improve model quality at the cost of longer training time. Defaults to `5`.
 </ParamField>
 
-<ParamField body="random_state" type="int" default="42">
+<ParamField body="random_state" default="42" type="int">
   Seed for the training search, for reproducible runs. Defaults to `42`.
 </ParamField>
 
@@ -73,9 +73,11 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
     <ResponseField name=".wait()" type="ReasoningModel">
       Blocks the current thread until the job completes, then returns the trained `ReasoningModel`. This is the most common pattern for scripts and notebooks.
     </ResponseField>
+
     <ResponseField name=".status()" type="str">
       Returns the current job state without blocking: `"pending"`, `"running"`, `"completed"`, or `"failed"`.
     </ResponseField>
+
     <ResponseField name=".results()" type="any">
       Returns the raw result payload once the job has completed. Prefer `.wait()` for typed access to the model.
     </ResponseField>
@@ -172,7 +174,7 @@ Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band
   An inclusive prediction band that defines which rows are considered "positive" examples for pattern extraction. Either bound may be `None` for an open-ended range; at least one bound must be set.
 
   | `target_range` | Selects |
-  |---|---|
+  | --- | --- |
   | `(0.5, None)` | `pred >= 0.5`, likely-positive cohort |
   | `(None, 0.5)` | `pred <= 0.5`, likely-negative cohort |
   | `(0.4, 0.6)` | `0.4 <= pred <= 0.6`, borderline / uncertain band |

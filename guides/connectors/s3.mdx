@@ -1,5 +1,5 @@
 ---
-title: "Connect OuterProduct to Amazon S3 with IAM Role Auth"
+title: "Amazon S3 with IAM Role Auth"
 sidebarTitle: "Amazon S3"
 icon: "box-archive"
 description: "Reference files in your Amazon S3 bucket from OuterProduct using a stored IAM credential."
@@ -17,6 +17,13 @@ Before using `S3Connector` from Python, create a credential in the OuterProduct 
   </Step>
   <Step title="Enter your S3 bucket information">
     Paste your S3 bucket details into the first page of the wizard, then click **Next**.
+  </Step>
+  <Step title="Create an IAM role with a Custom Trust Policy">
+    The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
+
+    <Note>
+      This trust policy allows the OuterProduct backend to assume the new role — it does not grant any resource access on its own.
+    </Note>
   </Step>
   <Step title="Create an IAM role with a Custom Trust Policy">
     The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
