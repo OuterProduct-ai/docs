@@ -8,9 +8,9 @@
   },
   "favicon": "/logo/op-avatar.png",
   "colors": {
-    "primary": "#7c7c7c",
-    "light": "#1b1b1b",
-    "dark": "#f2f2f2"
+    "primary": "#000000",
+    "light": "#FFFFFF",
+    "dark": "#000000"
   },
   "navbar": {
     "primary": {
@@ -59,14 +59,14 @@
               "mcp/overview",
               "mcp/prompts"
             ]
-          },
-          {
-            "group": "Use Cases",
-            "pages": [
-              "use-cases/underwriting",
-              "use-cases/recommender"
-            ]
           }
+        ]
+      },
+      {
+        "tab": "Use Cases",
+        "pages": [
+          "use-cases/underwriting",
+          "use-cases/recommender"
         ]
       },
       {
