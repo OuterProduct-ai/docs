@@ -1,12 +1,12 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "OuterProduct",
-  "theme": "luma",
+  "theme": "mint",
   "logo": {
-    "light": "https://media.brand.dev/1779ce27-9765-4d2e-8dd4-6288d0dc331e.svg",
-    "dark": "https://media.brand.dev/1779ce27-9765-4d2e-8dd4-6288d0dc331e.svg"
+    "light": "/logo/op-avatar.png",
+    "dark": "/logo/op-avatar.png"
   },
-  "favicon": "https://media.brand.dev/4c867f4a-820b-43e1-965e-7f8826b13359.svg",
+  "favicon": "/logo/op-avatar.png",
   "colors": {
     "primary": "#7c7c7c",
     "light": "#1b1b1b",
@@ -14,8 +14,9 @@
   },
   "navbar": {
     "primary": {
-      "type": "github",
-      "href": "https://github.com/OuterProduct-ai"
+      "type": "button",
+      "label": "Start for free",
+      "href": "https://console.outerproduct.com"
     }
   },
   "navigation": {
