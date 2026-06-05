@@ -1,0 +1,35 @@
+/* Custom styling for the OuterProduct docs.
+   Mintlify auto-loads root-level .css files. */
+
+/* Navbar logo — 1.5x larger (theme default is h-7 / 28px -> 42px). */
+.nav-logo {
+  height: 2.625rem !important;
+}
+
+/* "Start for free" -> solid pill button.
+   The navbar primary renders as a plain text link, so target it by href. */
+#navbar a[href="https://console.outerproduct.com"] {
+  padding: 0.45rem 0.95rem;
+  border-radius: 0.5rem;
+  background-color: #000000;
+  color: #ffffff !important;
+  transition: opacity 0.15s ease;
+}
+#navbar a[href="https://console.outerproduct.com"]:hover {
+  color: #ffffff !important;
+  opacity: 0.85;
+}
+/* Dark mode: invert so the button stays visible on the dark navbar. */
+.dark #navbar a[href="https://console.outerproduct.com"] {
+  background-color: #ffffff;
+  color: #000000 !important;
+}
+.dark #navbar a[href="https://console.outerproduct.com"]:hover {
+  color: #000000 !important;
+}
+
+/* Drop the "Ask Assistant" entry from the search bar. */
+#assistant-entry,
+#assistant-entry-mobile {
+  display: none !important;
+}
