@@ -42,11 +42,11 @@ connector = op.DatabricksConnector(
     http_path="/sql/1.0/warehouses/abc",
     schema_name="default",
     catalog="main",
-    credential_name="prod-databricks",
+    connector_credential_name="prod-databricks",
 )
 dataset = connector.table("customers")
 
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 <Tip>
@@ -54,7 +54,7 @@ model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wa
 </Tip>
 
 <Warning>
-  The `credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
+  The `connector_credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
 </Warning>
 
 ## Other connectors

@@ -85,7 +85,7 @@ op.init()
 # Train a model
 dataset = op.Dataset.from_csv("loans.csv")
 model = op.reasoning.fit(
-    dataset, label_column="approved", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="approved")
 ).wait()
 
 # Predict on new applicants

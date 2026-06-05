@@ -4,7 +4,7 @@ sidebarTitle: "Dataset"
 description: "Load and inspect tabular data with outerproduct.Dataset. Supports CSV, Parquet, pandas DataFrames, and NumPy arrays with automatic column schema inference."
 ---
 
-`outerproduct.Dataset` is the typed data handle that all OuterProduct training and inference functions accept. It wraps your tabular data together with a per-column `Column` schema, which is inferred automatically from the data by default. The target column is not marked on the `Dataset` itself — you name it later via the `label_column=` argument when you configure a trainer or call `reasoning.fit()`.
+`outerproduct.Dataset` is the typed data handle that all OuterProduct training and inference functions accept. It wraps your tabular data together with a per-column `Column` schema, which is inferred automatically from the data by default. The target column is not marked on the `Dataset` itself — you name it later via the `task` config (e.g. `op.BinclassConfig(label_column=...)`) when you configure a trainer or call `reasoning.fit()`.
 
 ## Constructor
 
@@ -216,7 +216,7 @@ dataset = op.Dataset.from_csv(
 ```
 
 <Note>
-  The target (label) column is **not** declared on the `Dataset`. You specify it later using the `label_column=` argument in [`Trainer.configure()`](/sdk/trainer) or `op.reasoning.fit()`.
+  The target (label) column is **not** declared on the `Dataset`. You specify it later using the `task` config (e.g. `op.BinclassConfig(label_column=...)`) in [`Trainer.configure()`](/sdk/trainer) or `op.reasoning.fit()`.
 </Note>
 
 ---

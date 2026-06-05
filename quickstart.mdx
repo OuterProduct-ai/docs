@@ -64,7 +64,7 @@ OuterProduct also supports Parquet files, Pandas DataFrames, NumPy arrays, and c
 Fit a `ReasoningModel` by passing your dataset and the name of the column you want to predict:
 
 ```python
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 <Note>
@@ -98,7 +98,7 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from environment
 
 dataset = op.Dataset.from_csv("customers.csv")
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 
 test_dataset = op.Dataset.from_csv("customers_test.csv")
 predictions = model.predict(test_dataset)
@@ -109,7 +109,7 @@ print(reasoning.attributions.shape)  # (n_samples, n_features)
 ```
 
 <Tip>
-  Use `task_type="regression"` for continuous targets or `task_type="multiclass"` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
+  Use `op.RegressionConfig(label_column=...)` for continuous targets or `op.MulticlassConfig(label_column=...)` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
 </Tip>
 
 ## What's next

@@ -28,14 +28,14 @@ op.init()
 
 # Historical users + approval outcomes (for training) — already in
 # Databricks. Replace the angle-bracket placeholders below with your
-# workspace's values; `credential_name` references a Databricks
+# workspace's values; `connector_credential_name` references a Databricks
 # credential you've already added in console.outerproduct.com.
 connector = op.DatabricksConnector(
     server_hostname="<workspace>.cloud.databricks.com",
     http_path="/sql/1.0/warehouses/<warehouse-id>",
     catalog="<catalog>",
     schema_name="<schema>",
-    credential_name="marketplace-prod",
+    connector_credential_name="marketplace-prod",
 )
 dataset = connector.table("recommendations_train")
 

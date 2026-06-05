@@ -11,8 +11,7 @@ The `outerproduct.reasoning` module is the entry point for training explainable 
 ```python
 op.reasoning.fit(
     dataset: Dataset,
-    label_column: str | None = None,
-    task_type: str | None = None,
+    task: TaskConfig | None = None,
     model_types: list[str] | None = None,
     n_hyperopt_steps: int | None = None,
     teacher: Model | Predictor | None = None,
@@ -25,23 +24,21 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 ### Parameters
 
 <ParamField body="dataset" type="Dataset" required>
-  Training data wrapped in an `op.Dataset`. Build one with `op.Dataset(df)`, `op.Dataset.from_csv(...)`, or any other `Dataset` constructor. The column you name in `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+  Training data wrapped in an `op.Dataset`. Build one with `op.Dataset(df)`, `op.Dataset.from_csv(...)`, or any other `Dataset` constructor. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
 </ParamField>
 
-<ParamField body="label_column" type="str | None">
-  Name of the column in `dataset` that contains the target labels. Required unless `teacher` is provided — when a teacher is set, OuterProduct queries the teacher to generate training labels and `label_column` becomes optional.
-</ParamField>
+<ParamField body="task" type="TaskConfig | None">
+  The supervised learning task, which carries the target `label_column`. Pass the config that matches your problem:
 
-<ParamField body="task_type" type="str | None">
-  The supervised learning task. Accepted values:
-
-  | Value | Use when |
+  | Config | Use when |
   |---|---|
-  | `"binclass"` | Binary classification (e.g. churn, fraud, approval) |
-  | `"multiclass"` | Multi-class classification (three or more discrete classes) |
-  | `"regression"` | Continuous numerical target |
+  | `op.BinclassConfig(label_column=...)` | Binary classification (e.g. churn, fraud, approval) |
+  | `op.MulticlassConfig(label_column=...)` | Multi-class classification (three or more discrete classes) |
+  | `op.RegressionConfig(label_column=...)` | Continuous numerical target |
+  | `op.ForecastingConfig(label_column=..., id_column=..., timestamp_column=..., horizon=..., lookback=...)` | Time-series forecasting |
+  | `op.SequenceConfig(label_column=..., id_column=..., timestamp_column=...)` | Sequence modeling |
 
-  If omitted, OuterProduct infers the task type from the label column's data.
+  Required unless `teacher` is provided — when a teacher is set, OuterProduct queries it to generate training labels and `task` becomes optional.
 </ParamField>
 
 <ParamField body="model_types" type="list[str] | None">
@@ -91,8 +88,7 @@ dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
     dataset,
-    label_column="churn",
-    task_type="binclass",
+    task=op.BinclassConfig(label_column="churn"),
 ).wait()  # ReasoningModel
 
 predictions = model.predict(op.Dataset(X_new))
@@ -102,8 +98,7 @@ reasoning   = model.explain(op.Dataset(X_new))
 ```python With hyperopt and model selection
 model = op.reasoning.fit(
     dataset,
-    label_column="loan_default",
-    task_type="binclass",
+    task=op.BinclassConfig(label_column="loan_default"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=50,
 ).wait()
@@ -115,11 +110,10 @@ teacher = op.model.Predictor(
     headers={"Authorization": "Bearer my-token"},
 )
 
-# label_column is optional when a teacher is provided
+# task (and label_column) is optional when a teacher is provided
 model = op.reasoning.fit(
     dataset,
     teacher=teacher,
-    task_type="binclass",
 ).wait()
 ```
 
@@ -127,7 +121,7 @@ model = op.reasoning.fit(
 import time
 
 job = op.reasoning.fit(
-    dataset, label_column="churn", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="churn")
 )
 
 while job.status() in ("pending", "running"):
@@ -191,7 +185,7 @@ op.init(api_key="your-api-key")
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
-    dataset, label_column="churn", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
@@ -281,7 +275,7 @@ op.init(api_key="your-api-key")
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
 model = op.reasoning.fit(
-    dataset, label_column="churn", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(

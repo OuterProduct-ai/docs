@@ -85,7 +85,7 @@ Choose between two entry points depending on whether you need explanations along
 
 ```python
 model = op.reasoning.fit(
-    dataset, label_column="churn", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="churn")
 ).wait()  # ReasoningModel
 ```
 
@@ -95,7 +95,7 @@ model = op.reasoning.fit(
 `Trainer.configure().run()` gives you full control over trial counts, ensembling, and cross-validation folds, and returns a plain `Model`.
 
 ```python
-trainer = op.Trainer.configure(dataset, label_column="churn")
+trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="churn"))
 model = trainer.run().wait()  # Model
 ```
 
@@ -108,7 +108,7 @@ model = trainer.run().wait()  # Model
 # Trainer path — full HPO, multi-metric Pareto sweep, Optuna strategy:
 trainer = op.Trainer.configure(
     dataset,
-    label_column="churn",
+    task=op.BinclassConfig(label_column="churn"),
     model_types=["tabm", "xgboost"],
     metric=[op.Metric("auc"), op.Metric("accuracy")],
 )
@@ -117,8 +117,7 @@ model = trainer.run(strategy="optuna", n_trials=10, grid_size=0.1).wait()
 # Reasoning path — model selection and HPO:
 model = op.reasoning.fit(
     dataset,
-    label_column="churn",
-    task_type="binclass",
+    task=op.BinclassConfig(label_column="churn"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=10,
 ).wait()
@@ -226,7 +225,7 @@ dataset = op.Dataset.from_csv("loans.csv")
 
 # 2. Train with reasoning
 model = op.reasoning.fit(
-    dataset, label_column="approved", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="approved")
 ).wait()
 
 # 3. Prepare inference rows (drop the label column the model never saw)

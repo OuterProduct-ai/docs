@@ -58,7 +58,7 @@ import outerproduct as op
 op.init(api_key="your-api-key")
 
 model = op.reasoning.fit(
-    dataset, label_column="churn", task_type="binclass"
+    dataset, task=op.BinclassConfig(label_column="churn")
 ).wait()
 
 test_dataset = op.Dataset(X_new)
@@ -340,8 +340,7 @@ teacher = op.model.Predictor(
 # Distil a ReasoningModel that learns from the teacher's predictions.
 model = op.reasoning.fit(
     dataset,
-    teacher=teacher,   # label_column can be omitted when a teacher is provided
-    task_type="binclass",
+    teacher=teacher,   # task can be omitted when a teacher is provided
 ).wait()
 
 # The distilled model now supports explain(), get_global_drivers(), and scenario().
@@ -349,5 +348,5 @@ reasoning = model.explain(op.Dataset(X_new))
 ```
 
 <Note>
-  When a `teacher` is provided, `label_column` is optional — OuterProduct queries the teacher to generate training labels. You can still supply `label_column` if you want to blend ground-truth labels with teacher predictions.
+  When a `teacher` is provided, `task` is optional — OuterProduct queries the teacher to generate training labels. You can still supply a `task` with a `label_column` if you want to blend ground-truth labels with teacher predictions.
 </Note>

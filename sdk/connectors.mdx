@@ -21,7 +21,7 @@ import outerproduct as op
 
 dataset = op.LocalDataset.from_csv("customers.csv").upload()
 
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 `LocalDataset` builds from CSV, Parquet, pandas, polars, or NumPy via `from_csv` / `from_parquet` / `from_pandas` / `from_polars` / `from_numpy`; `.upload()` (or `.aupload()` for async) returns the `Dataset`. See the [Dataset reference](/sdk/dataset) for the full API.
@@ -37,26 +37,26 @@ model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wa
     Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **S3**, enter your bucket details, and follow the wizard to attach the OuterProduct trust policy to a role in your AWS account.
   </Step>
   <Step title="Use the credential name in the SDK">
-    Pass the name you gave the connector to `S3Connector(credential_name=...)`. The backend resolves the stored credentials automatically.
+    Pass the name you gave the connector to `S3Connector(connector_credential_name=...)`. The backend resolves the stored credentials automatically.
   </Step>
 </Steps>
 
 ```python
 import outerproduct as op
 
-connector = op.S3Connector(credential_name="prod-aws", region="us-east-1")
+connector = op.S3Connector(connector_credential_name="prod-aws", region="us-east-1")
 dataset = connector.table("s3://my-bucket/data/customers.parquet")
 
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 ### Constructor
 
 ```python
-op.S3Connector(credential_name, region=None)
+op.S3Connector(connector_credential_name=None, region=None)
 ```
 
-<ParamField path="credential_name" type="str" required>
+<ParamField path="connector_credential_name" type="str">
   The name of the S3 credential stored in the OuterProduct Console. This name maps to the IAM role that OuterProduct uses to access your bucket.
 </ParamField>
 
@@ -89,7 +89,7 @@ Returns a server-backed `Dataset` pointing at an S3 object.
     Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Snowflake** and paste your account details and a Programmatic Access Token. To generate a PAT, open Snowsight and go to **Governance & Security → Users & roles**, select your user, and choose **Programmatic access tokens → Generate new token**.
   </Step>
   <Step title="Use the credential name in the SDK">
-    Pass the connector name to `SnowflakeConnector(credential_name=...)` along with your account and database details. The backend resolves the stored PAT automatically.
+    Pass the connector name to `SnowflakeConnector(connector_credential_name=...)` along with your account and database details. The backend resolves the stored PAT automatically.
   </Step>
 </Steps>
 
@@ -101,17 +101,17 @@ connector = op.SnowflakeConnector(
     database="MYDB",
     schema_name="PUBLIC",
     warehouse="COMPUTE_WH",
-    credential_name="prod-snowflake",
+    connector_credential_name="prod-snowflake",
 )
 dataset = connector.table("CUSTOMERS")
 
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 ### Constructor
 
 ```python
-op.SnowflakeConnector(account, database, schema_name, warehouse, credential_name)
+op.SnowflakeConnector(account, database, schema_name, warehouse, connector_credential_name=None)
 ```
 
 <ParamField path="account" type="str" required>
@@ -130,7 +130,7 @@ op.SnowflakeConnector(account, database, schema_name, warehouse, credential_name
   The Snowflake virtual warehouse to use when reading data (e.g. `"COMPUTE_WH"`).
 </ParamField>
 
-<ParamField path="credential_name" type="str" required>
+<ParamField path="connector_credential_name" type="str">
   The name of the Snowflake credential stored in the OuterProduct Console. The backend uses this credential to authenticate against Snowflake at training time.
 </ParamField>
 
@@ -159,7 +159,7 @@ Returns a server-backed `Dataset` pointing at a Snowflake table.
     Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token** — choose **Other APIs** as the token type.
   </Step>
   <Step title="Use the credential name in the SDK">
-    Pass the connector name to `DatabricksConnector(credential_name=...)` along with your workspace and warehouse details. The backend resolves the stored token automatically.
+    Pass the connector name to `DatabricksConnector(connector_credential_name=...)` along with your workspace and warehouse details. The backend resolves the stored token automatically.
   </Step>
 </Steps>
 
@@ -171,17 +171,17 @@ connector = op.DatabricksConnector(
     http_path="/sql/1.0/warehouses/abc",
     schema_name="default",
     catalog="main",
-    credential_name="prod-databricks",
+    connector_credential_name="prod-databricks",
 )
 dataset = connector.table("customers")
 
-model = op.reasoning.fit(dataset, label_column="churn", task_type="binclass").wait()
+model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
 ```
 
 ### Constructor
 
 ```python
-op.DatabricksConnector(server_hostname, http_path, schema_name, catalog, credential_name)
+op.DatabricksConnector(server_hostname, http_path, schema_name, catalog, connector_credential_name=None)
 ```
 
 <ParamField path="server_hostname" type="str" required>
@@ -200,7 +200,7 @@ op.DatabricksConnector(server_hostname, http_path, schema_name, catalog, credent
   The Unity Catalog catalog name that contains the target schema and table (e.g. `"main"`).
 </ParamField>
 
-<ParamField path="credential_name" type="str" required>
+<ParamField path="connector_credential_name" type="str">
   The name of the Databricks credential stored in the OuterProduct Console. The backend uses this personal access token to authenticate against Databricks at training time.
 </ParamField>
 

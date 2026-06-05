@@ -54,8 +54,7 @@ dataset = documents.tabularize(raw_documents, schema=schema)
 # 4. Train a ReasoningModel on the resulting tabular dataset
 model = op.reasoning.fit(
     dataset,
-    label_column="has_auto_renewal",
-    task_type="binclass",
+    task=op.BinclassConfig(label_column="has_auto_renewal"),
 ).wait()
 ```
 
@@ -165,8 +164,7 @@ dataset = documents.tabularize(raw_documents, schema=schema)
 # Use it exactly like any other Dataset
 model = op.reasoning.fit(
     dataset,
-    label_column="has_auto_renewal",
-    task_type="binclass",
+    task=op.BinclassConfig(label_column="has_auto_renewal"),
 ).wait()
 ```
 

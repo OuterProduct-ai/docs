@@ -15,7 +15,7 @@ Class method that creates a configured `Trainer` ready to launch a training job.
 ```python
 op.Trainer.configure(
     dataset,
-    label_column=None,
+    task=None,
     model_types=None,
     metric=None,
     teacher=None,
@@ -28,8 +28,8 @@ op.Trainer.configure(
   The training data. Pass an [`op.Dataset`](/sdk/dataset) built from any supported source (CSV, DataFrame, Parquet, or NumPy).
 </ParamField>
 
-<ParamField body="label_column" type="str | None">
-  Name of the target column within the dataset. Required for supervised training unless a `teacher` is provided — when a teacher is set, `label_column` is optional and the teacher's predictions are used as the training signal instead.
+<ParamField body="task" type="TaskConfig | None">
+  The supervised learning task, which carries the target `label_column` — e.g. `op.BinclassConfig(label_column="churn")`, `op.RegressionConfig(label_column=...)`, or `op.MulticlassConfig(label_column=...)`. Required for supervised training unless a `teacher` is provided — when a teacher is set, `task` is optional and the teacher's predictions are used as the training signal instead.
 </ParamField>
 
 <ParamField body="model_types" type="list[str] | None">
@@ -71,7 +71,7 @@ dataset = op.Dataset.from_csv("customers.csv")
 
 trainer = op.Trainer.configure(
     dataset,
-    label_column="churn",
+    task=op.BinclassConfig(label_column="churn"),
     model_types=["tabm", "xgboost"],
     metric=op.Metric("auc"),
 )
@@ -197,7 +197,7 @@ op.init()
 
 dataset = op.Dataset.from_csv("loans.csv")
 
-trainer = op.Trainer.configure(dataset, label_column="approved")
+trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="approved"))
 model = trainer.run().wait()
 
 print(model)
@@ -215,7 +215,7 @@ dataset = op.Dataset.from_csv("loans.csv")
 
 trainer = op.Trainer.configure(
     dataset,
-    label_column="approved",
+    task=op.BinclassConfig(label_column="approved"),
     model_types=["tabm", "xgboost"],
     metric=op.Metric("auc"),
 )
@@ -239,7 +239,7 @@ dataset = op.Dataset.from_csv("loans.csv")
 # then returns the best model found across the sweep.
 trainer = op.Trainer.configure(
     dataset,
-    label_column="approved",
+    task=op.BinclassConfig(label_column="approved"),
     model_types=["tabm", "xgboost"],
     metric=[op.Metric("auc"), op.Metric("accuracy")],
 )
@@ -261,7 +261,7 @@ import outerproduct as op
 op.init()
 
 dataset = op.Dataset.from_csv("loans.csv")
-trainer = op.Trainer.configure(dataset, label_column="approved")
+trainer = op.Trainer.configure(dataset, task=op.BinclassConfig(label_column="approved"))
 
 # Submit and continue doing other work
 job = trainer.run(strategy="optuna", n_trials=20)
@@ -293,7 +293,7 @@ teacher = op.model.Predictor(
     headers={"Authorization": "Bearer <token>"},
 )
 
-# label_column is optional when a teacher is set
+# task is optional when a teacher is set
 trainer = op.Trainer.configure(dataset, teacher=teacher)
 model = trainer.run().wait()
 ```
