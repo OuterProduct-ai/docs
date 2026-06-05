@@ -12,6 +12,11 @@
       "source": "/",
       "destination": "/introduction",
       "permanent": true
+    },
+    {
+      "source": "/use-cases/recommender",
+      "destination": "/use-cases/recommendations",
+      "permanent": true
     }
   ],
   "colors": {
@@ -73,7 +78,7 @@
         "tab": "Use Cases",
         "pages": [
           "use-cases/underwriting",
-          "use-cases/recommender"
+          "use-cases/recommendations"
         ]
       },
       {
