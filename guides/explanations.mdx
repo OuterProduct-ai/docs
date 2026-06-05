@@ -63,12 +63,12 @@ predictions, reasoning = model.predict_and_explain(test_dataset)
 ```
 
 <Tip>
-  Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately — it's faster and avoids any risk of the two calls returning results for different internal model states.
+  Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately. It's faster and avoids any risk of the two calls returning results for different internal model states.
 </Tip>
 
 ## Global feature importance
 
-`model.get_global_drivers()` returns a model-wide `Reasoning` object. Unlike local explanations, attributions here have shape `(n_features,)` — one importance score per feature across the entire model.
+`model.get_global_drivers()` returns a model-wide `Reasoning` object. Unlike local explanations, attributions here have shape `(n_features,)`: one importance score per feature across the entire model.
 
 ```python
 reasoning = model.get_global_drivers()
@@ -97,7 +97,7 @@ import pandas as pd
 X = pd.read_csv("new_applicants.csv")
 test_dataset = op.LocalDataset.from_pandas(X).upload()
 
-# Global importance — inspect once after training
+# Global importance, inspect once after training
 global_reasoning = model.get_global_drivers()
 for name, score in zip(global_reasoning.feature_names, global_reasoning.attributions):
     print(f"{name}: {score:.4f}")

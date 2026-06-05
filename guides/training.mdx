@@ -45,7 +45,7 @@ Training in OuterProduct is a server-side search over model families, hyperparam
 
 - All candidate model families are tuned in **parallel**, not one at a time.
 - Each family's hyperparameters are searched with the strategy you select.
-- When you pass multiple metrics, the search explores the weighting between them rather than treating one as primary — so you don't have to guess the right trade-off up front.
+- When you pass multiple metrics, the search explores the weighting between them rather than treating one as primary, so you don't have to guess the right trade-off up front.
 - Parallelism and per-trial timeouts are managed server-side; there are no SDK-level knobs.
 
 The result is a single trained model representing the best configuration found. `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
@@ -111,7 +111,7 @@ model = trainer.run().wait()
 ```
 
 <Tip>
-  Multi-metric sweeps are especially useful when you care about both calibration and ranking quality — you get the best achievable trade-off without having to pick a fixed weighting up front.
+  Multi-metric sweeps are especially useful when you care about both calibration and ranking quality: you get the best achievable trade-off without having to pick a fixed weighting up front.
 </Tip>
 
 ## Search strategy
@@ -122,8 +122,8 @@ model = trainer.run().wait()
 model = trainer.run(strategy="optuna", n_trials=50, grid_size=0.1).wait()
 ```
 
-- `n_trials` — per-family trial budget.
-- `grid_size` — resolution of the metric-weighting sweep when you pass multiple metrics.
+- `n_trials`: per-family trial budget.
+- `grid_size`: resolution of the metric-weighting sweep when you pass multiple metrics.
 
 For `op.reasoning.fit()`, control search depth via `n_hyperopt_steps`:
 
@@ -138,7 +138,7 @@ model = op.reasoning.fit(
 
 ## Jobs API
 
-`run()` and `fit()` submit work and return a **job handle** immediately - neither call blocks. Retrieve the trained model when you need it.
+`run()` and `fit()` submit work and return a **job handle** immediately; neither call blocks. Retrieve the trained model when you need it.
 
 ```python
 job = trainer.run()

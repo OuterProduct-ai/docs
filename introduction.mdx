@@ -9,16 +9,16 @@ description: "OuterProduct offers a Python SDK and hosted API for AI reasoning o
 
 OuterProduct centers on a handful of composable building blocks:
 
-- **ReasoningModel** - trains a model that produces both predictions _and_ feature-level reasoning for each prediction.
-- **Trainer** - trains a model optimized across one or multiple metrics of interest.
-- **PatternTracker** - aggregates local reasoning across a population to surface recurring patterns and segment-level drivers.
-- **Counterfactuals** - generate realistic, minimal interventions that would flip the predicted label.
-- **Connectors** - load data directly from S3, Snowflake, or Databricks, or upload local data.
-- **MCP server** - use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
+- **ReasoningModel**: trains a model that produces both predictions _and_ feature-level reasoning for each prediction.
+- **Trainer**: trains a model optimized across one or multiple metrics of interest.
+- **PatternTracker**: aggregates local reasoning across a population to surface recurring patterns and segment-level drivers.
+- **Counterfactuals**: generate realistic, minimal interventions that would flip the predicted label.
+- **Connectors**: load data directly from S3, Snowflake, or Databricks, or upload local data.
+- **MCP server**: use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
 
 ## How it fits your workflow
 
-OuterProduct sits between your raw structured data and the decisions you want to make with it. You point it at a dataset and a label column, call `fit()`, and get back a model object. From there you call `predict()` for scores and `explain()` for the reasoning behind them — both return structured, typed results you can log, visualize, or pass downstream.
+OuterProduct sits between your raw structured data and the decisions you want to make with it. You point it at a dataset and a label column, call `fit()`, and get back a model object. From there you call `predict()` for scores and `explain()` for the reasoning behind them. Both return structured, typed results you can log, visualize, or pass downstream.
 
 Our computations run asynchronously on OuterProduct's hosted infrastructure. The `.wait()` helper blocks your script until the model is ready, or you can poll with `job.status()` and integrate the job into your own orchestration.
 

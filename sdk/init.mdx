@@ -1,7 +1,7 @@
 ---
-title: "outerproduct.init — Initialize the OuterProduct SDK"
+title: "outerproduct.init: Initialize the OuterProduct SDK"
 sidebarTitle: "init()"
-description: "Initialize the OuterProduct SDK with your API key. Must be called before any other SDK operation — reads from environment or accepts a key directly."
+description: "Initialize the OuterProduct SDK with your API key. Must be called before any other SDK operation. Reads from environment or accepts a key directly."
 ---
 
 The `outerproduct.init()` function is the entry point for every OuterProduct session. It authenticates the SDK against the OuterProduct API and must be called before you create datasets, configure trainers, or invoke any other SDK operation. You can supply your API key either through an environment variable (recommended for production) or by passing it directly in code.
@@ -33,7 +33,7 @@ op.init()
 ```python Explicit API Key
 import outerproduct as op
 
-# Pass the key directly — useful for notebooks or dynamic configuration.
+# Pass the key directly, useful for notebooks or dynamic configuration.
 op.init(api_key="your-api-key")
 ```
 
@@ -61,7 +61,7 @@ If you are using a secrets manager or a CI/CD platform, inject the variable ther
 
 When `init()` is called, the SDK:
 
-1. Resolves the API key — from the argument or the environment variable.
+1. Resolves the API key from the argument or the environment variable.
 2. Validates the key format locally.
 3. Establishes an authenticated session that all subsequent SDK calls reuse.
 

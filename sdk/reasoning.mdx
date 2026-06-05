@@ -1,7 +1,7 @@
 ---
-title: "outerproduct.reasoning — Reasoning Model Training"
+title: "outerproduct.reasoning: Reasoning Model Training"
 sidebarTitle: "Reasoning"
-description: "API reference for op.reasoning.fit() and PatternTracker — train reasoning models and distil population-level patterns from their predictions."
+description: "API reference for op.reasoning.fit() and PatternTracker: train reasoning models and distil population-level patterns from their predictions."
 ---
 
 The `outerproduct.reasoning` module is the entry point for training reasoning models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
@@ -25,7 +25,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 ### Parameters
 
 <ParamField body="dataset" type="Dataset" required>
-  Training data wrapped in an `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or any other `LocalDataset` constructor — or reference a connector. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+  Training data wrapped in an `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or any other `LocalDataset` constructor, or reference a connector. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
 </ParamField>
 
 <ParamField body="task" type="TaskConfig | None">
@@ -39,7 +39,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   | `op.ForecastingConfig(label_column=..., id_column=..., timestamp_column=..., horizon=..., lookback=...)` | Time-series forecasting |
   | `op.SequenceConfig(label_column=..., id_column=..., timestamp_column=...)` | Sequence modeling |
 
-  Required unless `teacher` is provided — when a teacher is set, OuterProduct queries it to generate training labels and `task` becomes optional.
+  Required unless `teacher` is provided. When a teacher is set, OuterProduct queries it to generate training labels and `task` becomes optional.
 </ParamField>
 
 <ParamField body="model_types" type="list[str] | None">
@@ -171,9 +171,9 @@ Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band
 
   | `target_range` | Selects |
   |---|---|
-  | `(0.5, None)` | `pred >= 0.5` — likely-positive cohort |
-  | `(None, 0.5)` | `pred <= 0.5` — likely-negative cohort |
-  | `(0.4, 0.6)` | `0.4 <= pred <= 0.6` — borderline / uncertain band |
+  | `(0.5, None)` | `pred >= 0.5`, likely-positive cohort |
+  | `(None, 0.5)` | `pred <= 0.5`, likely-negative cohort |
+  | `(0.4, 0.6)` | `0.4 <= pred <= 0.6`, borderline / uncertain band |
 </ParamField>
 
 ### Return value
@@ -242,7 +242,7 @@ Returns a boolean `DataFrame` of shape `(n_rows, n_patterns)`. Each column corre
 pt.distribution(X: Dataset) -> pd.Series
 ```
 
-Returns match rates — the fraction of rows in `X` that match each pattern — as a `pd.Series` indexed by pattern label.
+Returns match rates (the fraction of rows in `X` that match each pattern) as a `pd.Series` indexed by pattern label.
 
 <ParamField body="X" type="Dataset" required>
   New data to score.

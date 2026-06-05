@@ -5,7 +5,7 @@ icon: "file-arrow-up"
 description: "Upload a local CSV or Parquet file to OuterProduct via a presigned URL with no console setup. Get a Dataset back and pass it straight to training."
 ---
 
-`op.LocalDataset` is the fastest way to get local data into OuterProduct. Build one from a CSV or Parquet file (or an in-memory frame), then call `.upload()` to stage it through a presigned URL and get back a `Dataset` you can pass directly to training or inference. It is completely stateless - there is no credential to configure in the Console.
+`op.LocalDataset` is the fastest way to get local data into OuterProduct. Build one from a CSV or Parquet file (or an in-memory frame), then call `.upload()` to stage it through a presigned URL and get back a `Dataset` you can pass directly to training or inference. It is completely stateless. There is no credential to configure in the Console.
 
 ## Supported formats
 

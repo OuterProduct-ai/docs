@@ -5,13 +5,13 @@ icon: "file-invoice-dollar"
 description: "Bolt traceable reasoning onto your risk-scoring model for audit trails, policy optimization, and per-applicant counterfactuals."
 ---
 
-Lenders and insurers rely on black-box ML models - gradient boosted trees, neural networks, transformers - to score applicant risk. Pairing each decision with specific reasoning unlocks the intelligence and traceability underwriters need for policy optimization, accelerated underwriting, and compliant audit. OuterProduct bolts onto your existing scoring model without replacing it, adding a reasoning engine that runs alongside the scorer in real time and leaves the production decision path untouched.
+Lenders and insurers rely on black-box ML models (gradient boosted trees, neural networks, transformers) to score applicant risk. Pairing each decision with specific reasoning gives underwriters the traceability they need for policy optimization, accelerated underwriting, and compliant audit. OuterProduct bolts onto your existing scoring model without replacing it, adding a reasoning engine that runs alongside the scorer in real time and leaves the production decision path untouched.
 
 This guide walks you through wrapping your existing scoring model in a reasoning app with intelligence at three levels:
 
-- **Scoring model** - what the model does in aggregate, how it aligns with business rules and KPIs, and its data efficiency for feature sourcing and model improvement.
-- **Patterns and trends** - fingerprinting applicant cohorts and tracking how risk patterns emerge and evolve.
-- **Cases** - for one applicant, why the decision landed where it did and what would flip it.
+- **Scoring model**: what the model does in aggregate, how it aligns with business rules and KPIs, and its data efficiency for feature sourcing and model improvement.
+- **Patterns and trends**: fingerprinting applicant cohorts and tracking how risk patterns emerge and evolve.
+- **Cases**: for one applicant, why the decision landed where it did and what would flip it.
 
 <Steps>
   <Step title="Distill your scoring model">
@@ -24,7 +24,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     
     op.init()
     
-    # Historical applicants (for training) — already in Databricks. Replace
+    # Historical applicants (for training), already in Databricks. Replace
     # the angle-bracket placeholders below with your workspace's values;
     # `connector_credential_name` references a Databricks credential you've already
     # added in console.outerproduct.com.
@@ -37,7 +37,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     )
     dataset = connector.table("applicants_train")
     
-    # Your production scorer — typically a Databricks Model Serving endpoint.
+    # Your production scorer, typically a Databricks Model Serving endpoint.
     teacher = op.model.Predictor(
         "https://underwriting.example.com/score",
         headers={"Authorization": "Bearer ..."},
@@ -53,7 +53,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     </Tip>
   </Step>
   <Step title="Plug in the daily applicant stream">
-    Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training  and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
+    Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
 
     <CodeGroup>
 
@@ -74,11 +74,11 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     </CodeGroup>
   </Step>
   <Step title="Reason at three altitudes">
-    Use the predictions and reasoning context to power every level of your underwriting app - from portfolio-wide KPIs down to a single applicant's audit trail.
+    Use the predictions and reasoning context to power every level of your underwriting app, from portfolio-wide KPIs down to a single applicant's audit trail.
 
-    #### Scoring engine — KPIs, drivers, and drift
+    #### Scoring engine: KPIs, drivers, and drift
 
-    Track headline KPIs (e.g., denials) over time, watch for anomalies and drift, and characterize the features driving risk across the population. Because `get_global_drivers()` exposes the features the model relies on, the view doubles as a data-efficiency check - features with low utilization are candidates for retirement.
+    Track headline KPIs (e.g., denials) over time, watch for anomalies and drift, and characterize the features driving risk across the population. Because `get_global_drivers()` exposes the features the model relies on, the view doubles as a data-efficiency check: features with low utilization are candidates for retirement.
 
     <CodeGroup>
 
@@ -90,7 +90,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 
     </CodeGroup>
 
-    #### Applicant patterns — recurring denial profiles
+    #### Applicant patterns: recurring denial profiles
 
     Fit a `PatternTracker` on the denial band to surface the dominant _combinations_ of features that drive risk decisions. Each pattern is an executable filter with precision and lift stats, ready to apply to fresh applicants.
 
@@ -114,7 +114,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
       See the [Pattern Tracker guide](/guides/pattern-tracker) for the full API including partition and labeling options.
     </Note>
 
-    #### Individual applications — explanation and scenario
+    #### Individual applications: explanation and scenario
 
     For one applicant, pair the explanation with a counterfactual scenario using `scenario()`. The explanation serves as the audit trail on file. The scenario doubles as the defensibility argument when a decision is challenged, and as a forward-looking recommendation. For example, "if the applicant resolves one recent credit inquiry and verifies stable employment, they will be approved on reapplication."
 

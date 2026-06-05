@@ -9,9 +9,9 @@ Affiliate marketplaces use AI models to recommend financial products and predict
 
 This guide walks you through wrapping your existing approval-odds model in a reasoning app with intelligence at three levels:
 
-- **Recommender model** - what the model does in aggregate, how it aligns with marketplace KPIs and product-partner constraints, and its data efficiency for feature sourcing and model improvement.
-- **Patterns and trends** - fingerprinting user cohorts and tracking how approval and conversion patterns emerge and evolve.
-- **Cases** - for one user, why a product was recommended (or why their odds are low) and what would flip them, in real time.
+- **Recommender model**: what the model does in aggregate, how it aligns with marketplace KPIs and product-partner constraints, and its data efficiency for feature sourcing and model improvement.
+- **Patterns and trends**: fingerprinting user cohorts and tracking how approval and conversion patterns emerge and evolve.
+- **Cases**: for one user, why a product was recommended (or why their odds are low) and what would flip them, in real time.
 
 <Steps>
   <Step title="Distill your approval-odds model">
@@ -24,7 +24,7 @@ This guide walks you through wrapping your existing approval-odds model in a rea
     
     op.init()
     
-    # Historical users + approval outcomes (for training) — already in
+    # Historical users + approval outcomes (for training), already in
     # Databricks. Replace the angle-bracket placeholders below with your
     # workspace's values; `connector_credential_name` references a Databricks
     # credential you've already added in console.outerproduct.com.
@@ -37,7 +37,7 @@ This guide walks you through wrapping your existing approval-odds model in a rea
     )
     dataset = connector.table("recommendations_train")
     
-    # Your production scorer — typically a Databricks Model Serving endpoint.
+    # Your production scorer, typically a Databricks Model Serving endpoint.
     teacher = op.model.Predictor(
         "https://marketplace.example.com/approval-odds",
         headers={"Authorization": "Bearer ..."},
@@ -74,11 +74,11 @@ This guide walks you through wrapping your existing approval-odds model in a rea
     </CodeGroup>
   </Step>
   <Step title="Reason at three altitudes">
-    Use the predictions and reasoning context to power every level of your marketplace app -from portfolio-wide KPIs down to a single user's personalized recommendation.
+    Use the predictions and reasoning context to power every level of your marketplace app, from portfolio-wide KPIs down to a single user's personalized recommendation.
 
-    #### Scoring engine - KPIs, drivers, and drift
+    #### Scoring engine: KPIs, drivers, and drift
 
-    Track headline KPIs (approval rate, conversion lift, sign-ups) over time, watch for anomalies and drift, and characterize the features driving approval odds. Because `get_global_drivers()` exposes the features the model relies on.
+    Track headline KPIs (approval rate, conversion lift, sign-ups) over time, watch for anomalies and drift, and characterize the features driving approval odds. `get_global_drivers()` exposes the features the model relies on, so the view doubles as a data-efficiency check: features with low utilization are candidates for retirement.
 
     <CodeGroup>
 
@@ -90,7 +90,7 @@ This guide walks you through wrapping your existing approval-odds model in a rea
 
     </CodeGroup>
 
-    #### User patterns - recurring approval profiles
+    #### User patterns: recurring approval profiles
 
     Fit a `PatternTracker` on the approved band to surface the dominant _combinations_ of features that drive recommendation outcomes. Each pattern is an executable filter with precision and lift stats, ready to apply to live users.
 
@@ -114,9 +114,9 @@ This guide walks you through wrapping your existing approval-odds model in a rea
       See the [Pattern Tracker guide](/guides/pattern-tracker) for the full API including partition and labeling options.
     </Note>
 
-    #### Individual users - explanation and scenario
+    #### Individual users: explanation and scenario
 
-    For one user, pair the explanation with a counterfactual scenario using `scenario()`. The explanation is the personalized "why this product fits you" that builds confidence for strong applicants and drives sign-ups. For weaker applicants the scenario doubles as a credit-advisor recommendation - specific steps to improve their approval likelihood - and as operator-facing traceability linking every recommendation back to its data inputs in one click.
+    For one user, pair the explanation with a counterfactual scenario using `scenario()`. The explanation is the personalized "why this product fits you" that builds confidence for strong applicants and drives sign-ups. For weaker applicants the scenario doubles as a credit-advisor recommendation (specific steps to improve their approval likelihood) and as operator-facing traceability linking every recommendation back to its data inputs in one click.
 
     <CodeGroup>
 

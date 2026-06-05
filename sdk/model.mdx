@@ -1,10 +1,10 @@
 ---
-title: "outerproduct.model — Model, ReasoningModel, Predictor"
+title: "outerproduct.model: Model, ReasoningModel, Predictor"
 sidebarTitle: "Model"
-description: "API reference for Model, ReasoningModel, ScenarioResult, and Predictor — the core objects returned by OuterProduct training and distillation flows."
+description: "API reference for Model, ReasoningModel, ScenarioResult, and Predictor: the core objects returned by OuterProduct training and distillation flows."
 ---
 
-The `outerproduct.model` module contains the objects you work with after training. A plain `Model` handles predictions; a `ReasoningModel` extends it with feature-level explanations, counterfactual scenarios, and global driver analysis. Both are produced asynchronously — you call `.wait()` on a job handle and receive the model object once training completes.
+The `outerproduct.model` module contains the objects you work with after training. A plain `Model` handles predictions; a `ReasoningModel` extends it with feature-level explanations, counterfactual scenarios, and global driver analysis. Both are produced asynchronously: you call `.wait()` on a job handle and receive the model object once training completes.
 
 ## Model
 
@@ -19,7 +19,7 @@ model.predict(dataset: Dataset) -> numpy.ndarray
 Scores every row in `dataset` and returns a one-dimensional NumPy array of predictions. The SDK validates `dataset`'s column schema against the model's training-time schema before the request leaves your machine, so mismatched or missing features raise a descriptive local error rather than a server-side 400.
 
 <ParamField body="dataset" type="Dataset" required>
-  An `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or `op.LocalDataset.from_numpy(...).upload()` — or reference a connector. Column names must match the features seen during training.
+  An `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or `op.LocalDataset.from_numpy(...).upload()`, or reference a connector. Column names must match the features seen during training.
 </ParamField>
 
 <ResponseField name="returns" type="numpy.ndarray">
@@ -42,7 +42,7 @@ print(predictions[:5])
 
 ## ReasoningModel
 
-`ReasoningModel` is produced by `op.reasoning.fit().wait()`. It is a superset of `Model` — all `predict()` behaviour is identical — and adds explanation, counterfactual, and global-driver methods.
+`ReasoningModel` is produced by `op.reasoning.fit().wait()`. It is a superset of `Model` (all `predict()` behaviour is identical) and adds explanation, counterfactual, and global-driver methods.
 
 <Note>
   You need a `ReasoningModel` any time you want feature attributions or counterfactuals. Train one with `op.reasoning.fit()` instead of `Trainer`.
@@ -50,7 +50,7 @@ print(predictions[:5])
 
 ### `model.predict()`
 
-Identical to [`Model.predict()`](#modelpredict) above — accepts a `Dataset` and returns a `numpy.ndarray` of shape `(n_samples,)`.
+Identical to [`Model.predict()`](#modelpredict) above: accepts a `Dataset` and returns a `numpy.ndarray` of shape `(n_samples,)`.
 
 ```python
 import outerproduct as op
@@ -149,7 +149,7 @@ model.get_global_drivers() -> Reasoning
 Returns a model-wide `Reasoning` summarising which features are most important across the entire training distribution, rather than for a specific set of input rows.
 
 <ResponseField name="returns" type="Reasoning">
-  A `Reasoning` object where `attributions` has shape `(n_features,)` — one scalar importance value per feature. `feature_names` is aligned with `attributions`. `rules` is `None` for global results.
+  A `Reasoning` object where `attributions` has shape `(n_features,)`, one scalar importance value per feature. `feature_names` is aligned with `attributions`. `rules` is `None` for global results.
 </ResponseField>
 
 ```python
@@ -164,7 +164,7 @@ for name, importance in zip(reasoning.feature_names, reasoning.attributions):
 ```
 
 <Tip>
-  Use `get_global_drivers()` as a quick sanity check after training — if a feature you expected to matter is near zero, verify the column was present in the training data.
+  Use `get_global_drivers()` as a quick sanity check after training: if a feature you expected to matter is near zero, verify the column was present in the training data.
 </Tip>
 
 ---
@@ -220,7 +220,7 @@ result = model.scenario(queries, target_class=1)
 for q in result.queries:
     print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
     if q.already_at_desired_class:
-        print("  Already at target class — no change needed.")
+        print("  Already at target class, no change needed.")
         continue
     for cf in q.counterfactuals:
         print(f"  Candidate ({cf.n_changes} changes):")
@@ -348,5 +348,5 @@ reasoning = model.explain(op.LocalDataset.from_pandas(X_new).upload())
 ```
 
 <Note>
-  When a `teacher` is provided, `task` is optional — OuterProduct queries the teacher to generate training labels. You can still supply a `task` with a `label_column` if you want to blend ground-truth labels with teacher predictions.
+  When a `teacher` is provided, `task` is optional: OuterProduct queries the teacher to generate training labels. You can still supply a `task` with a `label_column` if you want to blend ground-truth labels with teacher predictions.
 </Note>

@@ -1,10 +1,10 @@
 ---
-title: "outerproduct.Trainer — Model Training Configuration"
+title: "outerproduct.Trainer: Model Training Configuration"
 sidebarTitle: "Trainer"
 description: "Train models on structured data with outerproduct.Trainer. Configure model families, optimization metrics, search strategy, and knowledge distillation."
 ---
 
-`outerproduct.Trainer` is the low-level training interface that gives you full control over the model-selection and hyperparameter search that runs on the OuterProduct platform. It coordinates a parallel search over model families, hyperparameter spaces, and metric weightings — all server-side. The result is a single trained `Model` representing the best configuration found. If you also need feature-level explanations, use `op.reasoning.fit()` instead, which runs the same search and returns a `ReasoningModel`.
+`outerproduct.Trainer` is the low-level training interface that gives you full control over the model-selection and hyperparameter search that runs on the OuterProduct platform. It coordinates a parallel search over model families, hyperparameter spaces, and metric weightings, all server-side. The result is a single trained `Model` representing the best configuration found. If you also need feature-level explanations, use `op.reasoning.fit()` instead, which runs the same search and returns a `ReasoningModel`.
 
 ---
 
@@ -29,15 +29,15 @@ op.Trainer.configure(
 </ParamField>
 
 <ParamField body="task" type="TaskConfig | None">
-  The supervised learning task, which carries the target `label_column` — e.g. `op.BinclassConfig(label_column="churn")`, `op.RegressionConfig(label_column=...)`, or `op.MulticlassConfig(label_column=...)`. Required for supervised training unless a `teacher` is provided — when a teacher is set, `task` is optional and the teacher's predictions are used as the training signal instead.
+  The supervised learning task, which carries the target `label_column`, e.g. `op.BinclassConfig(label_column="churn")`, `op.RegressionConfig(label_column=...)`, or `op.MulticlassConfig(label_column=...)`. Required for supervised training unless a `teacher` is provided. When a teacher is set, `task` is optional and the teacher's predictions are used as the training signal instead.
 </ParamField>
 
 <ParamField body="model_types" type="list[str] | None">
-  List of model family identifiers to include in the search, for example `["tabm", "xgboost"]`. All listed families are tuned **in parallel** in the same search pass — you do not pay an extra round-trip per family. If omitted, OuterProduct automatically selects a curated set appropriate for your dataset.
+  List of model family identifiers to include in the search, for example `["tabm", "xgboost"]`. All listed families are tuned **in parallel** in the same search pass; you do not pay an extra round-trip per family. If omitted, OuterProduct automatically selects a curated set appropriate for your dataset.
 </ParamField>
 
 <ParamField body="metric" type="Metric | list[Metric] | None">
-  The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a **Pareto sweep** — training then explores the full weighting space between all listed metrics and returns the best model found across that sweep. If omitted, a default metric is chosen based on the detected task type (classification or regression).
+  The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a **Pareto sweep**: training then explores the full weighting space between all listed metrics and returns the best model found across that sweep. If omitted, a default metric is chosen based on the detected task type (classification or regression).
 
   <Expandable title="Common metric names">
     | Name | Task |
@@ -81,7 +81,7 @@ trainer = op.Trainer.configure(
 
 ## `trainer.run()`
 
-Submit the configured training job to the OuterProduct platform. Returns immediately with a `Job` handle — training runs asynchronously server-side.
+Submit the configured training job to the OuterProduct platform. Returns immediately with a `Job` handle; training runs asynchronously server-side.
 
 ```python
 trainer.run(strategy="random", n_trials=None, grid_size=None)
@@ -91,12 +91,12 @@ trainer.run(strategy="random", n_trials=None, grid_size=None)
 
 <ParamField body="strategy" type="string">
   Hyperparameter search strategy. Options:
-  - `"random"` *(default)* — random search, fast and effective for most datasets.
-  - `"optuna"` — Bayesian optimization via Optuna, recommended when you want a thorough search and have more trial budget.
+  - `"random"` *(default)*: random search, fast and effective for most datasets.
+  - `"optuna"`: Bayesian optimization via Optuna, recommended when you want a thorough search and have more trial budget.
 </ParamField>
 
 <ParamField body="n_trials" type="int | None">
-  Per-family trial budget — the number of hyperparameter configurations to evaluate for each model family in `model_types`. If omitted, the platform uses a sensible default based on dataset size.
+  Per-family trial budget: the number of hyperparameter configurations to evaluate for each model family in `model_types`. If omitted, the platform uses a sensible default based on dataset size.
 </ParamField>
 
 <ParamField body="grid_size" type="float | None">
@@ -140,7 +140,7 @@ metric = op.Metric("auc")
 
 ## The `Job` Handle
 
-`trainer.run()` — and `op.reasoning.fit()` — return a `Job` handle immediately. Training runs asynchronously; use the handle to interact with it.
+`trainer.run()` (and `op.reasoning.fit()`) return a `Job` handle immediately. Training runs asynchronously; use the handle to interact with it.
 
 ### `job.status()`
 
@@ -176,7 +176,7 @@ result = job.results()
 ```
 
 <ResponseField name="return value" type="dict">
-  A dictionary containing the raw response from the OuterProduct API — includes job IDs, artifact URIs, and timing information. Only available after the job status is `"completed"`.
+  A dictionary containing the raw response from the OuterProduct API, including job IDs, artifact URIs, and timing information. Only available after the job status is `"completed"`.
 </ResponseField>
 
 <Note>
@@ -307,10 +307,10 @@ model = trainer.run().wait()
 
 When you call `trainer.run()`, the OuterProduct platform:
 
-1. **Tunes all model families in parallel** — every family listed in `model_types` is explored concurrently, not sequentially.
+1. **Tunes all model families in parallel**: every family listed in `model_types` is explored concurrently, not sequentially.
 2. **Searches hyperparameter configurations** using the strategy you chose (`"random"` or `"optuna"`), up to the `n_trials` budget per family.
 3. **Sweeps metric weightings** (multi-metric only) at the resolution set by `grid_size`, evaluating each weighting as a separate optimization objective.
-4. **Returns a single model** — the best configuration found across all families, trials, and (if applicable) metric weightings.
+4. **Returns a single model**: the best configuration found across all families, trials, and (if applicable) metric weightings.
 
 Parallelism and per-trial timeouts are managed server-side. There are no SDK-level threading or timeout knobs.
 

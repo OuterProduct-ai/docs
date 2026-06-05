@@ -1,10 +1,10 @@
 ---
-title: "outerproduct.connector — Data Source Connectors API"
+title: "outerproduct.connector: Data Source Connectors API"
 sidebarTitle: "Connectors"
 description: "API reference for S3Connector, SnowflakeConnector, and DatabricksConnector. For local files and in-memory frames, use LocalDataset.upload()."
 ---
 
-The `outerproduct.connector` module provides three connector classes for loading structured data from external sources into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer` — no intermediate download or local processing required. For local files and in-memory frames, build a `Dataset` with [`op.LocalDataset.from_*(...).upload()`](/sdk/dataset) instead.
+The `outerproduct.connector` module provides three connector classes for loading structured data from external sources into OuterProduct. Each connector returns a server-backed `Dataset` object that you can pass directly to `op.reasoning.fit()` or a `Trainer`, with no intermediate download or local processing required. For local files and in-memory frames, build a `Dataset` with [`op.LocalDataset.from_*(...).upload()`](/sdk/dataset) instead.
 
 <Note>
   For all external connectors (S3, Snowflake, and Databricks), your cloud credentials are **never** passed through the SDK. You store them once in the [OuterProduct Console](https://console.outerproduct.com) under **Connectors**, and the SDK references them by the name you assigned. The OuterProduct backend uses those stored credentials at training and inference time.
@@ -14,7 +14,7 @@ The `outerproduct.connector` module provides three connector classes for loading
 
 ## Local files and in-memory data
 
-Local files and in-memory frames are **not** connectors. Stage them with `op.LocalDataset`, which runs the presigned-URL upload and returns a `Dataset` — no Console setup or credential required.
+Local files and in-memory frames are **not** connectors. Stage them with `op.LocalDataset`, which runs the presigned-URL upload and returns a `Dataset`; no Console setup or credential is required.
 
 ```python
 import outerproduct as op
@@ -30,7 +30,7 @@ model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).
 
 ## S3Connector
 
-`op.S3Connector` references data files stored in Amazon S3. You supply the name of a pre-configured S3 credential from the OuterProduct Console, and the backend reads your data at training time using a cross-account IAM role — no AWS access keys are required in your code.
+`op.S3Connector` references data files stored in Amazon S3. You supply the name of a pre-configured S3 credential from the OuterProduct Console, and the backend reads your data at training time using a cross-account IAM role, so no AWS access keys are required in your code.
 
 <Steps>
   <Step title="Add an S3 credential in the Console">
@@ -82,7 +82,7 @@ Returns a server-backed `Dataset` pointing at an S3 object.
 
 ## SnowflakeConnector
 
-`op.SnowflakeConnector` references tables stored in Snowflake. You provide your account details and the name of a stored Snowflake credential, and the backend reads the table using a Programmatic Access Token (PAT) that you registered in the Console — no PAT appears in your SDK code.
+`op.SnowflakeConnector` references tables stored in Snowflake. You provide your account details and the name of a stored Snowflake credential, and the backend reads the table using a Programmatic Access Token (PAT) that you registered in the Console, so no PAT appears in your SDK code.
 
 <Steps>
   <Step title="Add a Snowflake credential in the Console">
@@ -152,11 +152,11 @@ Returns a server-backed `Dataset` pointing at a Snowflake table.
 
 ## DatabricksConnector
 
-`op.DatabricksConnector` references tables in a Databricks SQL warehouse or cluster. You provide the workspace hostname and SQL warehouse path along with the name of a stored Databricks credential — no personal access token is passed through the SDK.
+`op.DatabricksConnector` references tables in a Databricks SQL warehouse or cluster. You provide the workspace hostname and SQL warehouse path along with the name of a stored Databricks credential; no personal access token is passed through the SDK.
 
 <Steps>
   <Step title="Add a Databricks credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token** — choose **Other APIs** as the token type.
+    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token**, choosing **Other APIs** as the token type.
   </Step>
   <Step title="Use the credential name in the SDK">
     Pass the connector name to `DatabricksConnector(connector_credential_name=...)` along with your workspace and warehouse details. The backend resolves the stored token automatically.

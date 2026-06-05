@@ -9,7 +9,7 @@ Once you have a trained model, generating predictions is a single method call. B
 
 ## Wrap your data in a Dataset
 
-`predict()` requires an `op.Dataset` — you cannot pass a raw DataFrame or array directly. Build one from your inference rows with `op.LocalDataset.from_*(...).upload()` before calling the model.
+`predict()` requires an `op.Dataset`. You cannot pass a raw DataFrame or array directly. Build one from your inference rows with `op.LocalDataset.from_*(...).upload()` before calling the model.
 
 ```python
 import outerproduct as op
@@ -45,7 +45,7 @@ predictions, reasoning = model.predict_and_explain(test_dataset)
 ```
 
 <Tip>
-Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately — it halves your network overhead and guarantees the predictions and attributions correspond to exactly the same forward pass.
+Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately. It halves your network overhead and guarantees the predictions and attributions correspond to exactly the same forward pass.
 </Tip>
 
 ## What predict() returns

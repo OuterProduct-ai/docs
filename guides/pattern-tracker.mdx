@@ -39,8 +39,8 @@ for fp in pt.patterns:
 
 | `target_range` | Selects |
 | --- | --- |
-| `(0.5, None)` | `pred >= 0.5` — likely-positive cohort |
-| `(None, 0.5)` | `pred <= 0.5` — likely-negative cohort |
+| `(0.5, None)` | `pred >= 0.5`, likely-positive cohort |
+| `(None, 0.5)` | `pred <= 0.5`, likely-negative cohort |
 | `(0.4, 0.6)` | Borderline / uncertain band |
 
 ## Pattern attributes
@@ -55,7 +55,7 @@ Each pattern in `pt.patterns` is a `FilterPattern` with three key attributes:
 
 ## Applying a fitted tracker
 
-Three methods let you score new data against the fitted patterns. A row can match multiple patterns simultaneously - coverage is overlapping, not a strict partition.
+Three methods let you score new data against the fitted patterns. A row can match multiple patterns simultaneously; coverage is overlapping, not a strict partition.
 
 ```python
 # Boolean DataFrame: shape (n_samples, n_patterns)
@@ -65,12 +65,12 @@ matches = pt.transform(X_new)
 # pd.Series: match rate per pattern label across X_new
 rates = pt.distribution(X_new)
 
-# dict[label, np.ndarray of row indices] — which rows match each pattern
+# dict[label, np.ndarray of row indices]: which rows match each pattern
 groups = pt.partition(X_new)
 ```
 
 <Note>
-  `pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array directly — they run locally, so unlike `model.predict()` they do not require an uploaded `Dataset`.
+  `pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array directly. They run locally, so unlike `model.predict()` they do not require an uploaded `Dataset`.
 </Note>
 
 ## Jobs API
@@ -106,7 +106,7 @@ model = op.reasoning.fit(
 pt = op.reasoning.pattern_tracker.fit(
     model,
     dataset,
-    target_range=(None, 0.5),  # pred <= 0.5 — denied applicants
+    target_range=(None, 0.5),  # pred <= 0.5, denied applicants
 ).wait()
 
 print(f"Found {len(pt.patterns)} denial patterns (coverage={pt.coverage_fit:.0%})")

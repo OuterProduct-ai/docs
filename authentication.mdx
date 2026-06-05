@@ -5,11 +5,11 @@ icon: "key"
 description: "Generate an OuterProduct API key and configure the Python SDK using an environment variable or by passing the key directly to op.init()."
 ---
 
-Every request the OuterProduct SDK makes is authenticated with an API key. You generate that key from the OuterProduct Console, then hand it to the SDK once via `op.init()` — all subsequent calls in the same process are automatically authenticated.
+Every request the OuterProduct SDK makes is authenticated with an API key. You generate that key from the OuterProduct Console, then hand it to the SDK once via `op.init()`; all subsequent calls in the same process are automatically authenticated.
 
 ## Get your API key
 
-Sign in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **API Keys**. Create a new key and copy it immediately — the console will not show the full value again after you close the dialog.
+Sign in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **API Keys**. Create a new key and copy it immediately; the console will not show the full value again after you close the dialog.
 
 ## Option 1: Environment variable (recommended)
 
@@ -29,7 +29,7 @@ This keeps your key out of source code and works cleanly in CI, Docker, and host
 
 ## Option 2: Pass the key directly
 
-If you manage secrets programmatically — for example, fetching them from a secrets manager at runtime — pass the key as an argument to `op.init()`:
+If you manage secrets programmatically (for example, fetching them from a secrets manager at runtime), pass the key as an argument to `op.init()`:
 
 ```python
 import outerproduct as op
@@ -43,7 +43,7 @@ op.init(api_key="your-api-key")
 
 ## When to call `op.init()`
 
-Call `op.init()` once, at the start of your script or application, before any other OuterProduct SDK call. The initialized state is global to the process — you do not need to pass credentials to individual SDK functions.
+Call `op.init()` once, at the start of your script or application, before any other OuterProduct SDK call. The initialized state is global to the process; you do not need to pass credentials to individual SDK functions.
 
 ```python
 import outerproduct as op
