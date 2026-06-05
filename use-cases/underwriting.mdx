@@ -15,7 +15,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 
 <Steps>
 
-### Distill your scoring model
+<Step title="Distill your scoring model">
 
 Point at historical applicant data via a connector, wrap your scoring endpoint as a `Predictor`, and pass it as `teacher` to `op.reasoning.fit`. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
 
@@ -54,7 +54,9 @@ reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
   See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for full distillation details.
 </Tip>
 
-### Plug in the daily applicant stream
+</Step>
+
+<Step title="Plug in the daily applicant stream">
 
 Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training — in practice, the view the production scorer already reads — and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
 
@@ -76,7 +78,9 @@ predictions, reasoning = reasoning_model.predict_and_explain(today)
 
 </CodeGroup>
 
-### Reason at three altitudes
+</Step>
+
+<Step title="Reason at three altitudes">
 
 Use the predictions and reasoning context to power every level of your underwriting app — from portfolio-wide KPIs down to a single applicant's audit trail.
 
@@ -137,6 +141,8 @@ for cf in result.queries[0].counterfactuals:
 ```
 
 </CodeGroup>
+
+</Step>
 
 </Steps>
 
