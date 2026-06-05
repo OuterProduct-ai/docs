@@ -12,11 +12,12 @@ The `outerproduct.reasoning` module is the entry point for training explainable 
 op.reasoning.fit(
     dataset: Dataset,
     task: TaskConfig | None = None,
-    model_types: list[str] | None = None,
-    n_hyperopt_steps: int | None = None,
     teacher: Model | Predictor | None = None,
-    device: str | None = None,
-) -> Job[ReasoningModel]
+    model_types: list[str] | None = None,
+    metric: Metric | list[Metric] | None = None,
+    n_hyperopt_steps: int = 5,
+    random_state: int = 42,
+) -> ReasoningFitJob
 ```
 
 Submits a training job and returns a non-blocking `Job` handle immediately. Call `.wait()` on the handle to block until training completes and receive the trained `ReasoningModel`.
@@ -45,16 +46,20 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   Restrict the model family search to a specific list, e.g. `["tabm", "xgboost"]`. When `None`, OuterProduct selects from its full portfolio of tabular model families. Providing this list is useful when you have a latency or interpretability constraint that rules out certain architectures.
 </ParamField>
 
-<ParamField body="n_hyperopt_steps" type="int | None">
-  Number of hyperparameter optimisation trials to run. Higher values improve model quality at the cost of longer training time. When `None`, OuterProduct uses a sensible default based on dataset size.
+<ParamField body="metric" type="Metric | list[Metric] | None">
+  The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a Pareto sweep across their weightings. When `None`, OuterProduct picks a sensible default for the task.
+</ParamField>
+
+<ParamField body="n_hyperopt_steps" type="int" default="5">
+  Number of hyperparameter optimisation trials to run. Higher values improve model quality at the cost of longer training time. Defaults to `5`.
+</ParamField>
+
+<ParamField body="random_state" type="int" default="42">
+  Seed for the training search, for reproducible runs. Defaults to `42`.
 </ParamField>
 
 <ParamField body="teacher" type="Model | Predictor | None">
   A teacher model for knowledge distillation. Accepts either a previously trained OuterProduct `Model` / `ReasoningModel` or a `Predictor` wrapping an external HTTP scoring endpoint. When set, OuterProduct trains the new `ReasoningModel` to mimic the teacher's output, adding full explainability to a black-box predictor.
-</ParamField>
-
-<ParamField body="device" type="str | None">
-  Compute device hint passed to the training backend, e.g. `"cuda"` or `"cpu"`. Leave as `None` to let OuterProduct select the appropriate device automatically.
 </ParamField>
 
 ### Return value
