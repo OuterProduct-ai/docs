@@ -27,25 +27,6 @@ op.init()  # automatically reads OUTERPRODUCT_API_KEY
 
 This keeps your key out of source code and works cleanly in CI, Docker, and hosted environments where secrets are injected as environment variables.
 
-<Tip>
-  For local development, store your key in a `.env` file and load it with [python-dotenv](https://pypi.org/project/python-dotenv/) before calling `op.init()`:
-
-  ```bash
-  # .env
-  OUTERPRODUCT_API_KEY=your-api-key
-  ```
-
-  ```python
-  from dotenv import load_dotenv
-  load_dotenv()
-
-  import outerproduct as op
-  op.init()
-  ```
-
-  Add `.env` to your `.gitignore` so the file is never committed.
-</Tip>
-
 ## Option 2: Pass the key directly
 
 If you manage secrets programmatically — for example, fetching them from a secrets manager at runtime — pass the key as an argument to `op.init()`:
