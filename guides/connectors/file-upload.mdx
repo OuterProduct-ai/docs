@@ -9,13 +9,7 @@ description: "Upload a local CSV or Parquet file to OuterProduct via a presigned
 
 ## Supported formats
 
-`LocalDataset.from_csv` and `LocalDataset.from_parquet` accept **CSV** and **Parquet** files.
-
-`.upload()` always serializes the rows to Parquet before staging them, so the `parquet` extra — which provides `pyarrow` — is required for the upload workflow regardless of whether you started from a CSV or a Parquet file (reading a Parquet input with `from_parquet` needs it too):
-
-```bash
-pip install "outerproduct[parquet]"
-```
+Build a `LocalDataset` from a local **CSV** or **Parquet** file (`from_csv` / `from_parquet`), or directly from an in-memory frame or array — **pandas** (`from_pandas`), **polars** (`from_polars`), or **numpy** (`from_numpy`). Whatever the source, `.upload()` serializes the rows to Parquet and stages them through the presigned URL.
 
 ## Upload a file and train a model
 

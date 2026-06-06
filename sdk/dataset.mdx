@@ -104,10 +104,6 @@ op.LocalDataset.from_parquet(path)
   Path to the Parquet file on your local filesystem.
 </ParamField>
 
-<Note>
-  Parquet support requires the `parquet` extra. Install it with `pip install outerproduct[parquet]`.
-</Note>
-
 ```python
 import outerproduct as op
 
@@ -235,7 +231,6 @@ import outerproduct as op
 
 op.init()
 
-# Requires: pip install outerproduct[parquet]
 dataset = op.LocalDataset.from_parquet("warehouse/transactions.parquet").upload()
 ```
 
