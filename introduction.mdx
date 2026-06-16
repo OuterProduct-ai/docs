@@ -27,35 +27,6 @@ train = ws.sql("SELECT * FROM customers WHERE signup_year >= 2020")
 
 The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your lake or warehouse stores. The query executes lazily, as needed, on our servers.
 
-## A short example
-
-```python
-import outerproduct as op
-
-op.init()  # reads OUTERPRODUCT_API_KEY from the environment
-
-ws = op.Workspace()
-
-# Register a source table once. S3 here; Snowflake and Databricks work the same way.
-ws.register_s3("customers", "s3://acme-data/customers.parquet", connector="prod-aws")
-
-# Build the training set as a query over that source.
-train = ws.table("customers").filter(op.col("signup_year") >= 2020)
-
-# Train a model that predicts and explains.
-model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
-
-# Score this year's customers; get predictions and record-level reasoning.
-recent = ws.table("customers").filter(op.col("signup_year") == 2025)
-predictions = model.predict(recent)
-reasoning = model.explain(recent)
-
-print(reasoning.feature_names)
-print(reasoning.attributions.shape)  # (n_samples, n_features)
-```
-
-You can also upload local data when it does not live in a warehouse. `ws.register_csv(...)`, `ws.from_pandas(df)`, and `ws.read_parquet(...)` upload the bytes and register a source table you query the same way.
-
 ## Query across your sources
 
 A workspace can hold tables from more than one system at once, and `ws.sql(...)` joins across them. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
