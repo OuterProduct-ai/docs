@@ -9,7 +9,7 @@ description: "Fit a PatternTracker to distill a ReasoningModel's behavior on a p
 
 ## Fit a PatternTracker
 
-`op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `DataFrame`, and a `target_range` that defines which prediction band to analyze. The `DataFrame` is a query over a table in your workspace, built with `ws.table(...)` or `ws.sql(...)`.
+`op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `Dataset`, and a `target_range` that defines which prediction band to analyze.  `op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `DataFrame`, and a `target_range` that defines which prediction band to analyze. The `DataFrame` is a query over a table in your workspace, built with `ws.table(...)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
