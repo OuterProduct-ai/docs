@@ -63,7 +63,7 @@ for q in result.queries:
 
 ## Tuning the search
 
-By default `target_class` is `1`. Control the search budget with `n_trials` and `max_steps`:
+`target_class` defaults to `None`; pass an explicit class (e.g. `1`) to choose the outcome to flip rows into. Control the search budget with `n_trials` and `max_steps`:
 
 ```python
 result = model.scenario(
