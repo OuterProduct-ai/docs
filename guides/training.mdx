@@ -7,6 +7,8 @@ description: "Train models on structured data using op.reasoning.fit() for a Rea
 
 Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics. Our infrastructure complies and executes this configuration, then retrieves the best model the search found. 
 
+Every model trains on a `DataFrame`. You derive it from the tables in your workspace with `ws.table(...)` or `ws.sql(...)`, then pass that query to `fit` or `Trainer.configure`.
+
 <Tabs>
   <Tab title="ReasoningModel path">
     `op.reasoning.fit()` is the fastest path to a model that produces both predictions and feature-level explanations. The same model-family × hyperparameter × metric search runs.
@@ -15,9 +17,12 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
+    
+    train = ws.table("customers")
     
     model = op.reasoning.fit(
-        dataset, task=op.Binclass(label_column="churn")
+        train, task=op.Binclass(label_column="churn")
     ).wait()  # ReasoningModel
     ```
 
@@ -30,8 +35,11 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="churn"))
+    train = ws.table("customers")
+    
+    trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
     model = trainer.run().wait()  # Model
     ```
 
@@ -50,47 +58,61 @@ Training in OuterProduct is a server-side search over model families, hyperparam
 
 The result is a single trained model representing the best configuration found. `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
 
-## Building a Dataset for training
+## Building a DataFrame for training
 
-Use `op.LocalDataset.upload()` to connect datasets that live locally on your machine to our platform. This method it sends your file to OuterProduct via a presigned URL and returns a server-backed `Dataset` the trainer reads at training time.
+Register a source table in your workspace, then build the training set as a query over it. The `register_*` methods upload local files (or connect cloud tables) and return a `DataFrame` you can query.
 
 ```python
-# From a pandas DataFrame
-dataset = op.LocalDataset.from_pandas(df).upload()
+ws = op.Workspace()
 
-# From a CSV (loaded locally)
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+# From a pandas DataFrame.
+train = ws.register_pandas(df, table_name="customers")
 
-# From NumPy arrays
-dataset = op.LocalDataset.from_numpy(X, y, feature_names=["sqft", "bedrooms"]).upload()
+# From a CSV (uploaded from your machine).
+train = ws.register_csv("customers.csv", table_name="customers")
+
+# Shape the training set with relational ops or SQL.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+train = ws.sql("SELECT * FROM customers WHERE signup_year >= 2020")
+```
+
+For NumPy arrays, build a frame first, then register it:
+
+```python
+import numpy as np
+import pandas as pd
+
+df = pd.DataFrame(X, columns=["sqft", "bedrooms"])
+df["price"] = y
+train = ws.register_pandas(df, table_name="homes")
 ```
 
 <Note>
-  Each column carries a `Column` schema. The schema is inferred automatically by default; override it via the `columns=` argument when needed. The target column is always specified at fit time via the `task` config (e.g. `op.Binclass(label_column=...)`), not on the dataset itself.
+  The schema is inferred automatically from the source table. The target column is always specified at fit time via the `task` config (e.g. `op.Binclass(label_column=...)`), not on the `DataFrame` itself.
 </Note>
 
 ## Default training call
 
-The smallest valid call accepts a dataset and the target column name:
+The smallest valid call accepts a `DataFrame` and the target column name:
 
 ```python
 # ReasoningModel (predictions + explanations)
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()
 
 # Plain Model (predictions only)
-trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="churn"))
+trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
 model = trainer.run().wait()
 ```
 
 ## Choosing model types
 
-Pass `model_types` as a list of string identifiers resolved server-side. If you omit it, OuterProduct selects a curated set based on your dataset. All listed families are tuned together in the same search.
+Pass `model_types` as a list of string identifiers resolved server-side. If you omit it, OuterProduct selects a curated set based on your data. All listed families are tuned together in the same search.
 
 ```python
 trainer = op.Trainer.configure(
-    dataset,
+    train,
     task=op.Binclass(label_column="churn"),
     model_types=["tabm", "xgboost"],
 )
@@ -103,7 +125,7 @@ Pass a single `op.Metric()` or a list. With a single metric, training optimizes 
 
 ```python
 trainer = op.Trainer.configure(
-    dataset,
+    train,
     task=op.Binclass(label_column="churn"),
     metric=[op.Metric("auc"), op.Metric("accuracy")],
 )
@@ -129,7 +151,7 @@ For `op.reasoning.fit()`, control search depth via `n_hyperopt_steps`:
 
 ```python
 model = op.reasoning.fit(
-    dataset,
+    train,
     task=op.Binclass(label_column="churn"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=10,
@@ -163,14 +185,14 @@ teacher = op.model.Predictor(
 )
 
 # Plain distilled Model (label_column is optional when a teacher is set):
-trainer = op.Trainer.configure(dataset, teacher=teacher)
+trainer = op.Trainer.configure(train, teacher=teacher)
 model = trainer.run().wait()
 ```
 
 To get a distilled student that also explains the teacher's behavior, use `op.reasoning.fit()`:
 
 ```python
-reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
+reasoning_model = op.reasoning.fit(train, teacher=teacher).wait()
 ```
 
 <Warning>

@@ -4,37 +4,86 @@ sidebarTitle: "Overview"
 icon: "plug"
 ---
 
-Connectors are the bridge between your data and OuterProduct's training and inference pipelines. Each connector points OuterProduct at a data source, whether that's a file on your local machine or a table in a cloud data warehouse, and returns a `Dataset` object you pass directly to `op.reasoning.fit()` or other model operations.
+You register source tables into a `Workspace`, then query them into a `DataFrame` that you pass to `op.reasoning.fit()`, `op.Trainer.configure()`, or any other model operation. A source table can live in a cloud data warehouse or come from a local upload. The query engine embedded in the workspace is based on [Apache DataFusion](https://datafusion.apache.org/), so your queries run as real relational plans against your source tables wherever they live.
 
-OuterProduct supports four data sources: local files plus S3, Snowflake, and Databricks. For cloud data sources (S3, Snowflake, and Databricks), you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at training time using the stored credential.
+OuterProduct supports four data sources: local files plus S3, Snowflake, and Databricks. For cloud data sources (S3, Snowflake, and Databricks), you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
 
 <CardGroup cols={2}>
   <Card title="File Upload" icon="arrow-up-from-bracket" href="/guides/connectors/file-upload">
-    Upload a local CSV or Parquet file directly from Python. No console setup required.
+    Register a local CSV or Parquet file directly from Python. No console setup required.
   </Card>
 
   <Card title="Amazon S3" icon="aws" href="/guides/connectors/s3">
-    Reference files in your S3 bucket by stored credential. Your AWS keys never leave your account.
+    Register files in your S3 bucket by stored credential. Your AWS keys never leave your account.
   </Card>
 
   <Card title="Snowflake" icon="snowflake" href="/guides/connectors/snowflake">
-    Query Snowflake tables by stored credential using a PAT.
+    Register Snowflake tables by stored credential using a PAT.
   </Card>
 
   <Card title="Databricks" icon="database" href="/guides/connectors/databricks">
-    Read Databricks SQL warehouse or cluster tables by stored credential.
+    Register Databricks SQL warehouse or cluster tables by stored credential.
   </Card>
 </CardGroup>
+
+## The workspace model
+
+A `Workspace` is the single data entry point and a query session. You register each source table into it with a `register_*` method, give the table a name, then build a `DataFrame` over those tables. A `DataFrame` is the one input that ML and reasoning accept; you never pass raw files or frames to `fit`, `predict`, or `explain`.
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
+
+# Register a source table once. S3 here; Snowflake and Databricks work the same way.
+ws.register_s3("customers", "s3://acme-data/customers.parquet", connector="prod-aws")
+
+# Build a DataFrame as a query over that source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+```
+
+Each `register_*` call returns the table's `DataFrame`, so you can also query with `ws.table(name)` or `ws.sql(...)` later.
 
 ## Choosing a connector
 
 | Connector | Setup required | Data location |
 | --- | --- | --- |
-| `LocalDataset.upload()` | None | Local file or in-memory frame |
-| `S3Connector` | Console \+ AWS IAM role | Amazon S3 bucket |
-| `SnowflakeConnector` | Console \+ Snowflake PAT | Snowflake table |
-| `DatabricksConnector` | Console \+ Databricks PAT | Databricks SQL warehouse or cluster |
+| `ws.register_csv` / `register_parquet` / `register_pandas` | None | Local file or in-memory frame |
+| `ws.register_s3` | Console \+ AWS IAM role | Amazon S3 bucket |
+| `ws.register_snowflake` | Console \+ Snowflake PAT | Snowflake table |
+| `ws.register_databricks` | Console \+ Databricks PAT | Databricks SQL warehouse or cluster |
+
+## Query across your sources
+
+A workspace can hold tables from more than one system at once, and `ws.sql(...)` joins across them. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
+
+```python
+ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
+ws.register_snowflake("customers", "ANALYTICS.PUBLIC.CUSTOMERS", connector="prod-snowflake")
+ws.register_databricks("payments", "main.finance.payments", connector="prod-databricks")
+
+train = ws.sql("""
+    SELECT
+        c.customer_id,
+        c.signup_year,
+        c.plan,
+        COUNT(e.event_id) AS events_30d,
+        SUM(p.amount)     AS revenue_90d,
+        c.churned
+    FROM customers c
+    LEFT JOIN events e   ON e.customer_id = c.customer_id
+    LEFT JOIN payments p ON p.customer_id = c.customer_id
+    GROUP BY c.customer_id, c.signup_year, c.plan, c.churned
+""")
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churned")).wait()
+```
+
+The join runs server-side, and the credentials for each source stay in the Console.
 
 <Note>
-  Cloud connectors (S3, Snowflake, Databricks) require you to add a credential in the [OuterProduct Console](https://console.outerproduct.com) before using them from the SDK. Local uploads via `op.LocalDataset.upload()` are stateless and work immediately with no prior setup.
+  Cloud connectors (S3, Snowflake, Databricks) require you to add a credential in the [OuterProduct Console](https://console.outerproduct.com) before using them from the SDK. Local uploads via `ws.register_csv(...)` and the other local register methods work immediately with no prior setup.
 </Note>

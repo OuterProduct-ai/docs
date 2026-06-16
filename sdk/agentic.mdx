@@ -1,10 +1,10 @@
 ---
 title: "outerproduct.agentic"
 sidebarTitle: "Agentic"
-description: "API reference for the agentic documents module — convert unstructured documents into typed structured features ready for ReasoningModel training."
+description: "API reference for the agentic documents module: convert unstructured documents into typed structured features ready for ReasoningModel training."
 ---
 
-The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed structured features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
+The `outerproduct.agentic` module provides agent-driven pipelines that turn unstructured or semi-structured document sources into typed structured features. The resulting datasets are fully compatible with `op.reasoning.fit()` and `op.Trainer.configure()`, so you can move from raw documents to a trained `ReasoningModel` without any manual feature engineering.
 
 All public symbols for document tabularization live in the `outerproduct.agentic.documents` submodule.
 
@@ -107,7 +107,7 @@ Applies a `DocumentSchema` to a collection of documents and returns a `DocumentD
 </ParamField>
 
 <ResponseField name="DocumentDataset" type="DocumentDataset">
-  A typed structured dataset derived from the source documents. Each row represents one document; each column represents one answered `DocumentQuestion`. Extends `Dataset`, so it can be passed directly to `op.reasoning.fit()` or `Trainer.configure()`.
+  A typed structured dataset derived from the source documents. Each row represents one document; each column represents one answered `DocumentQuestion`. You pass it directly to `op.reasoning.fit()` or `op.Trainer.configure()`, the same as a workspace `DataFrame`.
 </ResponseField>
 
 ---
@@ -156,22 +156,22 @@ print(schema.questions)  # list[DocumentQuestion]
 
 ### `DocumentDataset`
 
-A typed tabular dataset produced by `tabularize()`. Extends the base `Dataset` class, so every method available on a `Dataset` (including passing it to `op.reasoning.fit()` or `Trainer.configure()`) works without any conversion step.
+A typed tabular dataset produced by `tabularize()`. You pass it directly to `op.reasoning.fit()` or `op.Trainer.configure()`, the same way you pass a `DataFrame` built from a workspace.
 
 ```python
 dataset = documents.tabularize(raw_documents, schema=schema)
 
-# Use it exactly like any other Dataset
+# Pass it straight to fit, like a workspace DataFrame
 model = op.reasoning.fit(
     dataset,
     task=op.Binclass(label_column="has_auto_renewal"),
 ).wait()
 ```
 
-<ResponseField name="DocumentDataset" type="Dataset (extended)">
-  Inherits all properties and methods of `Dataset`. Each row corresponds to one source document; each column corresponds to one `DocumentQuestion` in the schema used to create it.
+<ResponseField name="DocumentDataset" type="DocumentDataset">
+  A dataset handle over the extracted table. Each row corresponds to one source document; each column corresponds to one `DocumentQuestion` in the schema used to create it.
 </ResponseField>
 
 <Note>
-  `DocumentDataset` is a drop-in replacement for any `Dataset` argument across the OuterProduct SDK. You can pass it directly to `op.reasoning.fit()`, `Trainer.configure()`, or any other API that accepts a `Dataset`.
+  `tabularize()` returns a dataset you can hand straight to `op.reasoning.fit()` or `op.Trainer.configure()`. Training and reasoning then work the same as for a workspace `DataFrame`.
 </Note>

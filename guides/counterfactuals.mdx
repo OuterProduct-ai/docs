@@ -11,18 +11,21 @@ Counterfactual analysis answers a concrete question: _"What is the smallest chan
 
 ## Basic scenario
 
-Wrap your query rows in an `op.Dataset` and call `model.scenario()` with the desired `target_class`.
+Register your query rows in the workspace to get a `DataFrame`, then call `model.scenario()` with the desired `target_class`.
 
 ```python
 import outerproduct as op
 import pandas as pd
 
+ws = op.Workspace()
+
 queries_df = pd.DataFrame([
     {"age": 25, "income": 50000, "credit_score": 620},
     {"age": 40, "income": 85000, "credit_score": 710},
 ])
+queries = ws.register_pandas(queries_df, table_name="queries")
 
-result = model.scenario(op.LocalDataset.from_pandas(queries_df).upload(), target_class=1)
+result = model.scenario(queries, target_class=1)
 
 for q in result.queries:
     print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
@@ -46,7 +49,7 @@ for q in result.queries:
 <Accordion title="QueryResult">
   One per input row. Contains:
 
-  - `q.query_index`: position of this row in your input dataset.
+  - `q.query_index`: position of this row in your input `DataFrame`.
   - `q.baseline_prediction`: the model's original prediction for this row.
   - `q.already_at_desired_class`: `True` if the row is already classified as `target_class`; no counterfactual is needed.
   - `q.counterfactuals`: list of `Counterfactual` candidates found by the search.
@@ -65,7 +68,7 @@ By default `target_class` is `1`. Control the search budget with `n_trials` and 
 
 ```python
 result = model.scenario(
-    op.LocalDataset.from_pandas(queries_df).upload(),
+    queries,
     target_class=1,
     n_trials=200,   # number of attempts per query row
     max_steps=20,   # maximum number of edit steps per attempt
@@ -80,28 +83,26 @@ result = model.scenario(
 
 ```python
 import outerproduct as op
-import pandas as pd
 
 op.init()
+ws = op.Workspace()
 
 # Train a model
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
+train = ws.register_csv("loans.csv", table_name="loans")
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="approved")
+    train, task=op.Binclass(label_column="approved")
 ).wait()
 
 # Predict on new applicants
-X_new = pd.read_csv("new_applicants.csv")
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-predictions = model.predict(test_dataset)
+applicants = ws.register_csv("new_applicants.csv", table_name="new_applicants")
+predictions = model.predict(applicants)
 
-# Run counterfactuals only for denied applicants
-import numpy as np
-denied_mask = predictions < 0.5
-denied_df = X_new[denied_mask].reset_index(drop=True)
-denied_dataset = op.LocalDataset.from_pandas(denied_df).upload()
+# Run counterfactuals only for denied applicants. The denial test depends on
+# model output, not a source column, so select the rows with the prediction mask.
+denied_df = applicants.materialize().to_pandas()[predictions < 0.5].reset_index(drop=True)
+denied = ws.register_pandas(denied_df, table_name="denied_applicants")
 
-result = model.scenario(denied_dataset, target_class=1, n_trials=100, max_steps=10)
+result = model.scenario(denied, target_class=1, n_trials=100, max_steps=10)
 
 for q in result.queries:
     print(f"\nApplicant {q.query_index} (baseline={q.baseline_prediction:.2f}):")

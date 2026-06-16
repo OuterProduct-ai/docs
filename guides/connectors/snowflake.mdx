@@ -5,11 +5,11 @@ icon: "snowflake"
 description: "Query Snowflake tables from OuterProduct using a stored Programmatic Access Token."
 ---
 
-`SnowflakeConnector` lets OuterProduct read data from your Snowflake tables at training and inference time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK. The OuterProduct backend authenticates directly with Snowflake using the stored PAT.
+`ws.register_snowflake` lets OuterProduct read data from your Snowflake tables at query time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK. The OuterProduct backend authenticates directly with Snowflake using the stored PAT.
 
 ## Add a Snowflake credential in the Console
 
-Before using `SnowflakeConnector` from Python, create a credential in the OuterProduct Console and generate a Programmatic Access Token in Snowflake.
+Before registering a Snowflake table from Python, create a credential in the OuterProduct Console and generate a Programmatic Access Token in Snowflake.
 
 <Steps>
   <Step title="Open the New Connector wizard">
@@ -32,29 +32,28 @@ Before using `SnowflakeConnector` from Python, create a credential in the OuterP
 
 ## Use it from Python
 
-Once your credential is saved in the Console, instantiate `SnowflakeConnector` with your account details and credential name, then call `.table()` with the name of the Snowflake table you want to use.
+Once your credential is saved in the Console, register the Snowflake table as a source table with `ws.register_snowflake`. Pass a table name, the source locator in `DATABASE.SCHEMA.TABLE` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
 
-connector = op.SnowflakeConnector(
-    account="xy12345",
-    database="MYDB",
-    schema_name="PUBLIC",
-    warehouse="COMPUTE_WH",
-    connector_credential_name="prod-snowflake",
-)
-dataset = connector.table("CUSTOMERS")
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
 
-model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
+ws.register_snowflake("customers", "MYDB.PUBLIC.CUSTOMERS", connector="prod-snowflake")
+
+# Build the training set as a query over the registered source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>
-  Snowflake identifiers are case-insensitive by default but are stored in uppercase. Pass table and column names in uppercase (e.g. `"CUSTOMERS"`) to avoid resolution errors.
+  Snowflake identifiers are case-insensitive by default but are stored in uppercase. Pass the database, schema, and table in uppercase (e.g. `"MYDB.PUBLIC.CUSTOMERS"`) to avoid resolution errors.
 </Tip>
 
 <Warning>
-  The `connector_credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
+  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
 </Warning>
 
 ## Other connectors

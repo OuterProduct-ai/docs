@@ -5,11 +5,11 @@ icon: "layer-group"
 description: "Reference Databricks SQL warehouse or cluster tables from OuterProduct using a stored access token. No Databricks credentials pass through the SDK."
 ---
 
-`DatabricksConnector` lets OuterProduct read data from your Databricks SQL warehouse or cluster at training and inference time. You store your Databricks credential once in the [OuterProduct Console](https://console.outerproduct.com) using a personal access token and reference it by name in the SDK. No Databricks access tokens are ever passed through the SDK, as the OuterProduct backend authenticates directly with Databricks using the stored credential.
+`ws.register_databricks` lets OuterProduct read data from your Databricks SQL warehouse or cluster at query time. You store your Databricks credential once in the [OuterProduct Console](https://console.outerproduct.com) using a personal access token and reference it by name in the SDK. No Databricks access tokens are ever passed through the SDK, as the OuterProduct backend authenticates directly with Databricks using the stored credential.
 
 ## Add a Databricks credential in the Console
 
-Before using `DatabricksConnector` from Python, create a credential in the OuterProduct Console and generate a personal access token in Databricks.
+Before registering a Databricks table from Python, create a credential in the OuterProduct Console and generate a personal access token in Databricks.
 
 <Steps>
   <Step title="Open the New Connector wizard">
@@ -32,29 +32,28 @@ Before using `DatabricksConnector` from Python, create a credential in the Outer
 
 ## Use it from Python
 
-Once your credential is saved in the Console, instantiate `DatabricksConnector` with your workspace details and credential name, then call `.table()` with the name of the table you want to use.
+Once your credential is saved in the Console, register the Databricks table as a source table with `ws.register_databricks`. Pass a table name, the source locator in `catalog.schema.table` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
 
-connector = op.DatabricksConnector(
-    server_hostname="adb-123.azuredatabricks.net",
-    http_path="/sql/1.0/warehouses/abc",
-    schema_name="default",
-    catalog="main",
-    connector_credential_name="prod-databricks",
-)
-dataset = connector.table("customers")
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
 
-model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
+ws.register_databricks("customers", "main.default.customers", connector="prod-databricks")
+
+# Build the training set as a query over the registered source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>
-  Find your `server_hostname` and `http_path` in the Databricks SQL warehouse UI under **Connection details**. The `http_path` changes if you switch warehouses, so update your connector accordingly.
+  The server hostname and HTTP path are configured once in the Console connector, not in the SDK. Find them in the Databricks SQL warehouse UI under **Connection details**. The HTTP path changes if you switch warehouses, so update your connector accordingly.
 </Tip>
 
 <Warning>
-  The `connector_credential_name` argument must match exactly the name you gave your connector in the OuterProduct Console.
+  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
 </Warning>
 
 ## Other connectors

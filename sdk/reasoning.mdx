@@ -6,11 +6,14 @@ description: "API reference for op.reasoning.fit() and PatternTracker: train rea
 
 The `outerproduct.reasoning` module is the entry point for training reasoning models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
 
+Both entry points take a `DataFrame` as their data input. A `DataFrame` is a query derived from the tables in your workspace, built with `ws.table(name)` or `ws.sql(...)`. It is the one input that ML and reasoning accept.
+
 ## `op.reasoning.fit()`
 
 ```python
 op.reasoning.fit(
-    dataset: Dataset,
+    df: DataFrame,
+    *,
     task: Task | None = None,
     teacher: Model | Predictor | None = None,
     model_types: list[str] | None = None,
@@ -24,8 +27,8 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 
 ### Parameters
 
-<ParamField body="dataset" type="Dataset" required>
-  Training data wrapped in an `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or any other `LocalDataset` constructor, or reference a connector. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+<ParamField body="df" type="DataFrame" required>
+  Training data as a `DataFrame`. Build one from a registered table with `ws.table("customers")` or `ws.sql("SELECT ... FROM customers")`, optionally chaining `filter`, `select`, `join`, and other relational ops. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
 </ParamField>
 
 <ParamField body="task" type="Task | None">
@@ -92,21 +95,25 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 import outerproduct as op
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
 
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 model = op.reasoning.fit(
-    dataset,
+    train,
     task=op.Binclass(label_column="churn"),
 ).wait()  # ReasoningModel
 
-predictions = model.predict(op.LocalDataset.from_pandas(X_new).upload())
-reasoning   = model.explain(op.LocalDataset.from_pandas(X_new).upload())
+# Score new rows by querying the workspace.
+recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(recent)
+reasoning   = model.explain(recent)
 ```
 
 ```python With hyperopt and model selection
 model = op.reasoning.fit(
-    dataset,
+    train,
     task=op.Binclass(label_column="loan_default"),
     model_types=["tabm", "xgboost"],
     n_hyperopt_steps=50,
@@ -121,7 +128,7 @@ teacher = op.model.Predictor(
 
 # task (and label_column) is optional when a teacher is provided
 model = op.reasoning.fit(
-    dataset,
+    train,
     teacher=teacher,
 ).wait()
 ```
@@ -130,7 +137,7 @@ model = op.reasoning.fit(
 import time
 
 job = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 )
 
 while job.status() in ("pending", "running"):
@@ -152,22 +159,23 @@ model = job.wait()
 
 ```python
 op.reasoning.pattern_tracker.fit(
-    model: ReasoningModel,
-    dataset: Dataset,
+    reasoning_model: ReasoningModel,
+    df: DataFrame,
+    *,
     target_range: tuple[float | None, float | None],
 ) -> Job[PatternTracker]
 ```
 
-Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band into a compact, portable set of named filter patterns. The fitted `PatternTracker` can then be applied to any schema-compatible dataset to score rows against those patterns.
+Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band into a compact, portable set of named filter patterns. The fitted `PatternTracker` can then be applied to any schema-compatible `DataFrame` to score rows against those patterns.
 
 ### Parameters
 
-<ParamField body="model" type="ReasoningModel" required>
-  A trained `ReasoningModel` (produced by `op.reasoning.fit().wait()`). The tracker learns from this model's explanations over the supplied `dataset`.
+<ParamField body="reasoning_model" type="ReasoningModel" required>
+  A trained `ReasoningModel` (produced by `op.reasoning.fit().wait()`). The tracker learns from this model's explanations over the supplied `df`.
 </ParamField>
 
-<ParamField body="dataset" type="Dataset" required>
-  The dataset used to fit the tracker. The tracker analyses the model's predictions and attributions over these rows to extract recurring patterns within the `target_range`.
+<ParamField body="df" type="DataFrame" required>
+  The `DataFrame` used to fit the tracker. The tracker analyses the model's predictions and attributions over these rows to extract recurring patterns within the `target_range`.
 </ParamField>
 
 <ParamField body="target_range" type="tuple[float | None, float | None]" required>
@@ -190,16 +198,18 @@ Distils a `ReasoningModel`'s explanation behaviour on a specific prediction band
 import outerproduct as op
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
 
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
     model,
-    dataset,
+    train,
     target_range=(0.5, None),  # analyse rows where pred >= 0.5
 ).wait()
 
@@ -210,7 +220,7 @@ print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
 
 ## PatternTracker
 
-`PatternTracker` is produced by `op.reasoning.pattern_tracker.fit().wait()`. It holds a set of named filter patterns and can score any schema-compatible dataset against them.
+`PatternTracker` is produced by `op.reasoning.pattern_tracker.fit().wait()`. It holds a set of named filter patterns and can score any schema-compatible rows against them. The apply methods (`transform`, `distribution`, `partition`) take raw rows (a pandas DataFrame, NumPy array, or list of rows), not a workspace `DataFrame`.
 
 ### Attributes
 
@@ -227,13 +237,13 @@ print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
 #### `pt.transform()`
 
 ```python
-pt.transform(X: Dataset) -> pd.DataFrame
+pt.transform(X) -> pd.DataFrame
 ```
 
-Returns a boolean `DataFrame` of shape `(n_rows, n_patterns)`. Each column corresponds to one pattern (named by `FilterPattern.label`); a cell is `True` if that row matches that pattern. Rows can match multiple patterns simultaneously.
+Returns a boolean `pandas.DataFrame` of shape `(n_rows, n_patterns)`. Each column corresponds to one pattern (named by `FilterPattern.label`); a cell is `True` if that row matches that pattern. Rows can match multiple patterns simultaneously.
 
-<ParamField body="X" type="Dataset" required>
-  New data to score. Must be schema-compatible with the dataset used to fit the tracker.
+<ParamField body="X" type="pandas.DataFrame | np.ndarray | list" required>
+  New rows to score, as a pandas DataFrame, NumPy array, or list of rows. Must be schema-compatible with the data used to fit the tracker.
 </ParamField>
 
 <ResponseField name="returns" type="pd.DataFrame">
@@ -243,13 +253,13 @@ Returns a boolean `DataFrame` of shape `(n_rows, n_patterns)`. Each column corre
 #### `pt.distribution()`
 
 ```python
-pt.distribution(X: Dataset) -> pd.Series
+pt.distribution(X) -> pd.Series
 ```
 
 Returns match rates (the fraction of rows in `X` that match each pattern) as a `pd.Series` indexed by pattern label.
 
-<ParamField body="X" type="Dataset" required>
-  New data to score.
+<ParamField body="X" type="pandas.DataFrame | np.ndarray | list" required>
+  New rows to score, as a pandas DataFrame, NumPy array, or list of rows.
 </ParamField>
 
 <ResponseField name="returns" type="pd.Series">
@@ -259,13 +269,13 @@ Returns match rates (the fraction of rows in `X` that match each pattern) as a `
 #### `pt.partition()`
 
 ```python
-pt.partition(X: Dataset) -> dict[str, np.ndarray]
+pt.partition(X) -> dict[str, np.ndarray]
 ```
 
 Returns a dict mapping each pattern label to the integer row indices in `X` that match it. Useful when you want to extract the actual rows belonging to each pattern segment.
 
-<ParamField body="X" type="Dataset" required>
-  New data to score.
+<ParamField body="X" type="pandas.DataFrame | np.ndarray | list" required>
+  New rows to score, as a pandas DataFrame, NumPy array, or list of rows.
 </ParamField>
 
 <ResponseField name="returns" type="dict[str, np.ndarray]">
@@ -276,20 +286,21 @@ Returns a dict mapping each pattern label to the integer row indices in `X` that
 
 ```python
 import outerproduct as op
-import pandas as pd
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
 
 # --- Fit ---
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
     model,
-    dataset,
+    train,
     target_range=(0.5, None),
 ).wait()
 
@@ -298,8 +309,10 @@ print(f"{len(pt.patterns)} patterns; coverage={pt.coverage_fit:.0%}")
 for fp in pt.patterns:
     print(f"  {fp.label}: precision={fp.precision:.2f}, lift={fp.lift:.2f}")
 
-# --- Apply to new data ---
-X_new = op.LocalDataset.from_pandas(pd.read_csv("new_customers.csv")).upload()
+# --- Apply to new data (the apply methods take raw rows) ---
+import pandas as pd
+
+X_new = pd.read_csv("new_customers.csv")
 
 # Boolean match matrix
 match_matrix = pt.transform(X_new)
@@ -315,7 +328,7 @@ for label, indices in segments.items():
 ```
 
 <Warning>
-  `transform()`, `distribution()`, and `partition()` require `X` to be schema-compatible with the dataset used during `pattern_tracker.fit()`. Mismatched column names will raise a local validation error before any network call is made.
+  `transform()`, `distribution()`, and `partition()` require `X` to be schema-compatible with the data used to fit the tracker. Mismatched column names raise a validation error before scoring.
 </Warning>
 
 ---

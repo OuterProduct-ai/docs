@@ -2,29 +2,30 @@
 title: "Aggregate Model Prediction Patterns with PatternTracker"
 sidebarTitle: "Pattern Tracker"
 icon: "chart-line"
-description: "Fit a PatternTracker to distill a ReasoningModel's behavior on a prediction band into named, executable filter patterns you can apply to any new dataset."
+description: "Fit a PatternTracker to distill a ReasoningModel's behavior on a prediction band into named, executable filter patterns you can apply to any new data."
 ---
 
-`PatternTracker` identifies trends in the behaviors of a `ReasoningModel` over a given data population that can be monitored over time. A fitted pattern tracker produces a small set of named, executable conjunctive filter patterns that you can apply any schema-compatible dataset to measure how often each pattern fires.
+`PatternTracker` identifies trends in the behaviors of a `ReasoningModel` over a given data population that can be monitored over time. A fitted pattern tracker produces a small set of named, executable conjunctive filter patterns that you can apply to any schema-compatible data to measure how often each pattern fires.
 
 ## Fit a PatternTracker
 
-`op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `Dataset`, and a `target_range` that defines which prediction band to analyze. 
+`op.reasoning.pattern_tracker.fit()` takes a `ReasoningModel`, a `DataFrame`, and a `target_range` that defines which prediction band to analyze. The `DataFrame` is a query over a table in your workspace, built with `ws.table(...)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
 
 op.init(api_key="...")
+ws = op.Workspace()
 
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+train = ws.register_csv("customers.csv", table_name="customers")
 
 reasoning_model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()
 
 pt = op.reasoning.pattern_tracker.fit(
     reasoning_model,
-    dataset,
+    train,
     target_range=(0.5, None),  # analyze rows where pred >= 0.5
 ).wait()
 
@@ -70,7 +71,7 @@ groups = pt.partition(X_new)
 ```
 
 <Note>
-  `pt.transform()`, `pt.distribution()`, and `pt.partition()` all accept a raw DataFrame or NumPy array directly. They run locally, so unlike `model.predict()` they do not require an uploaded `Dataset`.
+  `pt.transform()`, `pt.distribution()`, and `pt.partition()` accept raw rows directly: a pandas DataFrame, a NumPy array, or a list of lists. Unlike `op.reasoning.pattern_tracker.fit()`, they do not take a workspace `DataFrame`, so you do not register a table to apply a fitted tracker. The columns must match the model's training feature schema.
 </Note>
 
 ## Jobs API
@@ -79,7 +80,7 @@ groups = pt.partition(X_new)
 
 ```python
 job = op.reasoning.pattern_tracker.fit(
-    model, dataset, target_range=(0.5, None),
+    model, train, target_range=(0.5, None),
 )
 
 job.status()    # "pending" | "running" | "completed" | "failed"
@@ -94,18 +95,19 @@ import outerproduct as op
 import pandas as pd
 
 op.init()
+ws = op.Workspace()
 
-# Build dataset and train
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
+# Register a source table and train
+train = ws.register_csv("loans.csv", table_name="loans")
 
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="approved")
+    train, task=op.Binclass(label_column="approved")
 ).wait()
 
 # Fit a PatternTracker on the likely-denied cohort
 pt = op.reasoning.pattern_tracker.fit(
     model,
-    dataset,
+    train,
     target_range=(None, 0.5),  # pred <= 0.5, denied applicants
 ).wait()
 

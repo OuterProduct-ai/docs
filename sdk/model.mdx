@@ -6,6 +6,8 @@ description: "API reference for Model, ReasoningModel, ScenarioResult, and Predi
 
 The `outerproduct.model` module contains the objects you work with after training. A plain `Model` handles predictions; a `ReasoningModel` extends it with feature-level explanations, counterfactual scenarios, and global driver analysis. Both are produced asynchronously: you call `.wait()` on a job handle and receive the model object once training completes.
 
+You score a model on a `DataFrame`: a query derived from the tables in your workspace, built with `ws.table(name)` or `ws.sql(...)`. The same `DataFrame` queries feed `predict`, `explain`, `predict_and_explain`, and `scenario`.
+
 ## Model
 
 `Model` is produced by `Trainer.configure().run().wait()`. Use it when you need predictions but do not require explanations.
@@ -13,13 +15,13 @@ The `outerproduct.model` module contains the objects you work with after trainin
 ### `model.predict()`
 
 ```python
-model.predict(dataset: Dataset) -> numpy.ndarray
+model.predict(df: DataFrame) -> numpy.ndarray
 ```
 
-Scores every row in `dataset` and returns a one-dimensional NumPy array of predictions. The SDK validates `dataset`'s column schema against the model's training-time schema before the request leaves your machine, so mismatched or missing features raise a descriptive local error rather than a server-side 400.
+Scores every row in `df` and returns a one-dimensional NumPy array of predictions. The SDK validates the `DataFrame`'s column schema against the model's training-time schema before the request leaves your machine, so mismatched or missing features raise a descriptive local error rather than a server-side 400.
 
-<ParamField body="dataset" type="Dataset" required>
-  An `op.Dataset`. Build one with `op.LocalDataset.from_pandas(df).upload()`, `op.LocalDataset.from_csv(...).upload()`, or `op.LocalDataset.from_numpy(...).upload()`, or reference a connector. Column names must match the features seen during training.
+<ParamField body="df" type="DataFrame" required>
+  A `DataFrame` built from a registered table, for example `ws.table("customers")` or `ws.sql("SELECT ... FROM customers")`. Column names must match the features seen during training.
 </ParamField>
 
 <ResponseField name="returns" type="numpy.ndarray">
@@ -30,9 +32,10 @@ Scores every row in `dataset` and returns a one-dimensional NumPy array of predi
 import outerproduct as op
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
 
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-predictions = model.predict(test_dataset)  # numpy.ndarray, shape (n_samples,)
+score = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(score)  # numpy.ndarray, shape (n_samples,)
 
 print(predictions[:5])
 # [0.82, 0.14, 0.67, 0.91, 0.33]
@@ -50,19 +53,23 @@ print(predictions[:5])
 
 ### `model.predict()`
 
-Identical to [`Model.predict()`](#modelpredict) above: accepts a `Dataset` and returns a `numpy.ndarray` of shape `(n_samples,)`.
+Identical to [`Model.predict()`](#modelpredict) above: accepts a `DataFrame` and returns a `numpy.ndarray` of shape `(n_samples,)`.
 
 ```python
 import outerproduct as op
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
+
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()
 
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-predictions = model.predict(test_dataset)
+score = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(score)
 ```
 
 ---
@@ -70,13 +77,13 @@ predictions = model.predict(test_dataset)
 ### `model.explain()`
 
 ```python
-model.explain(dataset: Dataset) -> Reasoning
+model.explain(df: DataFrame) -> Reasoning
 ```
 
-Returns per-sample feature attributions for every row in `dataset`. Each attribution value reflects how much that feature pushed the prediction up or down relative to the model's baseline.
+Returns per-sample feature attributions for every row in `df`. Each attribution value reflects how much that feature pushed the prediction up or down relative to the model's baseline.
 
-<ParamField body="dataset" type="Dataset" required>
-  Inference rows wrapped in an `op.Dataset`. Column schema must match the training data.
+<ParamField body="df" type="DataFrame" required>
+  Inference rows as a `DataFrame`, for example `ws.table("customers")`. Column schema must match the training data.
 </ParamField>
 
 <ResponseField name="returns" type="Reasoning">
@@ -98,8 +105,8 @@ Returns per-sample feature attributions for every row in `dataset`. Each attribu
 </ResponseField>
 
 ```python
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-reasoning = model.explain(test_dataset)
+score = ws.table("customers").filter(op.col("signup_year") == 2025)
+reasoning = model.explain(score)
 
 print(reasoning.feature_names)
 # ["age", "income", "credit_score"]
@@ -118,13 +125,13 @@ if reasoning.rules:
 ### `model.predict_and_explain()`
 
 ```python
-model.predict_and_explain(dataset: Dataset) -> tuple[numpy.ndarray, Reasoning]
+model.predict_and_explain(df: DataFrame) -> tuple[numpy.ndarray, Reasoning]
 ```
 
 Returns predictions and local explanations in a single API round-trip. Prefer this over calling `predict()` and `explain()` separately when you need both.
 
-<ParamField body="dataset" type="Dataset" required>
-  Inference rows wrapped in an `op.Dataset`.
+<ParamField body="df" type="DataFrame" required>
+  Inference rows as a `DataFrame`.
 </ParamField>
 
 <ResponseField name="returns" type="tuple[numpy.ndarray, Reasoning]">
@@ -132,8 +139,8 @@ Returns predictions and local explanations in a single API round-trip. Prefer th
 </ResponseField>
 
 ```python
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-predictions, reasoning = model.predict_and_explain(test_dataset)
+score = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions, reasoning = model.predict_and_explain(score)
 
 for i, (pred, attrs) in enumerate(zip(predictions, reasoning.attributions)):
     top_feature = reasoning.feature_names[attrs.argmax()]
@@ -175,29 +182,30 @@ for name, importance in zip(reasoning.feature_names, reasoning.attributions):
 
 ```python
 model.scenario(
-    dataset: Dataset,
-    target_class: int = 1,
-    n_trials: int | None = None,
-    max_steps: int | None = None,
+    df: DataFrame,
+    *,
+    target_class: int | str | None = None,
+    n_trials: int = 500,
+    max_steps: int = 30,
 ) -> ScenarioResult
 ```
 
-Runs a counterfactual search for each row in `dataset`, finding the minimal feature edits that would shift the prediction to `target_class`. Each row is treated independently; results are returned together in a `ScenarioResult`.
+Runs a counterfactual search for each row in `df`, finding the minimal feature edits that would shift the prediction to `target_class`. Each row is treated independently; results are returned together in a `ScenarioResult`.
 
-<ParamField body="dataset" type="Dataset" required>
-  Query rows to analyse. Each row receives its own set of counterfactual candidates.
+<ParamField body="df" type="DataFrame" required>
+  Query rows to analyse, as a `DataFrame`. Each row receives its own set of counterfactual candidates.
 </ParamField>
 
-<ParamField body="target_class" default="1" type="int">
-  The class label you want the counterfactual to reach. Defaults to `1` (the positive class in binary classification).
+<ParamField body="target_class" type="int | str | None">
+  The class you want each counterfactual to reach (for binary classification, the class to flip rows into). Defaults to `None`.
 </ParamField>
 
-<ParamField body="n_trials" type="int | None">
-  Number of independent search attempts per query row. More trials improve the chance of finding a shorter path but increase latency. Leave as `None` to use the OuterProduct default.
+<ParamField body="n_trials" default="500" type="int">
+  Number of independent search attempts per query row. More trials improve the chance of finding a shorter path but increase latency. Defaults to `500`.
 </ParamField>
 
-<ParamField body="max_steps" type="int | None">
-  Maximum number of feature edits allowed per attempt. Constraining this produces more actionable (smaller) counterfactuals. Leave as `None` to use the OuterProduct default.
+<ParamField body="max_steps" default="30" type="int">
+  Maximum number of feature edits allowed per attempt. Constraining this produces more actionable (smaller) counterfactuals. Defaults to `30`.
 </ParamField>
 
 <ResponseField name="returns" type="ScenarioResult">
@@ -208,14 +216,17 @@ Runs a counterfactual search for each row in `dataset`, finding the minimal feat
 
 ```python Basic scenario
 import outerproduct as op
-import pandas as pd
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
 
-queries = op.LocalDataset.from_pandas(pd.DataFrame([
-    {"age": 25, "income": 50000, "credit_score": 620},
-    {"age": 40, "income": 85000, "credit_score": 710},
-])).upload()
+queries = ws.register_pylist(
+    [
+        {"age": 25, "income": 50000, "credit_score": 620},
+        {"age": 40, "income": 85000, "credit_score": 710},
+    ],
+    table_name="queries",
+)
 
 result = model.scenario(queries, target_class=1)
 
@@ -248,7 +259,7 @@ result = model.scenario(
 `ScenarioResult` is returned by `model.scenario()`. It groups all counterfactual results for a batch of query rows.
 
 <ResponseField name="queries" type="list[QueryResult]">
-  One `QueryResult` per row in the input `dataset`, in the same order as the input rows.
+  One `QueryResult` per row in the input `DataFrame`, in the same order as the input rows.
 </ResponseField>
 
 ---
@@ -258,7 +269,7 @@ result = model.scenario(
 A single row's counterfactual analysis.
 
 <ResponseField name="query_index" type="int">
-  Zero-based index of this row within the input dataset, matching the original row order.
+  Zero-based index of this row within the input `DataFrame`, matching the original row order.
 </ResponseField>
 
 <ResponseField name="baseline_prediction" type="float">
@@ -333,6 +344,10 @@ op.model.Predictor(url: str, headers: dict | None = None)
 import outerproduct as op
 
 op.init(api_key="your-api-key")
+ws = op.Workspace()
+
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 teacher = op.model.Predictor(
     url="https://my-scoring-service.example.com/predict",
@@ -341,12 +356,13 @@ teacher = op.model.Predictor(
 
 # Distil a ReasoningModel that learns from the teacher's predictions.
 model = op.reasoning.fit(
-    dataset,
+    train,
     teacher=teacher,   # task can be omitted when a teacher is provided
 ).wait()
 
 # The distilled model now supports explain(), get_global_drivers(), and scenario().
-reasoning = model.explain(op.LocalDataset.from_pandas(X_new).upload())
+score = ws.table("customers").filter(op.col("signup_year") == 2025)
+reasoning = model.explain(score)
 ```
 
 <Note>

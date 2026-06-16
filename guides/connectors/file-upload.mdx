@@ -1,40 +1,60 @@
 ---
-title: "Upload Local Files with LocalDataset"
+title: "Upload Local Files to a Workspace"
 sidebarTitle: "File Upload"
 icon: "file-arrow-up"
-description: "Upload a local CSV or Parquet file to OuterProduct via a presigned URL with no console setup. Get a Dataset back and pass it straight to training."
+description: "Register a local CSV or Parquet file (or an in-memory frame) in your workspace with no console setup. Query it into a DataFrame and pass it straight to training."
 ---
 
-`op.LocalDataset` is the fastest way to get local data into OuterProduct. Build one from a CSV or Parquet file (or an in-memory frame), then call `.upload()` to stage it through a presigned URL and get back a `Dataset` you can pass directly to training or inference. It is completely stateless. There is no credential to configure in the Console.
+The `register_*` methods are the fastest way to get local data into OuterProduct. Register a CSV or Parquet file, or an in-memory frame, into your `Workspace` to upload the bytes and create a source table you can query. There is no credential to configure in the Console.
 
 ## Supported formats
 
-Build a `LocalDataset` from a local **CSV** or **Parquet** file (`from_csv` / `from_parquet`), or directly from an in-memory frame or array — **pandas** (`from_pandas`), **polars** (`from_polars`), or **numpy** (`from_numpy`). Whatever the source, `.upload()` serializes the rows to Parquet and stages them through the presigned URL.
+Register a local **CSV** or **Parquet** file (`register_csv` / `register_parquet`), or an in-memory frame: **pandas** (`register_pandas`), **polars** (`register_polars`), or Arrow (`register_arrow`). Each method uploads the rows and registers a source table, then returns the table's `DataFrame`.
 
-## Upload a file and train a model
+There is no `register_numpy`. To register a numpy array, build a frame first:
+
+```python
+import numpy as np
+import pandas as pd
+import outerproduct as op
+
+op.init()
+ws = op.Workspace()
+
+X = np.random.rand(1000, 5)
+y = (X[:, 0] > 0.5).astype(int)
+df = pd.DataFrame(X, columns=["f0", "f1", "f2", "f3", "f4"])
+df["label"] = y
+
+ws.register_pandas(df, table_name="synthetic")
+```
+
+## Register a file and train a model
 
 <Steps>
-  <Step title="Build a LocalDataset">
-    Create a `LocalDataset` from your file with `from_csv` (or `from_parquet`).
+  <Step title="Create a workspace">
+    Initialize the SDK and create a `Workspace`.
 
     ```python
     import outerproduct as op
-    
-    local = op.LocalDataset.from_csv("customers.csv")
+
+    op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+    ws = op.Workspace()
     ```
   </Step>
-  <Step title="Upload it">
-    Call `.upload()` to stage the rows. OuterProduct uploads them via a presigned URL and returns a `Dataset`.
+  <Step title="Register your file">
+    Call `ws.register_csv` (or `register_parquet`) with the path and a `table_name`. OuterProduct uploads the rows and registers a source table.
 
     ```python
-    dataset = local.upload()
+    ws.register_csv("customers.csv", table_name="customers")
     ```
   </Step>
-  <Step title="Train a model">
-    Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
+  <Step title="Query and train">
+    Build a `DataFrame` over the registered table with `ws.table(name)`, then pass it to `op.reasoning.fit()` with your label column and task type. Call `.wait()` to block until training completes.
 
     ```python
-    model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
+    train = ws.table("customers")
+    model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
     ```
   </Step>
 </Steps>
@@ -44,9 +64,13 @@ Build a `LocalDataset` from a local **CSV** or **Parquet** file (`from_csv` / `f
 ```python
 import outerproduct as op
 
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+op.init()
+ws = op.Workspace()
 
-model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
 
 <Tip>

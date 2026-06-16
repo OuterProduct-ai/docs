@@ -4,7 +4,7 @@ sidebarTitle: "init()"
 description: "Initialize the OuterProduct SDK with your API key. Must be called before any other SDK operation. Reads from environment or accepts a key directly."
 ---
 
-The `outerproduct.init()` function is the entry point for every OuterProduct session. It authenticates the SDK against the OuterProduct API and must be called before you create datasets, configure trainers, or invoke any other SDK operation. You can supply your API key either through an environment variable (recommended for production) or by passing it directly in code.
+The `outerproduct.init()` function is the entry point for every OuterProduct session. It authenticates the SDK against the OuterProduct API and must be called before you create a `Workspace`, register source tables, or invoke any other SDK operation. You can supply your API key either through an environment variable (recommended for production) or by passing it directly in code.
 
 ## Function Signature
 
@@ -69,16 +69,29 @@ No network round-trip is made during `init()` itself; the key is sent with the f
 
 ## Next steps
 
-Once initialized, you are ready to load data and start training:
+Once initialized, create a `Workspace`, register a source table, and build the `DataFrame` you train on:
+
+```python
+import outerproduct as op
+
+op.init()
+ws = op.Workspace()
+
+# Register a source table, then query it into a DataFrame.
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+```
 
 <Steps>
-  <Step title="Load your data">
-    Create a [`Dataset`](/sdk/dataset) from a CSV, DataFrame, Parquet file, or NumPy array.
+  <Step title="Create a workspace">
+    Construct a [`Workspace`](/sdk/dataset) with `op.Workspace()`. It is the single data entry point and a query session over your source tables.
   </Step>
-  <Step title="Configure a Trainer">
-    Use [`Trainer.configure()`](/sdk/trainer) to select your target column, model families, and optimization metric.
+  <Step title="Register your data">
+    Register a source table from a cloud [connector](/sdk/connectors) or a local file, then build a [`DataFrame`](/sdk/dataset) over it with `ws.table(name)` or `ws.sql(...)`.
   </Step>
-  <Step title="Run training">
-    Call `.run().wait()` to submit the job and block until the trained model is returned.
+  <Step title="Train a model">
+    Pass the `DataFrame` to [`op.reasoning.fit()`](/sdk/reasoning) or [`Trainer.configure()`](/sdk/trainer), then call `.wait()` to block until the trained model is returned.
   </Step>
 </Steps>

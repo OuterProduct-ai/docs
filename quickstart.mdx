@@ -5,9 +5,53 @@ icon: "rocket"
 description: "Install the OuterProduct SDK, connect your data, train a ReasoningModel, and generate predictions with feature-level reasoning in minutes."
 ---
 
-This guide walks you through installing OuterProduct, authenticating, and training your first model, taking raw CSV to feature-level explanations in under ten lines of Python. Before you begin, make sure you have Python 3.12 or newer and an OuterProduct API key from [console.outerproduct.com](https://console.outerproduct.com).
+This guide walks you through installing OuterProduct, authenticating, and training your first model, taking a raw CSV to feature-level explanations in under ten lines of Python. Before you begin, make sure you have Python 3.12 or newer and an OuterProduct API key from [console.outerproduct.com](https://console.outerproduct.com).
 
 <Steps>
+  <Step title="Install the SDK">
+    Install the OuterProduct SDK from PyPI.
+
+    ```bash
+    pip install outerproduct
+    ```
+  </Step>
+  <Step title="Initialize and open a workspace">
+    Call `op.init()` once to authenticate, then open a `Workspace`. The workspace is your single data entry point and a query session over the tables you register.
+
+    ```python
+    import outerproduct as op
+
+    op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+    ws = op.Workspace()
+    ```
+  </Step>
+  <Step title="Register a source table">
+    Register your CSV as a source table. `register_csv` uploads the bytes, names the table, and returns a `DataFrame` you can query.
+
+    ```python
+    ws.register_csv("customers.csv", table_name="customers")
+    ```
+  </Step>
+  <Step title="Build a training set and fit">
+    Build the training set as a query over the table, then train a `ReasoningModel`. Every model trains and scores on a `DataFrame`.
+
+    ```python
+    train = ws.table("customers")
+    model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+    ```
+  </Step>
+  <Step title="Score with predictions and reasoning">
+    Build the rows you want to score as a query, then get predictions and feature-level reasoning. Querying for the scoring rows keeps them built the same way as training, with no second upload.
+
+    ```python
+    recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+    predictions = model.predict(recent)
+    reasoning = model.explain(recent)
+
+    print(reasoning.feature_names)
+    print(reasoning.attributions.shape)  # (n_samples, n_features)
+    ```
+  </Step>
 </Steps>
 
 ## Putting it all together
@@ -17,21 +61,27 @@ Here is the complete working example:
 ```python
 import outerproduct as op
 
-op.init()  # reads OUTERPRODUCT_API_KEY from environment
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
 
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
-model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
+# Register a CSV as a source table you can query.
+ws.register_csv("customers.csv", table_name="customers")
 
-test_dataset = op.LocalDataset.from_csv("customers_test.csv").upload()
-predictions = model.predict(test_dataset)
-reasoning = model.explain(test_dataset)
+# Build the training set as a query, then fit a ReasoningModel.
+train = ws.table("customers")
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+
+# Score recent customers with a query; get predictions and reasoning.
+recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(recent)
+reasoning = model.explain(recent)
 
 print(reasoning.feature_names)
 print(reasoning.attributions.shape)  # (n_samples, n_features)
 ```
 
 <Tip>
-  Use `op.Regression(label_column=...)` for continuous targets or `op.Multiclass(label_column=...)` for multi-class classification. The `label_column` must match a column name in your CSV exactly.
+  Use `op.Regression(label_column=...)` for continuous targets or `op.Multiclass(label_column=...)` for multi-class classification. The `label_column` must match a column name in your training `DataFrame` exactly.
 </Tip>
 
 ## What's next

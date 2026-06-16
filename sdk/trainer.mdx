@@ -6,6 +6,8 @@ description: "Train models on structured data with outerproduct.Trainer. Configu
 
 `outerproduct.Trainer` is the low-level training interface that gives you full control over the model-selection and hyperparameter search that runs on the OuterProduct platform. It coordinates a parallel search over model families, hyperparameter spaces, and metric weightings, all server-side. The result is a single trained `Model` representing the best configuration found. If you also need feature-level explanations, use `op.reasoning.fit()` instead, which runs the same search and returns a `ReasoningModel`.
 
+You train on a `DataFrame`: a query derived from the tables in your workspace, built with `ws.table(name)` or `ws.sql(...)`.
+
 ---
 
 ## `Trainer.configure()`
@@ -14,7 +16,8 @@ Class method that creates a configured `Trainer` ready to launch a training job.
 
 ```python
 op.Trainer.configure(
-    dataset,
+    df,
+    *,
     task=None,
     model_types=None,
     metric=None,
@@ -24,8 +27,8 @@ op.Trainer.configure(
 
 ### Parameters
 
-<ParamField body="dataset" type="Dataset" required>
-  The training data. Pass an [`op.Dataset`](/sdk/dataset) built from any supported source (CSV, DataFrame, Parquet, or NumPy).
+<ParamField body="df" type="DataFrame" required>
+  The training data as a `DataFrame`. Build one from a registered table with `ws.table("customers")` or `ws.sql("SELECT ... FROM customers")`, optionally chaining `filter`, `select`, `join`, and other relational ops.
 </ParamField>
 
 <ParamField body="task" type="Task | None">
@@ -67,10 +70,13 @@ op.Trainer.configure(
 import outerproduct as op
 
 op.init()
-dataset = op.LocalDataset.from_csv("customers.csv").upload()
+ws = op.Workspace()
+
+ws.register_csv("customers.csv", table_name="customers")
+train = ws.table("customers")
 
 trainer = op.Trainer.configure(
-    dataset,
+    train,
     task=op.Binclass(label_column="churn"),
     model_types=["tabm", "xgboost"],
     metric=op.Metric("auc"),
@@ -194,10 +200,12 @@ result = job.results()
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    ws.register_csv("loans.csv", table_name="loans")
+    train = ws.table("loans")
     
-    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
+    trainer = op.Trainer.configure(train, task=op.Binclass(label_column="approved"))
     model = trainer.run().wait()
     
     print(model)
@@ -208,11 +216,13 @@ result = job.results()
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    ws.register_csv("loans.csv", table_name="loans")
+    train = ws.table("loans")
     
     trainer = op.Trainer.configure(
-        dataset,
+        train,
         task=op.Binclass(label_column="approved"),
         model_types=["tabm", "xgboost"],
         metric=op.Metric("auc"),
@@ -227,14 +237,16 @@ result = job.results()
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    dataset = op.LocalDataset.from_csv("loans.csv").upload()
+    ws.register_csv("loans.csv", table_name="loans")
+    train = ws.table("loans")
     
     # Pass multiple metrics to trigger a Pareto sweep.
     # Training explores all weightings between AUC and accuracy,
     # then returns the best model found across the sweep.
     trainer = op.Trainer.configure(
-        dataset,
+        train,
         task=op.Binclass(label_column="approved"),
         model_types=["tabm", "xgboost"],
         metric=[op.Metric("auc"), op.Metric("accuracy")],
@@ -253,9 +265,11 @@ result = job.results()
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    dataset = op.LocalDataset.from_csv("loans.csv").upload()
-    trainer = op.Trainer.configure(dataset, task=op.Binclass(label_column="approved"))
+    ws.register_csv("loans.csv", table_name="loans")
+    train = ws.table("loans")
+    trainer = op.Trainer.configure(train, task=op.Binclass(label_column="approved"))
     
     # Submit and continue doing other work
     job = trainer.run(strategy="optuna", n_trials=20)
@@ -276,8 +290,10 @@ result = job.results()
     import outerproduct as op
     
     op.init()
+    ws = op.Workspace()
     
-    dataset = op.LocalDataset.from_csv("customers.csv").upload()
+    ws.register_csv("customers.csv", table_name="customers")
+    train = ws.table("customers")
     
     # Wrap an external model as the teacher
     teacher = op.model.Predictor(
@@ -286,7 +302,7 @@ result = job.results()
     )
     
     # task is optional when a teacher is set
-    trainer = op.Trainer.configure(dataset, teacher=teacher)
+    trainer = op.Trainer.configure(train, teacher=teacher)
     model = trainer.run().wait()
     ```
   </Tab>

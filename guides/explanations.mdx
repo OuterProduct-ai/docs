@@ -15,21 +15,25 @@ Explanations are only available on `ReasoningModel`, produced by `op.reasoning.f
 import outerproduct as op
 
 op.init()
+ws = op.Workspace()
 
+train = ws.register_csv("customers.csv", table_name="customers")
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="churn")
+    train, task=op.Binclass(label_column="churn")
 ).wait()  # ReasoningModel
 ```
+
+Every reasoning method takes a `DataFrame`, a query derived from the tables in your workspace. Build it with `ws.table(...)` or `ws.sql(...)` and hand it to `fit`, `predict`, or `explain`.
 
 See the [Training guide](/guides/training) for the full set of configuration options.
 
 ## Local explanations
 
-`model.explain(dataset)` returns a `Reasoning` object with per-sample feature attributions for every row in your dataset.
+`model.explain(df)` returns a `Reasoning` object with per-sample feature attributions for every row in the `DataFrame`.
 
 ```python
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-reasoning = model.explain(test_dataset)
+scores = ws.table("customers").filter(op.col("signup_year") == 2025)
+reasoning = model.explain(scores)
 ```
 
 The `Reasoning` object contains:
@@ -55,8 +59,8 @@ reasoning.rules            # ["age > 30 AND income > 60000 → positive", ...] o
 When you need both prediction scores and attributions, use `predict_and_explain()`. It runs a single round-trip and guarantees the predictions and attributions correspond to the same forward pass.
 
 ```python
-test_dataset = op.LocalDataset.from_pandas(X_new).upload()
-predictions, reasoning = model.predict_and_explain(test_dataset)
+scores = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions, reasoning = model.predict_and_explain(scores)
 
 # predictions: numpy.ndarray of shape (n_samples,)
 # reasoning:   Reasoning object with .feature_names, .attributions, .rules
@@ -85,17 +89,16 @@ Use global drivers to understand which features your model relies on most overal
 import outerproduct as op
 
 op.init()
+ws = op.Workspace()
 
 # Train
-dataset = op.LocalDataset.from_csv("loans.csv").upload()
+train = ws.register_csv("loans.csv", table_name="loans")
 model = op.reasoning.fit(
-    dataset, task=op.Binclass(label_column="approved")
+    train, task=op.Binclass(label_column="approved")
 ).wait()
 
-# Inference dataset
-import pandas as pd
-X = pd.read_csv("new_applicants.csv")
-test_dataset = op.LocalDataset.from_pandas(X).upload()
+# Inference rows: register the applicants and query them
+scores = ws.register_csv("new_applicants.csv", table_name="new_applicants")
 
 # Global importance, inspect once after training
 global_reasoning = model.get_global_drivers()
@@ -103,7 +106,7 @@ for name, score in zip(global_reasoning.feature_names, global_reasoning.attribut
     print(f"{name}: {score:.4f}")
 
 # Local explanations + predictions in one call
-predictions, reasoning = model.predict_and_explain(test_dataset)
+predictions, reasoning = model.predict_and_explain(scores)
 
 # Print the top driving feature for each sample
 import numpy as np
