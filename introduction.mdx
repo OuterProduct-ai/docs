@@ -1,32 +1,73 @@
 ---
-title: "AI Reasoning for Structured Data"
+title: "Machine learning on your enterprise data"
 sidebarTitle: "Introduction"
 icon: "book-open"
-description: "OuterProduct offers a Python SDK and hosted API for AI reasoning on structured data."
+description: "OuterProduct runs machine learning on queries over your enterprise data. Register your source tables, express the training set as an Apache DataFusion query, and train models that both predict and explain."
 ---
 
-## Key capabilities
+## What OuterProduct does
 
-OuterProduct centers on a handful of composable building blocks:
+OuterProduct trains models on your structured data and returns both predictions and the reasoning behind each one. The data stays where it lives: in S3, Snowflake, Databricks, or tables you upload. You describe the rows you want to train or score as a query, and OuterProduct runs the model on the result of that query.
 
-- **ReasoningModel**: trains a model that produces both predictions _and_ feature-level reasoning for each prediction.
-- **Trainer**: trains a model optimized across one or multiple metrics of interest.
-- **PatternTracker**: aggregates local reasoning across a population to surface recurring patterns and segment-level drivers.
-- **Counterfactuals**: generate realistic, minimal interventions that would flip the predicted label.
-- **Connectors**: load data directly from S3, Snowflake, or Databricks, or upload local data.
-- **MCP server**: use OuterProduct from Claude, Cursor, and any other Model Context Protocol client without writing Python directly.
+The query layer is [Apache DataFusion](https://datafusion.apache.org/). A `Workspace` is a DataFusion session. You register your source tables once, then build a `DataFrame` over them with ordinary relational operations: `filter`, `select`, `join`, `aggregate`. Nothing runs locally. The `DataFrame` is a plan, and the plan is what you pass to `fit`, `predict`, or `explain`.
 
-## How it fits your workflow
+The plan travels to OuterProduct as a portable Substrait document, and the same DataFusion engine executes it server-side against your data. What you write in your script is what runs. There is no separate export, no ETL hop, and no copy of your data to keep in sync.
 
-OuterProduct sits between your raw structured data and the decisions you want to make with it. You point it at a dataset and a label column, call `fit()`, and get back a model object. From there you call `predict()` for scores and `explain()` for the reasoning behind them. Both return structured, typed results you can log, visualize, or pass downstream.
+## The dataset is a query
 
-Our computations run asynchronously on OuterProduct's hosted infrastructure. The `.wait()` helper blocks your script until the model is ready, or you can poll with `job.status()` and integrate the job into your own orchestration.
+The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your warehouse actually stores, and it changes as new data lands. So OuterProduct treats the dataset as a query, not a copied file.
+
+You point a `Workspace` at your source tables, narrow to the population you care about, and pass that query to `fit`. Re-run the script and the query re-executes against current data. Because you score with the same query you trained on, the training set and the inference set are built the same way.
+
+## A short example
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+
+ws = op.Workspace()
+
+# Register a source table once. S3 here; Snowflake and Databricks work the same way.
+ws.register_s3("customers", "s3://acme-data/customers.parquet", connector="prod-aws")
+
+# Build the training set as a query over that source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+# Train a model that predicts and explains.
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+
+# Score this year's customers; get predictions and feature-level reasoning.
+recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(recent)
+reasoning = model.explain(recent)
+
+print(reasoning.feature_names)
+print(reasoning.attributions.shape)  # (n_samples, n_features)
+```
+
+You can also upload local data when it does not live in a warehouse. `ws.register_csv(...)`, `ws.from_pandas(df)`, and `ws.read_parquet(...)` upload the bytes and register a source table you query the same way.
+
+## Building blocks
+
+OuterProduct is a handful of composable pieces:
+
+- **Workspace**: your DataFusion session and single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
+- **ReasoningModel**: trains a model that returns predictions and feature-level reasoning for each one. Produced by `op.reasoning.fit()`.
+- **Trainer**: trains a model optimized across one or more metrics, without the reasoning layer.
+- **PatternTracker**: aggregates per-row reasoning across a population into a small set of named, executable patterns.
+- **Counterfactuals**: generate minimal, realistic changes that would flip a prediction.
+- **MCP server**: use OuterProduct from Claude, Cursor, and other Model Context Protocol clients without writing Python.
+
+## How jobs run
+
+Training and pattern fitting run on OuterProduct's hosted infrastructure, so `fit()` returns a job handle right away. Call `.wait()` to block until the model is ready, or poll `job.status()` and fold the job into your own orchestration.
 
 ## Start here
 
 <CardGroup cols={2}>
   <Card title="Quickstart" icon="bolt" href="/quickstart">
-    Train your first model and generate explanations.
+    Register a table, train a ReasoningModel, and generate explanations.
   </Card>
 
   <Card title="Authentication" icon="key" href="/authentication">
