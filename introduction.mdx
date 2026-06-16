@@ -1,23 +1,23 @@
 ---
-title: "Machine learning on your enterprise data"
+title: "Machine learning and reasoning on your data"
 sidebarTitle: "Introduction"
 icon: "book-open"
-description: "OuterProduct runs machine learning on queries over your enterprise data. Register your source tables, express the training set as an Apache DataFusion query, and train models that both predict and explain."
+description: "OuterProduct is an ML platform for your enterprise data. Define your data through a workspace, query it directly, and train models that both predict and explain."
 ---
 
 ## What OuterProduct does
 
-OuterProduct trains models on your structured data and returns both predictions and the reasoning behind each one. The data stays where it lives: in S3, Snowflake, Databricks, or tables you upload. You describe the rows you want to train or score as a query, and OuterProduct runs the model on the result of that query.
+OuterProduct lets you define the universe of your data through a `Workspace`, then combines the ergonomics of a data querying system with our reasoning engine. You shape the data the way you already think about it (filter, join, derive columns), and train models that return predictions together with the reasoning behind each one.
 
-The query layer is [Apache DataFusion](https://datafusion.apache.org/). A `Workspace` is a DataFusion session. You register your source tables once, then build a `DataFrame` over them with ordinary relational operations: `filter`, `select`, `join`, `aggregate`. Nothing runs locally. The `DataFrame` is a plan, and the plan is what you pass to `fit`, `predict`, or `explain`.
+It is a full ML platform. You get model search across a portfolio of architectures, multi-metric optimization, and hyperparameter tuning. On top of that sits the reasoning layer: feature-level explanations for every prediction, population-level patterns, and counterfactuals that show what would flip an outcome.
 
-The plan travels to OuterProduct as a portable Substrait document, and the same DataFusion engine executes it server-side against your data. What you write in your script is what runs. There is no separate export, no ETL hop, and no copy of your data to keep in sync.
+The query engine embedded in the workspace is based on [Apache DataFusion](https://datafusion.apache.org/), so your queries run as real relational plans against your source tables wherever they live: S3, Snowflake, Databricks, or data you upload.
 
 ## The dataset is a query
 
-The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your warehouse actually stores, and it changes as new data lands. So OuterProduct treats the dataset as a query, not a copied file.
+The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your warehouse stores, and it changes as new data lands. So OuterProduct treats the dataset as a query, not a copied file.
 
-You point a `Workspace` at your source tables, narrow to the population you care about, and pass that query to `fit`. Re-run the script and the query re-executes against current data. Because you score with the same query you trained on, the training set and the inference set are built the same way.
+You point a `Workspace` at your source tables, narrow to the population you care about, and pass that query to `fit`. Nothing runs locally and there is no copy to keep in sync; the query executes server-side against your data. Re-run the script and it re-executes against current rows. Because you score with the same query you trained on, the training set and the inference set are built the same way.
 
 ## A short example
 
@@ -52,7 +52,7 @@ You can also upload local data when it does not live in a warehouse. `ws.registe
 
 OuterProduct is a handful of composable pieces:
 
-- **Workspace**: your DataFusion session and single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
+- **Workspace**: defines the universe of your data and is the single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
 - **ReasoningModel**: trains a model that returns predictions and feature-level reasoning for each one. Produced by `op.reasoning.fit()`.
 - **Trainer**: trains a model optimized across one or more metrics, without the reasoning layer.
 - **PatternTracker**: aggregates per-row reasoning across a population into a small set of named, executable patterns.
