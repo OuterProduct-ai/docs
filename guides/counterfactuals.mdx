@@ -1,11 +1,10 @@
 ---
-title: "Counterfactual Scenarios: What Would Flip a Prediction?"
+title: "Scenarios: What Would Flip a Prediction?"
 sidebarTitle: "Counterfactuals"
 icon: "code-branch"
-description: "Use model.scenario() on a ReasoningModel to find minimal changes that flip a prediction to a target class, returned as structured ScenarioResult objects."
 ---
 
-Counterfactual analysis answers a concrete question: _"What is the smallest change to this input that would flip the model's prediction?"_ Instead of just knowing that a loan application was denied, you can tell the applicant exactly what would need to change (credit score up by 40 points, adding a co-borrower with certain attributes) to receive a different outcome.
+Counterfactual analysis answers a concrete question: _"What is the smallest change to this input that would flip the model's prediction?"_ Instead of just knowing that a loan application was denied, you can tell the applicant exactly what would need to change (credit score up by 40 points, adding a co-borrower with certain attributes) to receive a different outcome. Our scenario endpoint derives an exhaustive list of minimal counterfactuals.
 
 `model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate counterfactual edits found by the search.
 

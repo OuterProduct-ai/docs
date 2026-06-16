@@ -1,21 +1,21 @@
 ---
-title: "Machine learning and reasoning on your data"
+title: "The universal reasoning engine"
 sidebarTitle: "Introduction"
 icon: "book-open"
-description: "OuterProduct is an ML platform for your enterprise data. Define your data through a workspace, query it directly, and train models that both predict and explain."
+description: "The purpose of the OuterProduct platform is to enable verifiable reasoning over all machine learning models on structured and time-series data across all enterprise data sources. Our SDK and API give you a unified interface for our hosted platform."
 ---
 
-## What OuterProduct does
+## Workspaces
 
 OuterProduct lets you define the universe of your data through a `Workspace`, then combines the ergonomics of a data querying system with our reasoning engine. You shape the data the way you already think about it (filter, join, derive columns), and train models that return predictions together with the reasoning behind each one.
 
 It is a full ML platform. You get model search across a portfolio of architectures, multi-metric optimization, and hyperparameter tuning. On top of that sits the reasoning layer: feature-level explanations for every prediction, population-level patterns, and counterfactuals that show what would flip an outcome.
 
-The query engine embedded in the workspace is based on [Apache DataFusion](https://datafusion.apache.org/), so your queries run as real relational plans against your source tables wherever they live: S3, Snowflake, Databricks, or data you upload.
+The query engine embedded in the workspace is based on [Apache DataFusion](https://datafusion.apache.org/), so your queries run as real relational plans against all your data sources simultaneously. These can be tables or parquet files on S3, Snowflake, Databricks, and uploads from your local machine.
 
-## DataFrames are the unit of work
+## DataFrames
 
-Every model trains and scores on a `DataFrame`. A `DataFrame` is a query derived from the tables in your workspace, and it is the one input that ML and reasoning accept. You build it in whichever style fits, then hand it to `fit`, `predict`, or `explain`.
+Reasoning models are trained on a`DataFrame` as in pandas or polars. A `DataFrame` is a query derived from the tables in your workspace, and it is the one input that ML and reasoning accept. 
 
 ```python
 # Chain operations off a registered table.
@@ -25,7 +25,7 @@ train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 train = ws.sql("SELECT * FROM customers WHERE signup_year >= 2020")
 ```
 
-The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your warehouse stores, and it changes as new data lands. Treating it as a query keeps the training set and the inference set built the same way. Nothing runs locally and there is no copy to keep in sync; the query executes server-side, and re-running it picks up current rows.
+The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your lake or warehouse stores. The query executes lazily, as needed, on our servers.
 
 ## A short example
 
@@ -45,7 +45,7 @@ train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 # Train a model that predicts and explains.
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 
-# Score this year's customers; get predictions and feature-level reasoning.
+# Score this year's customers; get predictions and record-level reasoning.
 recent = ws.table("customers").filter(op.col("signup_year") == 2025)
 predictions = model.predict(recent)
 reasoning = model.explain(recent)
@@ -87,7 +87,7 @@ model = op.reasoning.fit(
     n_hyperopt_steps=50,
 ).wait()
 
-# Predictions plus the feature-level reasoning behind each one.
+# Predictions plus the record-level reasoning behind each one.
 predictions, reasoning = model.predict_and_explain(train)
 
 # Counterfactuals: the smallest realistic changes that would flip a predicted churn to retained.
@@ -106,15 +106,11 @@ The trained model is an ensemble of the model types you list. Here that is three
 OuterProduct is a handful of composable pieces:
 
 - **Workspace**: defines the universe of your data and is the single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
-- **ReasoningModel**: trains a model that returns predictions and feature-level reasoning for each one. Produced by `op.reasoning.fit()`.
-- **Trainer**: trains a model optimized across one or more metrics, without the reasoning layer.
-- **PatternTracker**: aggregates per-row reasoning across a population into a small set of named, executable patterns.
-- **Counterfactuals**: generate minimal, realistic changes that would flip a prediction.
-- **MCP server**: use OuterProduct from Claude, Cursor, and other Model Context Protocol clients without writing Python.
-
-## How jobs run
-
-Training and pattern fitting run on OuterProduct's hosted infrastructure, so `fit()` returns a job handle right away. Call `.wait()` to block until the model is ready, or poll `job.status()` and fold the job into your own orchestration.
+- **Trainer**: trains a model optimized across one or more metrics.
+- **Reasoning:** trains a model that returns predictions and record-level reasoning for each one. Produced by `op.reasoning.fit()`.
+- **Explanations:** record-level drivers that indicate the features relevant for a given prediction.
+- **Counterfactuals**: generate minimal, realistic changes that would flip a prediction - algorithmically derived from record-level drivers.
+- **PatternTracker**: derive the set of clearly defined, trending decisioning patterns for a reasoning model.
 
 ## Start here
 
