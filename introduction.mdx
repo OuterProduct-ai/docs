@@ -5,9 +5,9 @@ icon: "book-open"
 description: "The purpose of the OuterProduct platform is to enable verifiable reasoning over all machine learning models on structured and time-series data across all enterprise data sources. Our SDK and API give you a unified interface for our hosted platform."
 ---
 
-## Query across your sources
+## Our capabilities
 
-A workspace can hold tables from more than one system at once, and `ws.sql(...)` joins across them. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
+Our platform can query tables from more than one system at once. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
 
 ```python
 import outerproduct as op
@@ -60,11 +60,11 @@ The `hpo_space` says what to search (the model families and which hyperparameter
 OuterProduct is a handful of composable pieces:
 
 - **Workspace**: defines the universe of your data and is the single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
-- **Trainer**: trains a model optimized across one or more metrics.
-- **Reasoning:** trains a model that returns predictions and record-level reasoning for each one. Produced by `op.reasoning.fit()`.
+- **Training**: train a model optimized across one or more metrics.
+- **Reasoning:** train a model that returns predictions and reasoning. 
 - **Explanations:** record-level drivers that indicate the features relevant for a given prediction.
-- **Counterfactuals**: generate minimal, realistic changes that would flip a prediction - algorithmically derived from record-level drivers.
-- **PatternTracker**: derive the set of clearly defined, trending decisioning patterns for a reasoning model.
+- **Scenarios**: generate minimal, realistic changes that would flip a prediction.
+- **Patterns**: derive the set of clearly defined, trending decisioning patterns.
 
 ## Start here
 
