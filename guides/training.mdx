@@ -1,8 +1,8 @@
 ---
-title: "Training models: HPO, Metrics, and Distillation"
+title: "Training models: HPO and Metrics"
 sidebarTitle: "Training"
 icon: "dumbbell"
-description: "Train models on structured data using op.reasoning.fit() for a ReasoningModel or Trainer.configure().run() for our pure model training, with HPO and multi-metric optimization."
+description: "Train models on structured data using op.reasoning.fit() for a ReasoningModel or Trainer.configure().run() for plain model training, with a configurable HPO search space and optimizer."
 ---
 
 Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics. Our infrastructure complies and executes this configuration, then retrieves the best model the search found. 
@@ -27,7 +27,7 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     Use this path when you need `model.explain()`, `model.get_global_drivers()`, or `model.scenario()`.
   </Tab>
   <Tab title="Trainer path">
-    `Trainer.configure().run()` returns a plain `Model` (predictions only) and exposes the full set of search knobs: trial counts, ensembling, cross-validation folds, and multi-metric Pareto sweeps.
+    `Trainer.configure().run()` returns a plain `Model` (predictions only) and exposes the full set of search knobs: the HPO search space, the optimizer (sampler and trial budget), cross-validation folds, and ensembling.
 
     ```python
     import outerproduct as op
@@ -47,14 +47,18 @@ Training in OuterProduct is a server-side search over model families, hyperparam
 
 ## How the Trainer works
 
-`Trainer` is an orchestrator that coordinates a search over **model families × hyperparameters × metrics**. When you call `run()`:
+`Trainer` is an orchestrator that coordinates a search over the **HPO space** you describe. You give it two things, both optional and both resolved server-side:
 
-- All candidate model families are tuned in **parallel**, not one at a time.
-- Each family's hyperparameters are searched with the strategy you select.
-- When you pass multiple metrics, the search explores the weighting between them rather than treating one as primary, so you don't have to guess the right trade-off up front.
+- An `hpo_space`: which model families to consider and, per family, which hyperparameters are fixed versus searched.
+- An `optimizer`: how to search that space (the sampler and a round-structured trial budget).
+
+When you call `run()`:
+
+- All candidate model families in the space are tuned in **parallel**, not one at a time.
+- Each round proposes new trials with the sampler you chose, scores them with cross-validation, and folds the results back before the next round.
 - Parallelism and per-trial timeouts are managed server-side; there are no SDK-level knobs.
 
-The result is a single trained model representing the best configuration found. `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
+The result is a single trained model representing the best configuration found (or an ensemble of the top trials, if you set `ensemble=True`). `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
 
 ## Building a DataFrame for training
 
@@ -104,55 +108,84 @@ trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
 model = trainer.run().wait()
 ```
 
-## Choosing model types
+## Choosing the search space
 
-Pass `model_types` as a list of string identifiers resolved server-side. If you omit it, OuterProduct selects a curated set based on your data. All listed families are tuned together in the same search.
+Pass an `hpo_space` to control which model families are searched and how their hyperparameters are tuned. Build it with `op.HPOSpace.from_dict(...)` or the fluent `op.HPOSpace().add(...)` builder; a raw `dict` is rejected. If you omit it, OuterProduct selects a curated space based on your data (the default tabular families are `tabm` and `xrfm`). All listed families are tuned together in the same search.
 
 ```python
+# List families to search their curated default spaces.
+space = op.HPOSpace.from_dict(
+    {"models": [{"family": "tabm"}, {"family": "xgboost"}]}
+)
+
 trainer = op.Trainer.configure(
     train,
     task=op.Binclass(label_column="churn"),
-    model_types=["tabm", "xgboost"],
+    hpo_space=space,
 )
 model = trainer.run().wait()
 ```
 
+To pin or narrow specific hyperparameters, name them with the fluent builder. Searched dimensions are `.float()` / `.int()` / `.categorical()` / `.mixture()`; constants are `.const()`.
+
+```python
+xgb = (
+    op.ModelParamSpace(family="xgboost")
+    .float("eta", 1e-4, 0.3, log=True)
+    .int("max_depth", 3, 10)
+    .const("n_estimators", 1000)
+)
+
+trainer = op.Trainer.configure(
+    train,
+    task=op.Binclass(label_column="churn"),
+    hpo_space=op.HPOSpace().add(xgb),
+)
+```
+
+See the [Trainer reference](/sdk/trainer#the-hpospace-class) for the full `HPOSpace` and distribution API.
+
 ## Metrics
 
-Pass a single `op.Metric()` or a list. With a single metric, training optimizes it directly. With multiple metrics, the search explores all weightings between them and returns the best model found across the Pareto frontier that trades off the listed metrics.
+Pass a single `op.Metric()` to optimize it directly. Pass a list to optimize all of them jointly: OuterProduct uses Optuna's native multi-objective optimization to explore the Pareto frontier of trade-offs between the listed metrics, with no metric privileged, so you don't have to pick a fixed weighting up front. If you omit `metric`, OuterProduct picks a sensible default for the task.
 
 ```python
 trainer = op.Trainer.configure(
     train,
     task=op.Binclass(label_column="churn"),
-    metric=[op.Metric("auc"), op.Metric("accuracy")],
+    metric=[op.Metric("auc"), op.Metric("accuracy")],  # jointly optimized over the Pareto frontier
 )
 model = trainer.run().wait()
 ```
 
 <Tip>
-  Multi-metric sweeps are especially useful when you care about both calibration and ranking quality: you get the best achievable trade-off without having to pick a fixed weighting up front.
+  Multi-objective runs are useful when you care about more than one quality dimension at once (for example calibration and ranking): you get the best achievable trade-offs instead of collapsing them into one weighted score.
 </Tip>
 
-## Search strategy
+## Optimizer
 
-`Trainer.run()` accepts a `strategy` string. Use `"random"` for fast (parallel) exploration or `"optuna"` for adaptive tuning (in serial).
+`Trainer.run()` accepts an `optimizer` that sets the sampler and the trial budget. Build one with `op.Optimizer(kind=..., n_trials_per_step=..., n_steps=...)`. Each round proposes `n_trials_per_step` trials and `n_steps` rounds run in sequence, so the total trials searched is `n_trials_per_step * n_steps`.
 
 ```python
-model = trainer.run(strategy="optuna", n_trials=50, grid_size=0.1).wait()
+model = trainer.run(
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=10),  # 50 trials total
+    n_cv_splits=5,        # cross-validation folds per trial
+    ensemble=True,     # blend the top trials into the returned model
+).wait()
 ```
 
-- `n_trials`: per-family trial budget.
-- `grid_size`: resolution of the metric-weighting sweep when you pass multiple metrics.
+- `kind`: `"tpe"` (Bayesian, default) and `"cmaes"` learn from earlier rounds; `"random"` ignores them and collapses to a single round.
+- `n_cv_splits`: cross-validation folds used to score each trial.
+- `ensemble`: return an ensemble of the top trials instead of the single best.
 
-For `op.reasoning.fit()`, control search depth via `n_hyperopt_steps`:
+`op.reasoning.fit()` takes the same `hpo_space` and `optimizer` arguments:
 
 ```python
 model = op.reasoning.fit(
     train,
     task=op.Binclass(label_column="churn"),
-    model_types=["tabm", "xgboost"],
-    n_hyperopt_steps=10,
+    hpo_space=op.HPOSpace.from_dict({"models": [{"family": "tabm"}]}),
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=2, n_steps=5),
 ).wait()
 ```
 
@@ -171,28 +204,3 @@ job.results()        # raw result payload (ids, URIs) once completed
 <Note>
   `.wait()` is the blocking convenience used throughout these examples. Use `.status()` or `.results()` to poll or fetch the outcome without blocking your process.
 </Note>
-
-## Distillation
-
-Pass a `teacher` to train a student model that mimics an external model's predictions. The teacher can be a trained `Model` or a `Predictor` wrapping an HTTP endpoint.
-
-```python
-teacher = op.model.Predictor(
-    "https://api.example.com/predict",
-    headers={"Authorization": "Bearer ..."},
-)
-
-# Plain distilled Model (label_column is optional when a teacher is set):
-trainer = op.Trainer.configure(train, teacher=teacher)
-model = trainer.run().wait()
-```
-
-To get a distilled student that also explains the teacher's behavior, use `op.reasoning.fit()`:
-
-```python
-reasoning_model = op.reasoning.fit(train, teacher=teacher).wait()
-```
-
-<Warning>
-  The teacher endpoint must return predictions in the same format the trainer expects. Mismatched output shapes will cause the distillation job to fail.
-</Warning>

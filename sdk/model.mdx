@@ -1,7 +1,7 @@
 ---
 title: "outerproduct.model"
 sidebarTitle: "Model"
-description: "API reference for Model, ReasoningModel, ScenarioResult, and Predictor: the core objects returned by OuterProduct training and distillation flows."
+description: "API reference for Model, ReasoningModel, and ScenarioResult: the core objects returned by OuterProduct training."
 ---
 
 The `outerproduct.model` module contains the objects you work with after training. A plain `Model` handles predictions; a `ReasoningModel` extends it with feature-level explanations, counterfactual scenarios, and global driver analysis. Both are produced asynchronously: you call `.wait()` on a job handle and receive the model object once training completes.
@@ -321,50 +321,3 @@ Describes a single feature edit within a `Counterfactual`.
 <ResponseField name="after" type="any">
   The value the feature would need to take for the counterfactual to reach `target_class`.
 </ResponseField>
-
----
-
-## Predictor
-
-`Predictor` wraps an arbitrary HTTP scoring endpoint so you can use an existing model as a **teacher** in OuterProduct's distillation flow. Pass a `Predictor` as the `teacher` argument to `op.reasoning.fit()` to distil a `ReasoningModel` that mimics the teacher's predictions while adding full reasoning.
-
-```python
-op.model.Predictor(url: str, headers: dict | None = None)
-```
-
-<ParamField body="url" type="string" required>
-  The HTTP endpoint that accepts inference requests and returns predictions. OuterProduct will POST batches of rows to this URL during training.
-</ParamField>
-
-<ParamField body="headers" type="dict | None">
-  Optional dictionary of HTTP request headers, such as `{"Authorization": "Bearer <token>"}`. Use this to authenticate against a secured scoring endpoint.
-</ParamField>
-
-```python
-import outerproduct as op
-
-op.init(api_key="your-api-key")
-ws = op.Workspace()
-
-ws.register_csv("customers.csv", table_name="customers")
-train = ws.table("customers")
-
-teacher = op.model.Predictor(
-    url="https://my-scoring-service.example.com/predict",
-    headers={"Authorization": "Bearer my-token"},
-)
-
-# Distil a ReasoningModel that learns from the teacher's predictions.
-model = op.reasoning.fit(
-    train,
-    teacher=teacher,   # task can be omitted when a teacher is provided
-).wait()
-
-# The distilled model now supports explain(), get_global_drivers(), and scenario().
-score = ws.table("customers").filter(op.col("signup_year") == 2025)
-reasoning = model.explain(score)
-```
-
-<Note>
-  When a `teacher` is provided, `task` is optional: OuterProduct queries the teacher to generate training labels. You can still supply a `task` with a `label_column` if you want to blend ground-truth labels with teacher predictions.
-</Note>

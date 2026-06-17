@@ -14,12 +14,12 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 - **Cases**: for one applicant, why the decision landed where it did and what would flip it.
 
 <Steps>
-  <Step title="Distill your scoring model">
-    Register historical applicant data into a workspace, wrap your scoring endpoint as a `Predictor`, and pass it as `teacher` to `op.reasoning.fit`. The workspace is your single data entry point, and its query engine (based on [Apache DataFusion](https://datafusion.apache.org/)) builds the `DataFrame` you train on. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
+  <Step title="Train your reasoning engine">
+    Register historical applicant data into a workspace, then train a reasoning engine on it with `op.reasoning.fit`. The workspace is your single data entry point, and its query engine (based on [Apache DataFusion](https://datafusion.apache.org/)) builds the `DataFrame` you train on. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
 
     <CodeGroup>
 
-    ```python Distill the scoring model
+    ```python Train the reasoning engine
     import outerproduct as op
 
     op.init()
@@ -35,19 +35,15 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     )
     train = ws.table("applicants")
 
-    # Your production scorer, typically a Databricks Model Serving endpoint.
-    teacher = op.model.Predictor(
-        "https://underwriting.example.com/score",
-        headers={"Authorization": "Bearer ..."},
-    )
-
-    reasoning_model = op.reasoning.fit(train, teacher=teacher).wait()
+    reasoning_model = op.reasoning.fit(
+        train, task=op.Binclass(label_column="approved")
+    ).wait()
     ```
 
     </CodeGroup>
 
     <Tip>
-      See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for full distillation details.
+      See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for the full search and metric options.
     </Tip>
   </Step>
   <Step title="Plug in the daily applicant stream">

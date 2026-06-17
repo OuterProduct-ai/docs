@@ -1,7 +1,7 @@
 ---
 title: "outerproduct.reasoning"
 sidebarTitle: "Reasoning"
-description: "API reference for op.reasoning.fit() and PatternTracker: train reasoning models and distil population-level patterns from their predictions."
+description: "API reference for op.reasoning.fit() and PatternTracker: train reasoning models and extract population-level patterns from their predictions."
 ---
 
 The `outerproduct.reasoning` module is the entry point for training reasoning models and analysing their behaviour across populations. `op.reasoning.fit()` trains a `ReasoningModel` that produces both predictions and feature-level attributions. `op.reasoning.pattern_tracker.fit()` takes a fitted `ReasoningModel` and condenses its explanations over a target prediction band into a small set of named, executable filter patterns you can apply to any new data.
@@ -15,10 +15,9 @@ op.reasoning.fit(
     df: DataFrame,
     *,
     task: Task | None = None,
-    teacher: Model | Predictor | None = None,
-    model_types: list[str] | None = None,
+    hpo_space: HPOSpace | None = None,
     metric: Metric | list[Metric] | None = None,
-    n_hyperopt_steps: int = 5,
+    optimizer: Optimizer | None = None,
     random_state: int = 42,
 ) -> ReasoningFitJob
 ```
@@ -28,7 +27,7 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
 ### Parameters
 
 <ParamField body="df" type="DataFrame" required>
-  Training data as a `DataFrame`. Build one from a registered table with `ws.table("customers")` or `ws.sql("SELECT ... FROM customers")`, optionally chaining `filter`, `select`, `join`, and other relational ops. The column you name in `task`'s `label_column` (or the labels supplied by `teacher`) is used as the target; all remaining columns are treated as features.
+  Training data as a `DataFrame`. Build one from a registered table with `ws.table("customers")` or `ws.sql("SELECT ... FROM customers")`, optionally chaining `filter`, `select`, `join`, and other relational ops. The column you name in `task`'s `label_column` is used as the target; all remaining columns are treated as features.
 </ParamField>
 
 <ParamField body="task" type="Task | None">
@@ -44,27 +43,23 @@ Submits a training job and returns a non-blocking `Job` handle immediately. Call
   | `op.SequenceMulticlass(label_column=..., id_column=..., timestamp_column=...)` | Per-entity multi-class classification over each entity's sequence |
   | `op.SequenceRegression(label_column=..., id_column=..., timestamp_column=...)` | Per-entity regression over each entity's sequence (accepted, not yet executable) |
 
-  Required unless `teacher` is provided. When a teacher is set, OuterProduct queries it to generate training labels and `task` becomes optional.
+  Required for supervised training.
 </ParamField>
 
-<ParamField body="model_types" type="list[str] | None">
-  Restrict the model family search to a specific list, e.g. `["tabm", "xgboost"]`. When `None`, OuterProduct selects from its full portfolio of model families. Providing this list is useful when you have a latency or interpretability constraint that rules out certain architectures.
+<ParamField body="hpo_space" type="HPOSpace | None">
+  The surrogate search space for the reasoning model, built with `op.HPOSpace.from_dict(...)` or `op.HPOSpace().add(...)` (a raw `dict` is rejected). A reasoning fit searches a single model family, so pass one family. When `None`, OuterProduct picks a surrogate based on your dataset's size and schema. See [The `HPOSpace` class](/sdk/trainer#the-hpospace-class) for the full builder reference.
 </ParamField>
 
 <ParamField body="metric" type="Metric | list[Metric] | None">
-  The optimization target(s). Pass a single `op.Metric` to optimize directly, or a list to trigger a Pareto sweep across their weightings. When `None`, OuterProduct picks a sensible default for the task.
+  The evaluation metric used to score the surrogate. When `None`, OuterProduct picks a sensible default for the task. (Multi-objective optimization over a list of metrics is available on the [`Trainer`](/sdk/trainer) path.)
 </ParamField>
 
-<ParamField body="n_hyperopt_steps" default="5" type="int">
-  Number of hyperparameter optimisation trials to run. Higher values improve model quality at the cost of longer training time. Defaults to `5`.
+<ParamField body="optimizer" type="Optimizer | None">
+  How to search the surrogate space: the sampler and a round-structured trial budget, built with `op.Optimizer(kind=..., n_trials_per_step=..., n_steps=...)`. When `None`, the server uses a default optimizer. See [The `Optimizer` class](/sdk/trainer#the-optimizer-class) for details.
 </ParamField>
 
 <ParamField body="random_state" default="42" type="int">
   Seed for the training search, for reproducible runs. Defaults to `42`.
-</ParamField>
-
-<ParamField body="teacher" type="Model | Predictor | None">
-  A teacher model for knowledge distillation. Accepts either a previously trained OuterProduct `Model` / `ReasoningModel` or a `Predictor` wrapping an external HTTP scoring endpoint. When set, OuterProduct trains the new `ReasoningModel` to mimic the teacher's output, adding full reasoning to a black-box predictor.
 </ParamField>
 
 ### Return value
@@ -111,25 +106,12 @@ predictions = model.predict(recent)
 reasoning   = model.explain(recent)
 ```
 
-```python With hyperopt and model selection
+```python With a custom space and optimizer
 model = op.reasoning.fit(
     train,
     task=op.Binclass(label_column="loan_default"),
-    model_types=["tabm", "xgboost"],
-    n_hyperopt_steps=50,
-).wait()
-```
-
-```python Knowledge distillation from an external scorer
-teacher = op.model.Predictor(
-    url="https://my-scoring-service.example.com/predict",
-    headers={"Authorization": "Bearer my-token"},
-)
-
-# task (and label_column) is optional when a teacher is provided
-model = op.reasoning.fit(
-    train,
-    teacher=teacher,
+    hpo_space=op.HPOSpace.from_dict({"models": [{"family": "tabm"}]}),
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=4, n_steps=5),
 ).wait()
 ```
 

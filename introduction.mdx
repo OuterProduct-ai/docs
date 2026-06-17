@@ -33,12 +33,12 @@ train = ws.sql("""
     GROUP BY c.customer_id, c.signup_year, c.plan, c.churned
 """)
 
-# Train a reasoning model on the joined data, searching model types and hyperparameters.
+# Train a reasoning model on the joined data, describing the search space and optimizer.
 model = op.reasoning.fit(
     train,
     task=op.Binclass(label_column="churned"),
-    model_types=["tabm", "tabpfn", "tabop"],
-    n_hyperopt_steps=50,
+    hpo_space=op.HPOSpace.from_dict({"models": [{"family": "tabm"}]}),
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=4, n_steps=5),
 ).wait()
 
 # Predictions plus the record-level reasoning behind each one.
@@ -53,7 +53,7 @@ patterns = op.reasoning.pattern_tracker.fit(
 ).wait()
 ```
 
-The trained model is an ensemble of the model types you list. Here that is three: TabM, TabPFN, and TabOP (our own tabular model). The join runs server-side, and the credentials for each source stay in the Console. Predictions, explanations, counterfactuals, and patterns all run on that same query.
+The `hpo_space` says what to search (the model families and which hyperparameters to tune) and the `optimizer` says how to search it (the sampler and the trial budget). Both are resolved server-side, and both are optional: omit them and OuterProduct picks defaults from your data. The join runs server-side too, and the credentials for each source stay in the Console. Predictions, explanations, counterfactuals, and patterns all run on that same query.
 
 ## Building blocks
 
