@@ -37,12 +37,13 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "",
             "pages": [
               "introduction",
               "quickstart",
               "authentication"
-            ]
+            ],
+            "expanded": true
           },
           {
             "group": "Guides",
