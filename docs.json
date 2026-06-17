@@ -48,7 +48,6 @@
             "group": "Guides",
             "pages": [
               "guides/workspaces",
-              "guides/workflow",
               "guides/training",
               "guides/predictions",
               "guides/explanations",

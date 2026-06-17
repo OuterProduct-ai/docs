@@ -7,8 +7,6 @@ description: "Train models on structured data using op.reasoning.fit() for a Rea
 
 Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics. Our infrastructure complies and executes this configuration, then retrieves the best model the search found. 
 
-Every model trains on a `DataFrame`. You derive it from the tables in your workspace with `ws.table(...)` or `ws.sql(...)`, then pass that query to `fit` or `Trainer.configure`.
-
 <Tabs>
   <Tab title="ReasoningModel path">
     `op.reasoning.fit()` is the fastest path to a model that produces both predictions and feature-level explanations. The same model-family × hyperparameter × metric search runs.
