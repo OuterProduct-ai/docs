@@ -37,7 +37,7 @@ train = ws.sql("""
 model = op.reasoning.fit(
     train,
     task=op.Binclass(label_column="churned"),
-    hpo_space=op.HPOSpace.from_dict({"models": [{"family": "tabm"}]}),
+    hpo_space=op.HPOSpace(models=["tabm","tabpfn","tabop"]),
     optimizer=op.Optimizer(kind="tpe", n_trials_per_step=4, n_steps=5),
 ).wait()
 
