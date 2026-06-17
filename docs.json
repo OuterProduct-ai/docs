@@ -51,7 +51,7 @@
               "guides/training",
               "guides/predictions",
               "guides/explanations",
-              "guides/counterfactuals",
+              "guides/scenarios",
               "guides/pattern-tracker"
             ]
           },
