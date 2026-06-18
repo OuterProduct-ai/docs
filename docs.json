@@ -84,34 +84,14 @@
       },
       {
         "tab": "SDK Reference",
-        "groups": [
-          {
-            "group": "Core",
-            "pages": [
-              "sdk/init",
-              "sdk/dataset",
-              "sdk/trainer"
-            ]
-          },
-          {
-            "group": "Models",
-            "pages": [
-              "sdk/model",
-              "sdk/reasoning"
-            ]
-          },
-          {
-            "group": "Connectors",
-            "pages": [
-              "sdk/connectors"
-            ]
-          },
-          {
-            "group": "Agentic",
-            "pages": [
-              "sdk/agentic"
-            ]
-          }
+        "pages": [
+          "sdk/overview",
+          "sdk/workspace",
+          "sdk/model",
+          "sdk/trainer",
+          "sdk/jobs",
+          "sdk/tasks",
+          "sdk/hpo"
         ]
       },
       {
