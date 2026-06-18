@@ -3,8 +3,8 @@
   "name": "OuterProduct",
   "theme": "mint",
   "logo": {
-    "light": "/logo/op-logo-full-light.svg",
-    "dark": "/logo/op-logo-full-dark.svg"
+    "light": "/logo/op-logo-light.svg",
+    "dark": "/logo/op-logo-dark.svg"
   },
   "favicon": "/logo/op-avatar.png",
   "redirects": [
