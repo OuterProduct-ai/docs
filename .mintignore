@@ -5,3 +5,7 @@
 # Draft content
 drafts/
 *.draft.mdx
+
+# Python virtualenv can break local preview
+.venv/
+

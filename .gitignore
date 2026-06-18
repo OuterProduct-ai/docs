@@ -1,0 +1,20 @@
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+
+# uv lockfile (no pyproject is tracked in this docs repo)
+uv.lock
+
+# Sphinx artifacts (this repo's docs are Mintlify .mdx, not Sphinx)
+docs/
+site/
+
+# Claude Code / agent tooling (local only)
+.claude/
+.agents/
+skills-lock.json

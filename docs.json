@@ -3,8 +3,8 @@
   "name": "OuterProduct",
   "theme": "mint",
   "logo": {
-    "light": "/logo/op-avatar.png",
-    "dark": "/logo/op-avatar.png"
+    "light": "/logo/op-logo-full-light.svg",
+    "dark": "/logo/op-logo-full-dark.svg"
   },
   "favicon": "/logo/op-avatar.png",
   "redirects": [
@@ -37,7 +37,7 @@
         "tab": "Documentation",
         "groups": [
           {
-            "group": "",
+            "group": "Get Started",
             "pages": [
               "introduction",
               "quickstart",
