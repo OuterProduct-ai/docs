@@ -32,14 +32,30 @@ ws.register_pandas(df, table_name="synthetic")
 ## Register a file and train a model
 
 <Steps>
+  <Step title="Build a LocalDataset">
+    Create a `LocalDataset` from your file with `from_csv` (or `from_parquet`).
+
+    ```python
+    import outerproduct as op
+    
+    local = op.LocalDataset.from_csv("customers.csv")
+    ```
+  </Step>
   <Step title="Create a workspace">
     Initialize the SDK and create a `Workspace`.
 
     ```python
     import outerproduct as op
-
+    
     op.init()  # reads OUTERPRODUCT_API_KEY from the environment
     ws = op.Workspace()
+    ```
+  </Step>
+  <Step title="Upload it">
+    Call `.upload()` to stage the rows. OuterProduct uploads them via a presigned URL and returns a `Dataset`.
+
+    ```python
+    dataset = local.upload()
     ```
   </Step>
   <Step title="Register your file">
@@ -49,12 +65,26 @@ ws.register_pandas(df, table_name="synthetic")
     ws.register_csv("customers.csv", table_name="customers")
     ```
   </Step>
+  <Step title="Train a model">
+    Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
+
+    ```python
+    model = op.reasoning.fit(dataset, task=op.BinclassConfig(label_column="churn")).wait()
+    ```
+  </Step>
   <Step title="Query and train">
     Build a `DataFrame` over the registered table with `ws.table(name)`, then pass it to `op.reasoning.fit()` with your label column and task type. Call `.wait()` to block until training completes.
 
     ```python
     train = ws.table("customers")
     model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+    ```
+  </Step>
+  <Step title="Train a model">
+    Pass the `Dataset` to `op.reasoning.fit()` along with your label column and task type, then call `.wait()` to block until training completes.
+
+    ```python
+    model = op.reasoning.fit(dataset, task=op.Binclass(label_column="churn")).wait()
     ```
   </Step>
 </Steps>

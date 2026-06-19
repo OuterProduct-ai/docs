@@ -108,9 +108,7 @@
           },
           {
             "group": "Agentic",
-            "pages": [
-              "sdk/agentic"
-            ]
+            "pages": []
           }
         ]
       },
