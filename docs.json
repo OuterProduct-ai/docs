@@ -88,6 +88,7 @@
           "sdk/overview",
           "sdk/workspace",
           "sdk/model",
+          "sdk/reasoning",
           "sdk/trainer",
           "sdk/jobs",
           "sdk/tasks",
