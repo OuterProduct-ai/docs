@@ -14,6 +14,44 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 - **Cases**: for one applicant, why the decision landed where it did and what would flip it.
 
 <Steps>
+  <Step title="Distill your scoring model">
+    Point at historical applicant data via a connector, wrap your scoring endpoint as a `Predictor`, and pass it as `teacher` to `op.reasoning.fit`. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
+
+    <CodeGroup>
+
+    ```python Distill the scoring model
+    import outerproduct as op
+    
+    op.init()
+    
+    # Historical applicants (for training) — already in Databricks. Replace
+    # the angle-bracket placeholders below with your workspace's values;
+    # `connector_credential_name` references a Databricks credential you've already
+    # added in console.outerproduct.com.
+    connector = op.DatabricksConnector(
+        server_hostname="<workspace>.cloud.databricks.com",
+        http_path="/sql/1.0/warehouses/<warehouse-id>",
+        catalog="<catalog>",
+        schema_name="<schema>",
+        connector_credential_name="underwriting-prod",
+    )
+    dataset = connector.table("applicants_train")
+    
+    # Your production scorer — typically a Databricks Model Serving endpoint.
+    teacher = op.model.Predictor(
+        "https://underwriting.example.com/score",
+        headers={"Authorization": "Bearer ..."},
+    )
+    
+    reasoning_model = op.reasoning.fit(dataset, teacher=teacher).wait()
+    ```
+
+    </CodeGroup>
+
+    <Tip>
+      See the [Connectors guide](/guides/connectors) for Databricks, Snowflake, and S3 sources, and the [Training guide](/guides/training) for full distillation details.
+    </Tip>
+  </Step>
   <Step title="Train your reasoning engine">
     Register historical applicant data into a workspace, then train a reasoning engine on it with `op.reasoning.fit`. The workspace is your single data entry point, and its query engine (based on [Apache DataFusion](https://datafusion.apache.org/)) builds the `DataFrame` you train on. OuterProduct trains a reasoning engine alongside your scorer and leaves the production decision path untouched.
 
@@ -21,10 +59,10 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 
     ```python Train the reasoning engine
     import outerproduct as op
-
+    
     op.init()
     ws = op.Workspace()
-
+    
     # Historical applicants (for training) live in Databricks. The
     # locator is catalog.schema.table; `connector` references a Databricks
     # credential you've already added in console.outerproduct.com.
@@ -34,7 +72,7 @@ This guide walks you through wrapping your existing scoring model in a reasoning
         connector="underwriting-prod",
     )
     train = ws.table("applicants")
-
+    
     reasoning_model = op.reasoning.fit(
         train, task=op.Binclass(label_column="approved")
     ).wait()
@@ -47,6 +85,27 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     </Tip>
   </Step>
   <Step title="Plug in the daily applicant stream">
+    Lenders see a constant stream of applications, each scored on arrival. Pull the day's batch from your warehouse using the same feature schema as training  and pass it through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
+
+    <CodeGroup>
+
+    ```python Score today's applicants
+    import pandas as pd
+    from databricks import sql
+    
+    with sql.connect(**databricks_config) as cnx:
+        applicants_today = pd.read_sql(
+            "SELECT * FROM underwriting.applicants_today",
+            cnx,
+        )
+    
+    today = op.LocalDataset.from_pandas(applicants_today).upload()
+    predictions, reasoning = reasoning_model.predict_and_explain(today)
+    ```
+
+    </CodeGroup>
+  </Step>
+  <Step title="Plug in the daily applicant stream">
     Lenders see a constant stream of applications, each scored on arrival. Query the day's batch from the same source table you trained on, so the scoring rows are built the same way as the training set, then pass that `DataFrame` through the reasoning engine. Predictions come back paired in real time with the rich context that powers every level of the app.
 
     <CodeGroup>
@@ -54,6 +113,67 @@ This guide walks you through wrapping your existing scoring model in a reasoning
     ```python Score today's applicants
     today = ws.table("applicants").filter(op.col("received_date") == "2026-06-15")
     predictions, reasoning = reasoning_model.predict_and_explain(today)
+    ```
+
+    </CodeGroup>
+  </Step>
+  <Step title="Reason at three altitudes">
+    Use the predictions and reasoning context to power every level of your underwriting app - from portfolio-wide KPIs down to a single applicant's audit trail.
+
+    #### Scoring engine - KPIs, drivers, and drift
+
+    Track headline KPIs (e.g., denials) over time, watch for anomalies and drift, and characterize the features driving risk across the population. Because `get_global_drivers()` exposes the features the model relies on, the view doubles as a data-efficiency check - features with low utilization are candidates for retirement.
+
+    <CodeGroup>
+
+    ```python Global feature drivers
+    importance = reasoning_model.get_global_drivers()
+    for name, score in zip(importance.feature_names, importance.attributions):
+        print(f"{name}: {score:.4f}")
+    ```
+
+    </CodeGroup>
+
+    #### Applicant patterns - recurring denial profiles
+
+    Fit a `PatternTracker` on the denial band to surface the dominant _combinations_ of features that drive risk decisions. Each pattern is an executable filter with precision and lift stats, ready to apply to fresh applicants.
+
+    <CodeGroup>
+
+    ```python Fit and apply a PatternTracker
+    pt = op.reasoning.pattern_tracker.fit(
+        reasoning_model, dataset, target_range=(0.5, None)
+    ).wait()
+    for fp in pt.patterns:
+        print(f"{fp.label}: precision={fp.precision:.2f} lift={fp.lift:.2f}")
+    
+    # Apply to today's batch: which patterns each new applicant matches.
+    matches = pt.transform(today)
+    distribution = pt.distribution(today)
+    ```
+
+    </CodeGroup>
+
+    <Note>
+      See the [Pattern Tracker guide](/guides/pattern-tracker) for the full API including partition and labeling options.
+    </Note>
+
+    #### Individual applications - explanation and scenario
+
+    For one applicant, pair the explanation with a counterfactual scenario using `scenario()`. The explanation serves as the audit trail on file. The scenario doubles as the defensibility argument when a decision is challenged, and as a forward-looking recommendation. For example, "if the applicant resolves one recent credit inquiry and verifies stable employment, they will be approved on reapplication."
+
+    <CodeGroup>
+
+    ```python Per-applicant explanation and counterfactual
+    applicant = op.LocalDataset.from_pandas(applicants_today.iloc[[42]]).upload()
+    
+    prediction, explanation = reasoning_model.predict_and_explain(applicant)
+    result = reasoning_model.scenario(applicant, target_class=1, max_steps=10)
+    
+    for cf in result.queries[0].counterfactuals:
+        print(f"If the applicant changes {cf.n_changes} factor(s), they're approved:")
+        for feature, change in cf.changes.items():
+            print(f"  {feature}: {change.before} → {change.after}")
     ```
 
     </CodeGroup>
@@ -107,10 +227,10 @@ This guide walks you through wrapping your existing scoring model in a reasoning
 
     ```python Per-applicant explanation and counterfactual
     applicant = ws.table("applicants").filter(op.col("applicant_id") == "A-10042")
-
+    
     prediction, explanation = reasoning_model.predict_and_explain(applicant)
     result = reasoning_model.scenario(applicant, target_class=1, max_steps=10)
-
+    
     for cf in result.queries[0].counterfactuals:
         print(f"If the applicant changes {cf.n_changes} factor(s), they're approved:")
         for feature, change in cf.changes.items():

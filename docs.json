@@ -46,15 +46,15 @@
             "expanded": true
           },
           {
-            "group": "Guides",
+            "group": "Concepts",
             "pages": [
               "guides/workspaces",
               "guides/training",
               "guides/predictions",
               "guides/explanations",
-              "guides/scenarios",
-              "guides/pattern-tracker"
-            ]
+              "guides/scenarios"
+            ],
+            "icon": "book"
           },
           {
             "group": "Data Connectors",

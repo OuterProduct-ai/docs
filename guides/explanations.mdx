@@ -1,7 +1,7 @@
 ---
 title: "Feature Explanations"
-sidebarTitle: "Explanations"
-icon: "lightbulb"
+sidebarTitle: "Drivers"
+icon: "bars-progress"
 description: "Use ReasoningModel to get per-sample feature attributions, human-readable decision rules, and global feature importance across your entire trained model."
 ---
 
@@ -42,7 +42,7 @@ The `Reasoning` object contains:
 | --- | --- | --- |
 | `reasoning.feature_names` | `list[str]` | Ordered list of feature names, matching training-time columns |
 | `reasoning.attributions` | `ndarray` shape `(n_samples, n_features)` | Per-sample contribution of each feature to the prediction |
-| `reasoning.rules` | `list[str] \| None` | Human-readable decision rules, if the model produces them |
+| `reasoning.rules` | `list[str] | None` | Human-readable decision rules, if the model produces them |
 
 ```python
 reasoning.feature_names    # ["age", "income", "credit_score", ...]
