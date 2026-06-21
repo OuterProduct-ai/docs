@@ -2,40 +2,8 @@
 title: "Use OuterProduct from Claude, Cursor, and MCP Clients"
 sidebarTitle: "MCP Server"
 icon: "robot"
-description: "Connect the OuterProduct MCP server to Claude, Cursor, or any MCP client and train models, surface reasoning, and run counterfactuals in plain English."
+description: "Connect the OuterProduct MCP server to Claude, Cursor, or any MCP client and train models, surface reasoning, and generate scenarios."
 ---
-
-The OuterProduct MCP server bridges your favourite LLM interface and the OuterProduct platform. Once you add a single URL, the assistant can train models on structured data, generate predictions, produce per-feature reasoning, run counterfactuals, and mine decision-pattern aggregates, all without leaving your chat window.
-
-## What the server exposes
-
-When connected, the assistant gains access to five categories of tools:
-
-<CardGroup cols={2}>
-  <Card title="Training" icon="brain">
-    Fit a model on any structured dataset you upload or reference.
-  </Card>
-
-  <Card title="Prediction" icon="bolt">
-    Score new rows against a trained model.
-  </Card>
-
-  <Card title="Explanation" icon="magnifying-glass">
-    Get per-feature importance for any individual prediction.
-  </Card>
-
-  <Card title="Counterfactual" icon="arrow-right-arrow-left">
-    Find the minimal realistic changes that flip an outcome.
-  </Card>
-
-  <Card title="Upload" icon="arrow-up-from-bracket">
-    Send CSV data straight from the conversation.
-  </Card>
-
-  <Card title="Pattern aggregates" icon="chart-bar">
-    Mine decision-pattern summaries across a dataset.
-  </Card>
-</CardGroup>
 
 ## Server details
 
@@ -113,19 +81,3 @@ Choose the tab for the client you are using.
     </Steps>
   </Tab>
 </Tabs>
-
-## Verify the connection
-
-Once authentication completes, ask the assistant:
-
-> What MCP tools do you have available from `outerproduct`?
-
-A healthy connection returns a list that includes training, prediction, explanation, counterfactual, and upload tools. Anything you can do in Python with the OuterProduct SDK, you can now ask the assistant to do in plain English.
-
-<Tip>
-  If the assistant does not list OuterProduct tools, confirm that you completed the **Authenticate** step for your client and that you are signed in to the correct OuterProduct account.
-</Tip>
-
-## Built-in workflows
-
-OuterProduct ships pre-built, end-to-end workflows for common scenarios (such as **Suspicious Activity Reports (SAR)** and **Churn Winback Briefings**) that the assistant follows automatically when your prompt matches. See [Sample Prompts](/mcp/prompts) for the full list and the prompts that trigger them.
