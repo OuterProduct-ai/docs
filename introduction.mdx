@@ -5,47 +5,49 @@ icon: "book-open"
 description: "OuterProduct enables model training and reasoning across the structured data stack.  Query over multiple sources of data, train your machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure. "
 ---
 
-## Capabilities
+## Reason over all data sources and models
 
-Query tables from more than one system at once. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
+1. Register tables across S3, Snowflake, Databricks, local files.
+2. Query tables for model training.
+3. Optimize model performance across model families (including tabular foundation models), thousands of hyper-parameter configurations, and multiple metrics.
+4. Reason to interpret model outputs and verify model behavior.  
 
 ```python
 import outerproduct as op
 
-op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+# Set the OUTERPRODUCT_API_KEY environment variable
+# Create an API key at console.outerproduct.com (contact us to get access)
+op.init()  
 ws = op.Workspace()
 
+# 1. Register multiple data sources 
+ws.register_parquet("segments", "data/segments.parquet") 
 ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
 ws.register_snowflake("customers", "ANALYTICS.PUBLIC.CUSTOMERS", connector="prod-snowflake")
 ws.register_databricks("payments", "main.finance.payments", connector="prod-databricks")
 
-train = ws.sql("""
-    SELECT
-        c.customer_id,
-        c.signup_year,
-        c.plan,
-        COUNT(e.event_id) AS events_30d,
-        SUM(p.amount)     AS revenue_90d,
-        c.churned
-    FROM customers c
-    LEFT JOIN events e   ON e.customer_id = c.customer_id
-    LEFT JOIN payments p ON p.customer_id = c.customer_id
-    GROUP BY c.customer_id, c.signup_year, c.plan, c.churned
+# 2. Query tables
+df = ws.sql("""
+    SELECT c.customer_id, c.plan, COUNT(e.event_id) AS events_30d, c.churned FROM customers c
+    LEFT JOIN events e ON e.customer_id = c.customer_id
+    GROUP BY c.customer_id, c.plan, c.churned
 """)
 
-# Train a reasoning model on the joined data, describing the search space and optimizer.
+# 3. Model training
+split = int(0.8 * df.count())
+train_df = df.filter(op.col("id") < split)
 model = op.reasoning.fit(
-    train,
+    train_df,
     task=op.Binclass(label_column="churned"),
-    hpo_space=op.HPOSpace(models=["tabm","tabpfn","tabop"]),
-    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=4, n_steps=5),
+    hpo_space=op.HPOSpace.add(op.ModelSpace("tabicl")).add(op.ModelSpace("tabm")),
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=10),
+	metrics=[op.metric('accuracy'), op.metric('logloss')]
 ).wait()
 
-# Predictions plus the record-level reasoning behind each one.
-predictions, reasoning = model.predict_and_explain(train)
-
-# Counterfactuals: the smallest realistic changes that would flip a predicted churn to retained.
-scenarios = model.scenario(train, target_class=0)
+# 4. Reasoning 
+test_df = df.filter(op.col("id") >= split).drop(op.col("churned"))
+predictions, reasoning = model.predict_and_explain(test_df)
+scenarios = model.scenario(test_df)
 ```
 
 The `hpo_space` says what to search (the model families and which hyperparameters to tune) and the `optimizer` says how to search it (the sampler and the trial budget). Both are resolved server-side, and both are optional: omit them and OuterProduct picks defaults from your data. The join runs server-side too, and the credentials for each source stay on the console. Predictions, explanations, and scenarios all run on that same query.
