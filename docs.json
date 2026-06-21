@@ -76,13 +76,6 @@
         ]
       },
       {
-        "tab": "Use Cases",
-        "pages": [
-          "use-cases/underwriting",
-          "use-cases/recommendations"
-        ]
-      },
-      {
         "tab": "SDK Reference",
         "groups": [
           {
@@ -105,10 +98,6 @@
             "pages": [
               "sdk/connectors"
             ]
-          },
-          {
-            "group": "Agentic",
-            "pages": []
           }
         ]
       },

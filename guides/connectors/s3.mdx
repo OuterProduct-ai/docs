@@ -29,8 +29,28 @@ Before registering an S3 table from Python, create a credential in the OuterProd
     The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
 
     <Note>
+      This trust policy allows the OuterProduct backend to assume the new role — it does not grant any resource access on its own.
+    </Note>
+  </Step>
+  <Step title="Create an IAM role with a Custom Trust Policy">
+    The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
+
+    <Note>
       This trust policy allows the OuterProduct backend to assume the new role; it does not grant any resource access on its own.
     </Note>
+  </Step>
+  <Step title="Create an IAM role with a Custom Trust Policy">
+    The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
+
+    <Note>
+      This trust policy allows the OuterProduct backend to assume the new role; it does not grant any resource access on its own.
+    </Note>
+  </Step>
+  <Step title="Attach an inline permissions policy">
+    After creating the role, open it in AWS and select **Edit role → Add permissions → Create inline policy**. Toggle to **JSON** format and paste the permissions policy displayed in the OuterProduct Console. Save the policy.
+  </Step>
+  <Step title="Save the connector">
+    Return to the OuterProduct Console and complete the wizard. Your connector is now ready to use from the SDK.
   </Step>
   <Step title="Create an IAM role with a Custom Trust Policy">
     The Console displays a JSON trust policy. In your AWS account, navigate to **IAM → Roles → Create Role**. Choose **Custom Trust Policy** and paste the JSON provided by the Console.
