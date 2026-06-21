@@ -34,8 +34,7 @@
             "group": "Get Started",
             "pages": [
               "introduction",
-              "quickstart",
-              "authentication"
+              "quickstart"
             ],
             "expanded": true
           },

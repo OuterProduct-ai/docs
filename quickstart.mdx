@@ -20,7 +20,7 @@ This guide walks you through installing OuterProduct, authenticating, and traini
 
     ```python
     import outerproduct as op
-
+    
     op.init()  # reads OUTERPRODUCT_API_KEY from the environment
     ws = op.Workspace()
     ```
@@ -47,7 +47,7 @@ This guide walks you through installing OuterProduct, authenticating, and traini
     recent = ws.table("customers").filter(op.col("signup_year") == 2025)
     predictions = model.predict(recent)
     reasoning = model.explain(recent)
-
+    
     print(reasoning.feature_names)
     print(reasoning.attributions.shape)  # (n_samples, n_features)
     ```
@@ -95,7 +95,7 @@ print(reasoning.attributions.shape)  # (n_samples, n_features)
     Control the HPO search space, evaluation metrics, and optimizer.
   </Card>
 
-  <Card title="Explanations" icon="magnifying-glass" href="/guides/explanations">
-    Dive into local attributions, global importance, and decision rules.
+  <Card title="Reasoning" icon="magnifying-glass" href="/guides/explanations">
+    Generate record-level attributions and scenarios.
   </Card>
 </CardGroup>

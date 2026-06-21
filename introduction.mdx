@@ -2,12 +2,12 @@
 title: "The unified reasoning engine"
 sidebarTitle: "Introduction"
 icon: "book-open"
-description: "The purpose of the OuterProduct platform is to enable verifiable reasoning over all predictive models (including tabular and time series foundation models) on structured and time-series data across all enterprise data sources. Our SDK and API give you a unified interface for our hosted platform."
+description: "OuterProduct enables model training and reasoning across the structured data stack.  Query over multiple sources of data, train your machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure. "
 ---
 
-## Our capabilities
+## Capabilities
 
-Our platform can query tables from more than one system at once. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
+Query tables from more than one system at once. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
 
 ```python
 import outerproduct as op
@@ -46,14 +46,9 @@ predictions, reasoning = model.predict_and_explain(train)
 
 # Counterfactuals: the smallest realistic changes that would flip a predicted churn to retained.
 scenarios = model.scenario(train, target_class=0)
-
-# Patterns: recurring drivers across the high-risk cohort, as named, reusable filters.
-patterns = op.reasoning.pattern_tracker.fit(
-    model, train, target_range=(0.5, None)
-).wait()
 ```
 
-The `hpo_space` says what to search (the model families and which hyperparameters to tune) and the `optimizer` says how to search it (the sampler and the trial budget). Both are resolved server-side, and both are optional: omit them and OuterProduct picks defaults from your data. The join runs server-side too, and the credentials for each source stay in the Console. Predictions, explanations, counterfactuals, and patterns all run on that same query.
+The `hpo_space` says what to search (the model families and which hyperparameters to tune) and the `optimizer` says how to search it (the sampler and the trial budget). Both are resolved server-side, and both are optional: omit them and OuterProduct picks defaults from your data. The join runs server-side too, and the credentials for each source stay on the console. Predictions, explanations, and scenarios all run on that same query.
 
 ## Building blocks
 
