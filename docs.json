@@ -43,17 +43,13 @@
             "pages": [
               "guides/workspaces",
               "guides/training",
-              "guides/predictions",
-              "guides/explanations",
-              "guides/scenarios"
+              "guides/explanations"
             ],
             "icon": "book"
           },
           {
             "group": "Data Connectors",
             "pages": [
-              "guides/connectors/overview",
-              "guides/connectors/file-upload",
               "guides/connectors/s3",
               "guides/connectors/snowflake",
               "guides/connectors/databricks"
