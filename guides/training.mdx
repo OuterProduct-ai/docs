@@ -12,7 +12,7 @@ OuterProduct optimizes reasoning model performance over the configurations speci
 
 When you call `fit()`, all candidate model families in the space are searched with maximum parallelization.
 
-If there is one metric specified, the result is a single trained model representing the best configuration found.  If multiple metrics are specified, the result is the set of models along the Pareto frontier. 
+If there is one metric specified, the result is a single trained model representing the best configuration found.  If multiple metrics are specified, the result is the set of models along the Pareto frontier.  
 
 ## Optimized Reasoning Models At Enterprise Scale
 
@@ -24,7 +24,7 @@ import outerproduct as op
 op.init()
 ws = op.Workspace()
 
-train = ws.table("customers")
+train_df = ws.table("customers")
 
 # TabM: MLP-style tabular net (https://arxiv.org/abs/2410.24210)
 tabm = (
@@ -43,8 +43,10 @@ tabicl = (
     .categorical("norm_methods", ["none", "power", "quantile"])
 )
 
-space = op.HPOSpace().add(tabm).add(tabicl)
+hpo_space = op.HPOSpace().add(tabm).add(tabicl)
 model = op.reasoning.fit(
-    train, task=op.Regression(label_column="sales_30d"),
+    train_df, 
+	hpo_space=hpo_space,
+	task=op.Regression(label_column="sales_30d"),
 ).wait()  
 ```
