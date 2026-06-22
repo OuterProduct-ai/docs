@@ -67,30 +67,16 @@
       },
       {
         "tab": "SDK Reference",
-        "groups": [
-          {
-            "group": "Core",
-            "pages": [
-              "sdk/init",
-              "sdk/dataset",
-              "sdk/trainer"
-            ]
-          },
-          {
-            "group": "Models",
-            "pages": [
-              "sdk/model",
-              "sdk/reasoning"
-            ]
-          },
-          {
-            "group": "Connectors",
-            "pages": [
-              "sdk/connectors"
-            ]
-          }
-        ],
-        "hidden": true
+        "pages": [
+          "sdk/overview",
+          "sdk/workspace",
+          "sdk/model",
+          "sdk/reasoning",
+          "sdk/trainer",
+          "sdk/jobs",
+          "sdk/tasks",
+          "sdk/hpo"
+        ]
       },
       {
         "tab": "API Reference",
