@@ -47,6 +47,7 @@ hpo_space = op.HPOSpace().add(tabm).add(tabicl)
 model = op.reasoning.fit(
     train_df, 
 	hpo_space=hpo_space,
+	optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=4),
 	task=op.Regression(label_column="sales_30d"),
 ).wait()  
 ```
