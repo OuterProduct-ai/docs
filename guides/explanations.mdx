@@ -65,20 +65,6 @@ result = model.scenario(
 )
 ```
 
-Below, we describe two core methods of the `ReasoningModel` object, drivers and scenarios.
-
-## Drivers
-
-Every inference from a `ReasoningModel` is enriched with the drivers behind the output.  These drivers are available in a `Reasoning` object.
-
-```python
-scores = ws.table("customers").filter(op.col("signup_year") == 2025)
-predictions, reasoning = model.predict_and_explain(scores)
-
-# predictions: numpy.ndarray of shape (n_samples,)
-# reasoning:   Reasoning object with .feature_names, .attributions
-```
-
 | Attribute | Type | Description |
 | --- | --- | --- |
 | `reasoning.feature_names` | `list[str]` | Ordered list of input names |
