@@ -65,3 +65,62 @@ result = model.scenario(
     max_steps=20,   # reasoning effort per trial
 )
 ```
+
+Below, we describe two core methods of the `ReasoningModel` object, drivers and scenarios.
+
+## Drivers
+
+Every inference from a `ReasoningModel` is enriched with the drivers behind the output.  These drivers are available in a `Reasoning` object.
+
+```python
+scores = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions, reasoning = model.predict_and_explain(scores)
+
+# predictions: numpy.ndarray of shape (n_samples,)
+# reasoning:   Reasoning object with .feature_names, .attributions
+```
+
+| Attribute | Type | Description |
+| --- | --- | --- |
+| `reasoning.feature_names` | `list[str]` | Ordered list of input names |
+| `reasoning.drivers` | `ndarray` | Features that drive the prediction for each individual sample |
+
+```python
+reasoning.feature_names    # ["age", "income", "credit_score", ...]
+reasoning.attributions     # ndarray of same shape as input data
+```
+
+## Scenarios
+
+A `ReasoningModel` provides verifiable reasoning via scenarios.  Scenarios are minimal interventions on input data that change model outputs to a specific target value.  As a result, scenarios provide verifiable reasoning for models.
+
+`model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate scenarios.
+
+```python
+queries_df = pd.DataFrame([
+    {"age": 25, "income": 50000, "credit_score": 620},
+    {"age": 40, "income": 85000, "credit_score": 710},
+])
+queries = ws.register_pandas(queries_df, table_name="queries")
+
+result = model.scenario(queries)
+
+for q in result.queries:
+    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
+    for cf in q.scenarios:
+        print(f"  Candidate ({cf.n_changes} changes):")
+        for feature, change in cf.changes.items():
+            print(f"    {feature}: {change.before} → {change.after}")
+```
+
+## Sourcing scenarios
+
+The number of scenarios is determined by the reasoning effort.  Control the effort with `n_trials` and `max_steps`:
+
+```python
+result = model.scenario(
+    queries,
+    n_trials=200,   # number of scenario sourcing trials per query row
+    max_steps=20,   # reasoning effort per trial
+)
+```
