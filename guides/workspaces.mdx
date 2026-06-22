@@ -3,22 +3,21 @@ title: "DataFrame"
 icon: "database"
 ---
 
-OuterProduct lets you define the universe of your data through a `Workspace`, then combines the ergonomics of a data querying system with our reasoning engine. You construct custom views of your data (e.g. filter, join, derive columns), and train AI models that generate predictions along with our reasoning layer. This layer provides record-level explanations for every prediction, population-level patterns, and counterfactuals that show what would flip an outcome.
+An OuterProduct`DataFrame` is a query against the tables in your workspace (defined below).  Importantly, a `DataFrame` is a lazy-query, meaning that it will not materialize data until it is needed for computation.  As a result, you can query across data at any scale as if it were in memory.  
 
-You get model search across a portfolio of architectures, multi-metric optimization, and hyperparameter tuning. On top of that sits  It is a full ML platform. You get model search across a portfolio of architectures, multi-metric optimization, and hyperparameter tuning.
+The `DataFrame` is built in Rust on [Apache DataFusion](https://datafusion.apache.org/), so that queries run as real relational plans against all registered data sources simultaneously. These can be files on S3, Snowflake, Databricks, and your local machine.
 
-The query engine embedded in the workspace is based on [Apache DataFusion](https://datafusion.apache.org/), so your queries run as real relational plans against all your data sources simultaneously. These can be tables or parquet files on S3, Snowflake, Databricks, and uploads from your local machine.
+## Workspace
 
-## DataFrames
-
-Reasoning models are trained on a `DataFrame` as in pandas or polars. A `DataFrame` is a query derived from the tables in your workspace, and it is the one input that ML and reasoning accept.
+The OuterProduct `Workspace` provides one object to connect and query across multiple data sources.   Construct custom views of your data (e.g. filter, join, derive columns) for training models and reasoning over these models.  
 
 ```python
+# Initialize your workspace
+ws = op.Workspace()
+
 # Chain operations off a registered table.
 train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 
 # Or write SQL against the workspace.
 train = ws.sql("SELECT * FROM customers WHERE signup_year >= 2020")
 ```
-
-The table you train on is rarely a raw table. It is a filter, a join, and a few derived columns away from what your lake or warehouse stores. The query executes lazily, as needed, on our servers.
