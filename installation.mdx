@@ -1,0 +1,82 @@
+---
+title: "Quickstart"
+sidebarTitle: "Quickstart"
+icon: "play"
+---
+
+<Steps>
+  <Step title="Install the SDK">
+    Install the OuterProduct SDK from PyPI.
+
+    ```shellscript
+    pip install outerproduct
+    ```
+
+    Or with the uv package manager:
+
+    ```shellscript
+    uv add outerproduct
+    ```
+  </Step>
+  <Step title="Initialize and open a workspace">
+    Call `op.init()` once to authenticate, then open a `Workspace`. The workspace is your entry point for unified data queries, model training, and reasoning.
+
+    ```python
+    import outerproduct as op
+    
+    op.init()  # reads OUTERPRODUCT_API_KEY from the environment to authenticate
+    ws = op.Workspace()
+    ```
+  </Step>
+  <Step title="Register a source table">
+    Register a source table using the appropriate `register_*` function. For example,`register_csv` registers a csv file to the workspace.  (See the Overview for an example of registering multiple sources.)
+
+    ```python
+    ws.register_csv("customers.csv", table_name="customers")
+    ```
+  </Step>
+  <Step title="Build a training set and fit a reasoning model">
+    Query over the registered sources, then train a `ReasoningModel`. (See the Overview for an example of training over multiple models, setting hyper-parameter configurations, and more.)
+
+    ```python
+    train = ws.table("customers")
+    model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+    ```
+  </Step>
+  <Step title="Run inference with native reasoning">
+    Reasoning models come with additional reasoning functions.  For example, get predictions with real-time drivers. (See Overview for additional examples of reasoning like running scenarios.)
+
+    ```python
+    recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+    predictions = model.predict(recent)
+    reasoning = model.explain(recent)
+    
+    print(reasoning.feature_names)
+    print(reasoning.drivers.shape)  
+    ```
+  </Step>
+</Steps>
+
+## Putting it all together
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
+
+# Register a CSV as a source table you can query.
+ws.register_csv("customers.csv", table_name="customers")
+
+# Build the training set as a query, then fit a ReasoningModel.
+train = ws.table("customers")
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+
+# Score recent customers with a query; get predictions and reasoning.
+recent = ws.table("customers").filter(op.col("signup_year") == 2025)
+predictions = model.predict(recent)
+reasoning = model.explain(recent)
+
+print(reasoning.feature_names)
+print(reasoning.drivers.shape)
+```

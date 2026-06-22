@@ -24,43 +24,32 @@
     "light": "#FFFFFF",
     "dark": "#000000"
   },
-  "navbar": {
-    "primary": {
-      "type": "button",
-      "label": "Start for free",
-      "href": "https://console.outerproduct.com"
-    }
-  },
+  "navbar": {},
   "navigation": {
     "tabs": [
       {
         "tab": "Documentation",
         "groups": [
           {
-            "group": "Get Started",
+            "group": "Getting Started",
             "pages": [
               "introduction",
-              "quickstart",
-              "authentication"
+              "installation"
             ],
             "expanded": true
           },
           {
-            "group": "Guides",
+            "group": "Concepts",
             "pages": [
               "guides/workspaces",
               "guides/training",
-              "guides/predictions",
-              "guides/explanations",
-              "guides/scenarios",
-              "guides/pattern-tracker"
-            ]
+              "guides/explanations"
+            ],
+            "icon": "book"
           },
           {
             "group": "Data Connectors",
             "pages": [
-              "guides/connectors/overview",
-              "guides/connectors/file-upload",
               "guides/connectors/s3",
               "guides/connectors/snowflake",
               "guides/connectors/databricks"
@@ -71,15 +60,9 @@
             "pages": [
               "mcp/overview",
               "mcp/prompts"
-            ]
+            ],
+            "hidden": true
           }
-        ]
-      },
-      {
-        "tab": "Use Cases",
-        "pages": [
-          "use-cases/underwriting",
-          "use-cases/recommendations"
         ]
       },
       {

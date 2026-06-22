@@ -11,6 +11,18 @@ description: "The SDK's single data-entry object."
 A client-bound dataframe context: resolves the org's source tables over
 HTTP and ingests new ones (S3 reference or upload).
 
+### `Workspace.table()`
+
+```python
+table(name: str) -> DataFrame
+```
+
+### `Workspace.sql()`
+
+```python
+sql(query: str) -> DataFrame
+```
+
 ### `Workspace.upload()`
 
 ```python
@@ -473,3 +485,9 @@ delete(table_name: str, *, client: OuterProductClient | None = None) -> None
 ```
 
 Delete source table `table_name`.
+
+### `Workspace.list_tables()`
+
+```python
+list_tables(catalog: str = 'datafusion', schema: str = 'public') -> set[str]
+```

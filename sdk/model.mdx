@@ -12,7 +12,7 @@ A trained, deployable predictor.
 
 Returned by [`Trainer.run`](/sdk/trainer#trainer-run). `Model` is
 intentionally minimal — it exposes prediction and persistence, nothing else.
-For explanations, counterfactuals, and segmentation, use
+For explanations, scenarios, and segmentation, use
 [`fit`](/sdk/reasoning#op-reasoning-fit) to get a
 [`ReasoningModel`](/sdk/model#reasoningmodel) instead.
 
@@ -68,7 +68,7 @@ rejected.
 **Returns**
 
 <ResponseField name="returns" type="np.ndarray">
-  shape `(n_samples,)`. Classification: shape `(n_samples, n_classes)` of class probabilities.
+  Shape `(n_samples, n_outputs)`. Regression / single-output has one column; classification returns one column per class of class probabilities (binary → two columns).
 </ResponseField>
 
 ## `ReasoningModel`
@@ -77,14 +77,11 @@ A [`Model`](/sdk/model#model) augmented with explanation and reasoning methods.
 
 Returned by [`fit`](/sdk/reasoning#op-reasoning-fit). Inherits everything from
 [`Model`](/sdk/model#model) and adds methods for local/global
-explanations and counterfactual scenarios. For population-level
-decomposition, fit a
-`PatternTracker`
-separately.
+explanations and scenarios.
 
 The return types of these methods are
 [`Reasoning`](/sdk/reasoning#reasoning) (single explanation) and
-[`ScenarioResult`](/sdk/reasoning#scenarioresult) (counterfactual
+[`ScenarioResult`](/sdk/reasoning#scenarioresult) (scenario
 search results).
 
 ### `ReasoningModel.explain()`
@@ -186,16 +183,16 @@ Model-wide global feature importance.
 **Returns**
 
 <ResponseField name="returns" type="Reasoning">
-  A [`Reasoning`](/sdk/reasoning#reasoning) with attributions of shape `(n_features,)`.
+  A [`Reasoning`](/sdk/reasoning#reasoning) with drivers of shape `(n_features,)`.
 </ResponseField>
 
 ### `ReasoningModel.scenario()`
 
 ```python
-scenario(df: DataFrame, *, target_class: int | str | None = None, n_trials: int = 500, max_steps: int = 30, random_state: int | None = 42, constraints: dict[str, Any] | None = None) -> ScenarioResult
+scenario(df: DataFrame, *, target_class: int | str | None = None, n_trials: int = 500, max_steps: int = 30, decision_threshold: float = 0.5, random_state: int | None = 42, constraints: dict[str, Any] | None = None) -> ScenarioResult
 ```
 
-Search for counterfactuals: minimal feature changes that flip the prediction.
+Search for scenarios: minimal feature changes that flip the prediction.
 
 **Parameters**
 
@@ -210,11 +207,16 @@ class labels are not supported.
 </ParamField>
 
 <ParamField body="n_trials" type="int">
-  Number of counterfactual attempts per query.
+  Number of scenario attempts per query.
 </ParamField>
 
 <ParamField body="max_steps" type="int">
   Maximum number of edit steps per attempt.
+</ParamField>
+
+<ParamField body="decision_threshold" type="float">
+  Probability cutoff for the positive class. Set
+away from `0.5` to target a different operating point.
 </ParamField>
 
 <ParamField body="random_state" type="int | None">
@@ -234,5 +236,5 @@ instances) with optional keys `immutable` (bool), `monotonic`
 **Returns**
 
 <ResponseField name="returns" type="ScenarioResult">
-  A [`ScenarioResult`](/sdk/reasoning#scenarioresult) with one [`QueryResult`](/sdk/reasoning#queryresult) per input row, each carrying the original query, its baseline prediction, and the list of [`Counterfactual`](/sdk/reasoning#counterfactual) candidates found.
+  A [`ScenarioResult`](/sdk/reasoning#scenarioresult) with one [`QueryResult`](/sdk/reasoning#queryresult) per input row, each carrying the original query, its baseline prediction, and the list of `Scenario` candidates found.
 </ResponseField>

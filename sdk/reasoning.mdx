@@ -9,7 +9,7 @@ description: "Train reasoning models and read their explanations and counterfact
 ## `op.reasoning.fit()`
 
 ```python
-fit(df: DataFrame, *, task: Task | None = None, hpo_space: HPOSpace | None = None, optimizer: Optimizer | None = None, random_state: int = 42) -> ReasoningFitJob
+fit(df: DataFrame, *, task: Task | None = None, metrics: list[str] | None = None, model_types: list[str] | None = None, hpo_space: HPOSpace | None = None, optimizer: Optimizer | None = None, random_state: int = 42) -> ReasoningFitJob
 ```
 
 Fit a [`ReasoningModel`](/sdk/model#reasoningmodel) via the OuterProduct API.
@@ -32,12 +32,26 @@ single self-contained call — no need to construct a separate
 `op.Regression(label_column=...)`). Required for supervised fits.
 </ParamField>
 
+<ParamField body="metrics" type="list[str] | None">
+  HPO objective metric names (e.g. `["neg_rmse"]`, `["auc"]`).
+The order is the objective order; passing more than one runs a
+multi-objective (Pareto) search. Defaults to the task metric
+server-side (neg-RMSE for regression, neg-class-error otherwise).
+</ParamField>
+
+<ParamField body="model_types" type="list[str] | None">
+  Surrogate model families to fit. A list is accepted for
+forward compatibility, but only `"tabm"` and `"tabicl"` are allowed
+today — any other value is rejected at request validation. Defaults
+to `["tabm"]`.
+</ParamField>
+
 <ParamField body="hpo_space" type="HPOSpace | None">
   The surrogate search space (a single model family). Must be
 a built [`HPOSpace`](/sdk/hpo#hpospace) — construct
 it with [`HPOSpace.from_dict`](/sdk/hpo#hpospace-from_dict)
-or `HPOSpace().add(...)` (a raw dict is rejected). Defaults to a
-surrogate chosen server-side by dataset size.
+or `HPOSpace().add(...)` (a raw dict is rejected). Its family must
+be `"tabm"` or `"tabicl"`. Defaults to a TabM surrogate.
 </ParamField>
 
 <ParamField body="optimizer" type="Optimizer | None">
@@ -58,7 +72,7 @@ omitted, the server uses a default optimizer.
 
 ## `Reasoning`
 
-A single explanation: feature attributions plus optional rules.
+A single explanation: feature drivers plus optional rules.
 
 Returned by [`ReasoningModel.explain`](/sdk/model#reasoningmodel-explain)
 and
@@ -68,14 +82,14 @@ and
 
 <ParamField body="feature_names" type="list[str]">
   Names of the raw input features. These align with the
-last axis of `attributions` only when the model has no categorical
+last axis of `drivers` only when the model has no categorical
 features. When it does, the model attributes in an encoded space
-(categoricals are one-hot expanded), so `attributions` is wider
+(categoricals are one-hot expanded), so `drivers` is wider
 than `feature_names`; use `encoded_feature_names` to label the
-attribution columns in that case.
+driver columns in that case.
 </ParamField>
 
-<ParamField body="attributions" type="np.ndarray">
+<ParamField body="drivers" type="np.ndarray">
   Per-feature contribution values, in the encoded feature
 space. Shape `(n_samples, n_encoded_features)` for local
 explanations, or `(n_encoded_features,)` for global / model-wide
@@ -85,7 +99,7 @@ is present, else with `feature_names`.
 
 <ParamField body="encoded_feature_names" type="list[str] | None">
   Encoded column labels aligned to the last axis
-of `attributions` (categorical features are one-hot expanded, e.g.
+of `drivers` (categorical features are one-hot expanded, e.g.
 `"State__KS"`). Present only when the model has categorical
 features — otherwise `None` and `feature_names` already aligns.
 </ParamField>
@@ -119,7 +133,7 @@ the target class the search aimed for.
 
 ## `QueryResult`
 
-Counterfactual search results for one input row.
+Scenario search results for one input row.
 
 ### Fields
 
@@ -137,37 +151,17 @@ Counterfactual search results for one input row.
 
 <ParamField body="already_at_desired_class" type="bool">
   `True` if the model already predicted the
-desired class for this row, so no search was needed;
-`counterfactuals` will be empty.
+desired class for this row, so no search was needed; `scenarios`
+will be empty.
 </ParamField>
 
-<ParamField body="counterfactuals" type="list[Counterfactual]">
-  Candidate edits found within the search budget. May be
-empty.
-</ParamField>
-
-## `Counterfactual`
-
-One candidate edit that flips the model's prediction toward the target class.
-
-### Fields
-
-<ParamField body="row" type="dict[str, Any]">
-  The full counterfactual row (post-edit), keyed by feature name.
-</ParamField>
-
-<ParamField body="changes" type="dict[str, Change]">
-  Per-feature edits applied to reach `row` from the original
-query.
-</ParamField>
-
-<ParamField body="n_changes" type="int">
-  Number of features edited. Equal to `len(changes)`.
+<ParamField body="scenarios" type="list[Scenario]">
+  Candidate edits found within the search budget. May be empty.
 </ParamField>
 
 ## `Change`
 
-Single-feature edit between a query and one counterfactual row.
+Single-feature edit between a query and one scenario row.
 
 ### Fields
 
@@ -176,7 +170,7 @@ Single-feature edit between a query and one counterfactual row.
 </ParamField>
 
 <ParamField body="after" type="Any">
-  The feature's value in the counterfactual row.
+  The feature's value in the scenario row.
 </ParamField>
 
 <ParamField body="delta" type="float | None">

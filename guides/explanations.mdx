@@ -1,128 +1,67 @@
 ---
-title: "Feature Explanations"
-sidebarTitle: "Explanations"
-icon: "lightbulb"
-description: "Use ReasoningModel to get per-sample feature attributions, human-readable decision rules, and global feature importance across your entire trained model."
+title: "Reasoning Methods"
+sidebarTitle: "Reasoning Methods"
+icon: "bars-progress"
+description: "Reasoning models each come with methods for reasoning across the structured data stack."
 ---
 
-A `ReasoningModel` wraps the standard `Model` class with individual reasoning methods.
+Below, we describe two core methods of the `ReasoningModel` object, drivers and scenarios.
 
-## Train a ReasoningModel
+## Drivers
 
-Explanations are only available on `ReasoningModel`, produced by `op.reasoning.fit()`.
-
-```python
-import outerproduct as op
-
-op.init()
-ws = op.Workspace()
-
-train = ws.register_csv("customers.csv", table_name="customers")
-model = op.reasoning.fit(
-    train, task=op.Binclass(label_column="churn")
-).wait()  # ReasoningModel
-```
-
-Every reasoning method takes a `DataFrame`, a query derived from the tables in your workspace. Build it with `ws.table(...)` or `ws.sql(...)` and hand it to `fit`, `predict`, or `explain`.
-
-See the [Training guide](/guides/training) for the full set of configuration options.
-
-## Local explanations
-
-`model.explain(df)` returns a `Reasoning` object with per-sample feature attributions for every row in the `DataFrame`.
-
-```python
-scores = ws.table("customers").filter(op.col("signup_year") == 2025)
-reasoning = model.explain(scores)
-```
-
-The `Reasoning` object contains:
-
-| Attribute | Type | Description |
-| --- | --- | --- |
-| `reasoning.feature_names` | `list[str]` | Ordered list of feature names, matching training-time columns |
-| `reasoning.attributions` | `ndarray` shape `(n_samples, n_features)` | Per-sample contribution of each feature to the prediction |
-| `reasoning.rules` | `list[str] \| None` | Human-readable decision rules, if the model produces them |
-
-```python
-reasoning.feature_names    # ["age", "income", "credit_score", ...]
-reasoning.attributions     # ndarray of shape (n_samples, n_features)
-reasoning.rules            # ["age > 30 AND income > 60000 → positive", ...] or None
-```
-
-<Note>
-  Attribution signs matter: a positive value means the feature pushed the prediction higher; a negative value means it pulled the prediction lower. Magnitudes reflect relative importance within each sample.
-</Note>
-
-## Predict and explain in one call
-
-When you need both prediction scores and attributions, use `predict_and_explain()`. It runs a single round-trip and guarantees the predictions and attributions correspond to the same forward pass.
+Every inference from a `ReasoningModel` is enriched with the drivers behind the output.  These drivers are available in a `Reasoning` object.  
 
 ```python
 scores = ws.table("customers").filter(op.col("signup_year") == 2025)
 predictions, reasoning = model.predict_and_explain(scores)
 
 # predictions: numpy.ndarray of shape (n_samples,)
-# reasoning:   Reasoning object with .feature_names, .attributions, .rules
+# reasoning:   Reasoning object with .feature_names, .attributions
 ```
 
-<Tip>
-  Prefer `predict_and_explain()` over calling `predict()` and `explain()` separately. It's faster and avoids any risk of the two calls returning results for different internal model states.
-</Tip>
+The `Reasoning` object contains:
 
-## Global feature importance
-
-`model.get_global_drivers()` returns a model-wide `Reasoning` object. Unlike local explanations, attributions here have shape `(n_features,)`: one importance score per feature across the entire model.
+| Attribute | Type | Description |
+| --- | --- | --- |
+| `reasoning.feature_names` | `list[str]` | Ordered list of input names |
+| `reasoning.drivers` | `ndarray` | Features that drive the prediction for each individual sample |
 
 ```python
-reasoning = model.get_global_drivers()
-
-for name, importance in zip(reasoning.feature_names, reasoning.attributions):
-    print(f"{name}: {importance:.4f}")
+reasoning.feature_names    # ["age", "income", "credit_score", ...]
+reasoning.attributions     # ndarray of same shape as input data
 ```
 
-Use global drivers to understand which features your model relies on most overall, independently of any specific input row.
+## Scenarios
 
-## Full example
+A `ReasoningModel` provides verifiable reasoning via scenarios.  Scenarios are minimal interventions on input data that change model outputs to a specific target value.  As a result, scenarios provide verifiable reasoning for models.  
+
+`model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate scenarios.
 
 ```python
-import outerproduct as op
+queries_df = pd.DataFrame([
+    {"age": 25, "income": 50000, "credit_score": 620},
+    {"age": 40, "income": 85000, "credit_score": 710},
+])
+queries = ws.register_pandas(queries_df, table_name="queries")
 
-op.init()
-ws = op.Workspace()
+result = model.scenario(queries)
 
-# Train
-train = ws.register_csv("loans.csv", table_name="loans")
-model = op.reasoning.fit(
-    train, task=op.Binclass(label_column="approved")
-).wait()
-
-# Inference rows: register the applicants and query them
-scores = ws.register_csv("new_applicants.csv", table_name="new_applicants")
-
-# Global importance, inspect once after training
-global_reasoning = model.get_global_drivers()
-for name, score in zip(global_reasoning.feature_names, global_reasoning.attributions):
-    print(f"{name}: {score:.4f}")
-
-# Local explanations + predictions in one call
-predictions, reasoning = model.predict_and_explain(scores)
-
-# Print the top driving feature for each sample
-import numpy as np
-for i, (pred, attribs) in enumerate(zip(predictions, reasoning.attributions)):
-    top_feature = reasoning.feature_names[np.argmax(np.abs(attribs))]
-    print(f"Sample {i}: pred={pred:.2f}, top driver={top_feature}")
+for q in result.queries:
+    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
+    for cf in q.scenarios:
+        print(f"  Candidate ({cf.n_changes} changes):")
+        for feature, change in cf.changes.items():
+            print(f"    {feature}: {change.before} → {change.after}")
 ```
 
-## Next steps
+## Sourcing scenarios
 
-<CardGroup cols={2}>
-  <Card title="Counterfactuals" href="/guides/counterfactuals">
-    Find minimal input changes that would flip a prediction using `model.scenario()`.
-  </Card>
+The number of scenarios is determined by the reasoning effort.  Control the effort with `n_trials` and `max_steps`:
 
-  <Card title="Pattern Tracker" href="/guides/pattern-tracker">
-    Aggregate explanation patterns across a cohort with `op.reasoning.pattern_tracker.fit()`.
-  </Card>
-</CardGroup>
+```python
+result = model.scenario(
+    queries,
+    n_trials=200,   # number of scenario sourcing trials per query row
+    max_steps=20,   # reasoning effort per trial
+)
+```

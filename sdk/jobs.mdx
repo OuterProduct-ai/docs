@@ -11,8 +11,7 @@ description: "Async job handles."
 Base handle for any async server operation. Keyed on `job_id`.
 
 Not instantiated directly — use one of the subclasses returned by
-[`Trainer.run`](/sdk/trainer#trainer-run),
-[`fit`](/sdk/reasoning#op-reasoning-fit), or
+[`Trainer.run`](/sdk/trainer#trainer-run) or
 [`fit`](/sdk/reasoning#op-reasoning-fit).
 
 ### Properties
@@ -64,32 +63,12 @@ Subclasses override this to return a richer artifact type — e.g.
 [`ReasoningFitJob`](/sdk/jobs#reasoningfitjob). The base
 implementation returns the typed
 [`JobResult`](/sdk/jobs#jobresult), which
-dataset-producing jobs (e.g. tabularize) read via
+dataset-producing jobs read via
 `JobResult.source_table_id`.
 
 ## `TrainingJob`
 
 Handle for a [`Trainer.run`](/sdk/trainer#trainer-run) call.
-
-### `TrainingJob.into_model()`
-
-```python
-into_model() -> Model
-```
-
-Construct a [`Model`](/sdk/model#model) from this job's completed result.
-
-Reads the dedicated `GET /v1/training_jobs/{id}` resource — not
-the generic results envelope — for the trained `model_id`.
-Expects the job to have already finished — typically called from
-[`wait`](/sdk/jobs#trainingjob-wait). Raises if the resource
-does not carry a `model_id` (which would indicate a server-side bug,
-not a client error).
-
-If the original [`Trainer.run`](/sdk/trainer#trainer-run)
-pinned the search to a single trainer DiffModel class (TabM / XRFM /
-DiffEnsemble), returns a `DiffModel`;
-otherwise a plain [`Model`](/sdk/model#model).
 
 ### `TrainingJob.wait()`
 
@@ -102,19 +81,6 @@ Block until training completes, then return the trained model.
 ## `ReasoningFitJob`
 
 Handle for a [`fit`](/sdk/reasoning#op-reasoning-fit) call.
-
-### `ReasoningFitJob.into_model()`
-
-```python
-into_model() -> ReasoningModel | SequenceReasoningModel
-```
-
-Construct the reasoning model from this job's completed result.
-
-Sequence-task fits resolve to a
-`SequenceReasoningModel`
-(predict + per-entity attributions); all others to a
-[`ReasoningModel`](/sdk/model#reasoningmodel).
 
 ### `ReasoningFitJob.wait()`
 
@@ -140,7 +106,7 @@ that creates the matching row, and are exposed as typed properties here.
 </ResponseField>
 
 <ResponseField name="source_table_id" type="str | None">
-  The source-table row id, when this job produced one (tabularize).
+  The source-table row id, when this job produced one.
 </ResponseField>
 
 ## `JobFailed`

@@ -1,206 +1,50 @@
 ---
-title: "Training models: HPO and Metrics"
-sidebarTitle: "Training"
-icon: "hammer"
-description: "Train models on structured data using op.reasoning.fit() for a ReasoningModel or Trainer.configure().run() for plain model training, with a configurable HPO search space and optimizer."
+title: "Reasoning Models"
+sidebarTitle: "Reasoning Models"
+icon: "dice-d6"
+description: "Train OuterProduct reasoning models optimized over custom model families (including foundation models), hyper-parameter configurations, and metrics.  "
 ---
 
-Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics. Our infrastructure complies and executes this configuration, then retrieves the best model the search found. 
+OuterProduct optimizes reasoning model performance over the configurations specified by:
 
-<Tabs>
-  <Tab title="ReasoningModel path">
-    `op.reasoning.fit()` is the fastest path to a model that produces both predictions and feature-level explanations. The same model-family × hyperparameter × metric search runs.
+- An `hpo_space`that optionally specifies model families and hyper-parameters per family.
+- An `optimizer`that optionally specifies the search strategy over the defined `hpo_space`.
 
-    ```python
-    import outerproduct as op
-    
-    op.init()
-    ws = op.Workspace()
-    
-    train = ws.table("customers")
-    
-    model = op.reasoning.fit(
-        train, task=op.Binclass(label_column="churn")
-    ).wait()  # ReasoningModel
-    ```
+When you call `fit()`, all candidate model families in the space are searched with maximum parallelization.
 
-    Use this path when you need `model.explain()`, `model.get_global_drivers()`, or `model.scenario()`.
-  </Tab>
-  <Tab title="Trainer path">
-    `Trainer.configure().run()` returns a plain `Model` (predictions only) and exposes the full set of search knobs: the HPO search space, the optimizer (sampler and trial budget), cross-validation folds, and ensembling.
+If there is one metric specified, the result is a single trained model representing the best configuration found.  If multiple metrics are specified, the result is the set of models along the Pareto frontier. 
 
-    ```python
-    import outerproduct as op
-    
-    op.init()
-    ws = op.Workspace()
-    
-    train = ws.table("customers")
-    
-    trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
-    model = trainer.run().wait()  # Model
-    ```
+## Optimized Reasoning Models At Enterprise Scale
 
-    Use this path when you need finer control over the search and don't require explanation methods.
-  </Tab>
-</Tabs>
-
-## How the Trainer works
-
-`Trainer` is an orchestrator that coordinates a search over the **HPO space** you describe. You give it two things, both optional and both resolved server-side:
-
-- An `hpo_space`: which model families to consider and, per family, which hyperparameters are fixed versus searched.
-- An `optimizer`: how to search that space (the sampler and a round-structured trial budget).
-
-When you call `run()`:
-
-- All candidate model families in the space are tuned in **parallel**, not one at a time.
-- Each round proposes new trials with the sampler you chose, scores them with cross-validation, and folds the results back before the next round.
-- Parallelism and per-trial timeouts are managed server-side; there are no SDK-level knobs.
-
-The result is a single trained model representing the best configuration found (or an ensemble of the top trials, if you set `ensemble=True`). `op.reasoning.fit()` runs this same search and returns a `ReasoningModel`.
-
-## Building a DataFrame for training
-
-Register a source table in your workspace, then build the training set as a query over it. The `register_*` methods upload local files (or connect cloud tables) and return a `DataFrame` you can query.
+Build optimized reasoning models by tuning over model families, hyper-parameter configurations, and even multiple metrics.   The example below shows how to build a reasoning model for regression across the TabM and TabICL model families.  
 
 ```python
+import outerproduct as op
+
+op.init()
 ws = op.Workspace()
 
-# From a pandas DataFrame.
-train = ws.register_pandas(df, table_name="customers")
+train = ws.table("customers")
 
-# From a CSV (uploaded from your machine).
-train = ws.register_csv("customers.csv", table_name="customers")
+# TabM: MLP-style tabular net (https://arxiv.org/abs/2410.24210)
+tabm = (
+    op.ModelParamSpace(family="tabm")
+    .float("lr", 1e-4, 3e-3, log=True)
+    .categorical("n_blocks", [1, 2, 3, 4])
+    .int("d_block", 64, 512, log=True)
+)
 
-# Shape the training set with relational ops or SQL.
-train = ws.table("customers").filter(op.col("signup_year") >= 2020)
-train = ws.sql("SELECT * FROM customers WHERE signup_year >= 2020")
-```
+# TabICL: tabular foundation model (https://arxiv.org/abs/2602.11139)
+tabicl = (
+    op.ModelParamSpace(family="tabicl")
+    .int("n_estimators", 1, 32, log=True)
+    .float("softmax_temperature", 0.5, 2.0)
+    .categorical("average_logits", [True, False])
+    .categorical("norm_methods", ["none", "power", "quantile"])
+)
 
-For NumPy arrays, build a frame first, then register it:
-
-```python
-import numpy as np
-import pandas as pd
-
-df = pd.DataFrame(X, columns=["sqft", "bedrooms"])
-df["price"] = y
-train = ws.register_pandas(df, table_name="homes")
-```
-
-<Note>
-  The schema is inferred automatically from the source table. The target column is always specified at fit time via the `task` config (e.g. `op.Binclass(label_column=...)`), not on the `DataFrame` itself.
-</Note>
-
-## Default training call
-
-The smallest valid call accepts a `DataFrame` and the target column name:
-
-```python
-# ReasoningModel (predictions + explanations)
+space = op.HPOSpace().add(tabm).add(tabicl)
 model = op.reasoning.fit(
-    train, task=op.Binclass(label_column="churn")
-).wait()
-
-# Plain Model (predictions only)
-trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
-model = trainer.run().wait()
+    train, task=op.Regression(label_column="sales_30d"),
+).wait()  
 ```
-
-## Choosing the search space
-
-Pass an `hpo_space` to control which model families are searched and how their hyperparameters are tuned. Build it with `op.HPOSpace.from_dict(...)` or the fluent `op.HPOSpace().add(...)` builder; a raw `dict` is rejected. If you omit it, OuterProduct selects a curated space based on your data (the default tabular families are `tabm` and `xrfm`). All listed families are tuned together in the same search.
-
-```python
-# List families to search their curated default spaces.
-space = op.HPOSpace.from_dict(
-    {"models": [{"family": "tabm"}, {"family": "xgboost"}]}
-)
-
-trainer = op.Trainer.configure(
-    train,
-    task=op.Binclass(label_column="churn"),
-    hpo_space=space,
-)
-model = trainer.run().wait()
-```
-
-To pin or narrow specific hyperparameters, name them with the fluent builder. Searched dimensions are `.float()` / `.int()` / `.categorical()` / `.mixture()`; constants are `.const()`.
-
-```python
-xgb = (
-    op.ModelParamSpace(family="xgboost")
-    .float("eta", 1e-4, 0.3, log=True)
-    .int("max_depth", 3, 10)
-    .const("n_estimators", 1000)
-)
-
-trainer = op.Trainer.configure(
-    train,
-    task=op.Binclass(label_column="churn"),
-    hpo_space=op.HPOSpace().add(xgb),
-)
-```
-
-See the [Trainer reference](/sdk/trainer#the-hpospace-class) for the full `HPOSpace` and distribution API.
-
-## Metrics
-
-Pass a single `op.Metric()` to optimize it directly. Pass a list to optimize all of them jointly: OuterProduct uses Optuna's native multi-objective optimization to explore the Pareto frontier of trade-offs between the listed metrics, with no metric privileged, so you don't have to pick a fixed weighting up front. If you omit `metric`, OuterProduct picks a sensible default for the task.
-
-```python
-trainer = op.Trainer.configure(
-    train,
-    task=op.Binclass(label_column="churn"),
-    metric=[op.Metric("auc"), op.Metric("accuracy")],  # jointly optimized over the Pareto frontier
-)
-model = trainer.run().wait()
-```
-
-<Tip>
-  Multi-objective runs are useful when you care about more than one quality dimension at once (for example calibration and ranking): you get the best achievable trade-offs instead of collapsing them into one weighted score.
-</Tip>
-
-## Optimizer
-
-`Trainer.run()` accepts an `optimizer` that sets the sampler and the trial budget. Build one with `op.Optimizer(kind=..., n_trials_per_step=..., n_steps=...)`. Each round proposes `n_trials_per_step` trials and `n_steps` rounds run in sequence, so the total trials searched is `n_trials_per_step * n_steps`.
-
-```python
-model = trainer.run(
-    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=10),  # 50 trials total
-    n_cv_splits=5,        # cross-validation folds per trial
-    ensemble=True,     # blend the top trials into the returned model
-).wait()
-```
-
-- `kind`: `"tpe"` (Bayesian, default) and `"cmaes"` learn from earlier rounds; `"random"` ignores them and collapses to a single round.
-- `n_cv_splits`: cross-validation folds used to score each trial.
-- `ensemble`: return an ensemble of the top trials instead of the single best.
-
-`op.reasoning.fit()` takes the same `hpo_space` and `optimizer` arguments:
-
-```python
-model = op.reasoning.fit(
-    train,
-    task=op.Binclass(label_column="churn"),
-    hpo_space=op.HPOSpace.from_dict({"models": [{"family": "tabm"}]}),
-    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=2, n_steps=5),
-).wait()
-```
-
-## Jobs API
-
-`run()` and `fit()` submit work and return a **job handle** immediately; neither call blocks. Retrieve the trained model when you need it.
-
-```python
-job = trainer.run()
-
-job.status()    # "pending" | "running" | "completed" | "failed"
-model = job.wait()   # block until done, return the trained model
-job.results()        # raw result payload (ids, URIs) once completed
-```
-
-<Note>
-  `.wait()` is the blocking convenience used throughout these examples. Use `.status()` or `.results()` to poll or fetch the outcome without blocking your process.
-</Note>
