@@ -1,8 +1,8 @@
 ---
-title: "Training models: HPO and Metrics"
+title: "Reasoning Models"
 sidebarTitle: "Models"
 icon: "dice-d6"
-description: "Train models on structured data using op.reasoning.fit() for a ReasoningModel or Trainer.configure().run() for plain model training, with a configurable HPO search space and optimizer."
+description: "Train OuterProduct reasoning models optimized over custom hyper-parameter configurations and metrics.  "
 ---
 
 Training in OuterProduct is a server-side search over model families, hyperparameters, and metrics. Our infrastructure complies and executes this configuration, then retrieves the best model the search found. 
@@ -12,36 +12,14 @@ Training in OuterProduct is a server-side search over model families, hyperparam
     `op.reasoning.fit()` is the fastest path to a model that produces both predictions and feature-level explanations. The same model-family × hyperparameter × metric search runs.
 
     ```python
-    import outerproduct as op
-    
-    op.init()
-    ws = op.Workspace()
-    
-    train = ws.table("customers")
+    train_df = ws.table("customers")
     
     model = op.reasoning.fit(
-        train, task=op.Binclass(label_column="churn")
+        train_df, task=op.Binclass(label_column="churn")
     ).wait()  # ReasoningModel
     ```
 
     Use this path when you need `model.explain()`, `model.get_global_drivers()`, or `model.scenario()`.
-  </Tab>
-  <Tab title="Trainer path">
-    `Trainer.configure().run()` returns a plain `Model` (predictions only) and exposes the full set of search knobs: the HPO search space, the optimizer (sampler and trial budget), cross-validation folds, and ensembling.
-
-    ```python
-    import outerproduct as op
-    
-    op.init()
-    ws = op.Workspace()
-    
-    train = ws.table("customers")
-    
-    trainer = op.Trainer.configure(train, task=op.Binclass(label_column="churn"))
-    model = trainer.run().wait()  # Model
-    ```
-
-    Use this path when you need finer control over the search and don't require explanation methods.
   </Tab>
 </Tabs>
 

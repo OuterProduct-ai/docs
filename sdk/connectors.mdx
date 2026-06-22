@@ -18,7 +18,7 @@ ws.register_<source>(table_name, source_locator, connector="<console-credential-
 
 ---
 
-## register_s3
+## register\_s3
 
 `ws.register_s3` registers a parquet file stored in Amazon S3. You supply the name of a pre-configured S3 credential from the OuterProduct Console, and the backend reads your data at training time using a cross-account IAM role, so no AWS access keys are required in your code.
 
@@ -67,13 +67,19 @@ ws.register_s3(table_name, url, connector)
 
 ---
 
-## register_snowflake
+## register\_snowflake
 
 `ws.register_snowflake` registers a table stored in Snowflake. The backend reads the table using a Programmatic Access Token (PAT) that you registered in the Console, so no PAT appears in your SDK code.
 
 <Steps>
+  <Step title="Add an S3 credential in the Console">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **S3**, enter your bucket details, and follow the wizard to attach the OuterProduct trust policy to a role in your AWS account.
+  </Step>
   <Step title="Add a Snowflake credential in the Console">
     Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Snowflake** and paste your account details and a Programmatic Access Token. To generate a PAT, open Snowsight and go to **Governance & Security → Users & roles**, select your user, and choose **Programmatic access tokens → Generate new token**.
+  </Step>
+  <Step title="Use the credential name in the SDK">
+    Pass the name you gave the connector to `S3Connector(connector_credential_name=...)`. The backend resolves the stored credentials automatically.
   </Step>
   <Step title="Use the credential name in the SDK">
     Pass the connector name to `register_snowflake(..., connector=...)`. The backend resolves the stored PAT automatically.
@@ -116,7 +122,7 @@ ws.register_snowflake(table_name, source_locator, connector)
 
 ---
 
-## register_databricks
+## register\_databricks
 
 `ws.register_databricks` registers a table in a Databricks SQL warehouse or cluster. The backend reads the table using a personal access token that you registered in the Console, so no token is passed through the SDK.
 
@@ -164,6 +170,21 @@ ws.register_databricks(table_name, source_locator, connector)
 </ResponseField>
 
 ---
+
+<Steps>
+  <Step title="Add a Snowflake credential in the Console">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Snowflake** and paste your account details and a Programmatic Access Token. To generate a PAT, open Snowsight and go to **Governance & Security → Users & roles**, select your user, and choose **Programmatic access tokens → Generate new token**.
+  </Step>
+  <Step title="Use the credential name in the SDK">
+    Pass the connector name to `SnowflakeConnector(connector_credential_name=...)` along with your account and database details. The backend resolves the stored PAT automatically.
+  </Step>
+  <Step title="Add a Databricks credential in the Console">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token**, choosing **Other APIs** as the token type.
+  </Step>
+  <Step title="Use the credential name in the SDK">
+    Pass the connector name to `DatabricksConnector(connector_credential_name=...)` along with your workspace and warehouse details. The backend resolves the stored token automatically.
+  </Step>
+</Steps>
 
 ## Query across your sources
 

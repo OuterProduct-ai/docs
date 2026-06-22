@@ -44,7 +44,7 @@ icon: "play"
     ```
   </Step>
   <Step title="Run inference with native reasoning">
-    Reasoning models come with additional reasoning functions.  For example, get predictions with real-time attributions. (See Overview for additional examples of reasoning like running scenarios.)
+    Reasoning models come with additional reasoning functions.  For example, get predictions with real-time drivers. (See Overview for additional examples of reasoning like running scenarios.)
 
     ```python
     recent = ws.table("customers").filter(op.col("signup_year") == 2025)
@@ -52,7 +52,7 @@ icon: "play"
     reasoning = model.explain(recent)
     
     print(reasoning.feature_names)
-    print(reasoning.attributions.shape)  # (n_samples, n_features)
+    print(reasoning.drivers.shape)  
     ```
   </Step>
 </Steps>
@@ -78,5 +78,5 @@ predictions = model.predict(recent)
 reasoning = model.explain(recent)
 
 print(reasoning.feature_names)
-print(reasoning.attributions.shape)  # (n_samples, n_features)
+print(reasoning.drivers.shape)
 ```
