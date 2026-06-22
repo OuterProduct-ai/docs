@@ -5,12 +5,14 @@ icon: "book-open"
 description: "OuterProduct enables model training and reasoning across the structured data stack.  Query over multiple sources of data, train your machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure. "
 ---
 
-## Reason over all data sources and models
+## Reason over the structured data stack
+
+Below, we outline the four step process for reasoning over all data sources and model types. 
 
 1. Register tables across S3, Snowflake, Databricks, local files.
 2. Query tables for model training.
 3. Optimize model performance across model families (including tabular foundation models), thousands of hyper-parameter configurations, and multiple metrics.
-4. Reason to interpret model outputs and verify model behavior.  
+4. Reason to interpret model outputs and verify model behavior.
 
 ```python
 import outerproduct as op
@@ -50,35 +52,8 @@ predictions, reasoning = model.predict_and_explain(test_df)
 scenarios = model.scenario(test_df)
 ```
 
-The `hpo_space` says what to search (the model families and which hyperparameters to tune) and the `optimizer` says how to search it (the sampler and the trial budget). Both are resolved server-side, and both are optional: omit them and OuterProduct picks defaults from your data. The join runs server-side too, and the credentials for each source stay on the console. Predictions, explanations, and scenarios all run on that same query.
-
 ## Building blocks
 
-OuterProduct is a handful of composable pieces:
-
-- **Workspace**: defines the universe of your data and is the single data entry point. Registers source tables (S3, Snowflake, Databricks, or local uploads) and builds queries over them with `ws.table(name)`.
+- **DataFrames**: derived from queries over the universe of your data (S3, Snowflake, Databricks, or local tables).
 - **Training**: train a model optimized across one or more metrics.
-- **Reasoning:** train a model that returns predictions and reasoning. 
-- **Explanations:** record-level drivers that indicate the features relevant for a given prediction.
-- **Scenarios**: generate minimal, realistic changes that would flip a prediction.
-- **Patterns**: derive the set of clearly defined, trending decisioning patterns.
-
-## Start here
-
-<CardGroup cols={2}>
-  <Card title="Quickstart" icon="bolt" href="/quickstart">
-    Register a table, train a ReasoningModel, and generate explanations.
-  </Card>
-
-  <Card title="Authentication" icon="key" href="/authentication">
-    Get your API key and configure the SDK.
-  </Card>
-
-  <Card title="Full Workflow Guide" icon="map" href="/guides/workflow">
-    Walk through the complete model lifecycle with detailed examples.
-  </Card>
-
-  <Card title="MCP Server" icon="server" href="/mcp/overview">
-    Use OuterProduct from Claude, Cursor, and other MCP clients.
-  </Card>
-</CardGroup>
+- **Reasoning:** train a **reasoning model** that gives drivers and scenarios as verifiable reasoning context.
