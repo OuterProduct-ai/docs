@@ -1,38 +1,48 @@
 ---
-title: "Snowflake with a PAT Credential"
+title: "Connect your Snowflake account to your OuterProduct account"
 sidebarTitle: "Snowflake"
 icon: "snowflake"
-description: "Query Snowflake tables from OuterProduct using a stored Programmatic Access Token."
+description: "Authenticate your OuterProduct account with your Snowflake account via Workload Identity Federation."
 ---
 
-`ws.register_snowflake` lets OuterProduct read data from your Snowflake tables at query time. You store your Snowflake credential once in the [OuterProduct Console](https://console.outerproduct.com) using a Programmatic Access Token (PAT) and reference it by name in the SDK. No Snowflake credentials are ever passed through the SDK. The OuterProduct backend authenticates directly with Snowflake using the stored PAT.
+## Give your OuterProduct account permission to access your Snowflake Account
 
-## Add a Snowflake credential in the Console
-
-Before registering a Snowflake table from Python, create a credential in the OuterProduct Console and generate a Programmatic Access Token in Snowflake.
+We authenticate with Snowflake via OIDC based [Workload Identity Federation](https://docs.snowflake.com/en/user-guide/workload-identity-federation).
 
 <Steps>
   <Step title="Open the New Connector wizard">
     Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **Snowflake**.
   </Step>
-  <Step title="Generate a Programmatic Access Token in Snowflake">
-    In Snowsight, navigate to **Governance & Security → Users & roles**. Select the user the token will be assigned to, then go to **Programmatic access tokens → Generate new token**. Copy this token, as you'll need it in the next step.
-
-    <Note>
-      Assign the PAT to a Snowflake user that has `SELECT` access on the tables you want OuterProduct to read.
-    </Note>
+  <Step title="Enter your Snowflake account identifier">
+    Enter your Snowflake \[account identifier\]([https://docs.snowflake.com/en/user-guide/admin-account-identifier](https://docs.snowflake.com/en/user-guide/admin-account-identifier)).
   </Step>
-  <Step title="Enter your Snowflake account information">
-    Paste your Snowflake account details and the PAT you just generated into the connector wizard.
+  <Step title="Run the generated setup SQL">
+    Copy the SQL from the connector wizard and run it in a Snowflake worksheet with a role that can create service users, such as `ACCOUNTADMIN`. The SQL creates a Snowflake `SERVICE` user that trusts OuterProduct's OIDC workload identity.
+
+    ```sql expandable
+    CREATE USER IF NOT EXISTS IDENTIFIER('OUTERPRODUCT_<ID>')
+      TYPE = SERVICE
+      WORKLOAD_IDENTITY = (
+        TYPE = OIDC
+        ISSUER = 'https://<redacted>.tokens.sts.global.api.aws'
+        SUBJECT = 'arn:aws:iam::<redacted>:user/outerproduct-backend-runtime'
+        OIDC_AUDIENCE_LIST = ('outerproduct:snowflake:org:<org-id>:account:<snowflake-account>:connector:<connector-name>')
+      )
+      DEFAULT_ROLE = PUBLIC;
+    ```
+
+    Do not edit the generated user name, issuer, subject, or audience.
   </Step>
   <Step title="Save the connector">
-    Click **Add connector**. Your credential is now stored in the Console and ready to use from the SDK.
+    Return to the connector wizard and click **Add connector**. OuterProduct validates the workload identity login before saving the connector.
   </Step>
 </Steps>
 
+The generated SQL only sets up login. The service user still needs whatever Snowflake privileges your organization requires to read the tables you register.
+
 ## Use it from Python
 
-Once your credential is saved in the Console, register the Snowflake table as a source table with `ws.register_snowflake`. Pass a table name, the source locator in `DATABASE.SCHEMA.TABLE` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+Once your connector is saved in the Console, register the Snowflake table as a source table with `ws.register_snowflake`. Pass a table name, the source locator in `DATABASE.SCHEMA.TABLE` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
@@ -40,18 +50,10 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from the environment
 ws = op.Workspace()
 
-ws.register_snowflake("customers", "MYDB.PUBLIC.CUSTOMERS", connector="prod-snowflake")
+ws.register_snowflake("customers", "MYDB.PUBLIC.CUSTOMERS", connector_name="prod-snowflake")
 
 # Build the training set as a query over the registered source.
 train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
-
-<Tip>
-  Snowflake identifiers are case-insensitive by default but are stored in uppercase. Pass the database, schema, and table in uppercase (e.g. `"MYDB.PUBLIC.CUSTOMERS"`) to avoid resolution errors.
-</Tip>
-
-<Warning>
-  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
-</Warning>
