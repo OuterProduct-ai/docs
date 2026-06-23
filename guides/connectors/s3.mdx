@@ -7,7 +7,7 @@ description: "Authenticate your OuterProduct account with AWS by assuming an IAM
 
 ## Give your OuterProduct account permission to access your S3 bucket
 
-We authenticate with AWS by assuming an IAM role in your account. The generated custom trust policy includes an `ExternalId`, which protects against [the confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
+We authenticate with AWS by assuming an IAM role in your account.
 
 You will paste two generated JSON blocks in AWS: first the custom trust policy, then the S3 permissions policy.
 
@@ -82,6 +82,11 @@ You will paste two generated JSON blocks in AWS: first the custom trust policy, 
 
 The generated custom trust policy only sets up login. The generated permissions policy controls which S3 objects OuterProduct can read.
 
+<Tip>
+  For more background on why you had to attach these policies, read AWS's guide to third party tool authentication, in particular its solution against
+  the [confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
+</Tip>
+
 ## Use it from Python
 
 Once your connector is saved in the Console, register the S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
@@ -99,7 +104,3 @@ train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
-
-<Warning>
-  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
-</Warning>
