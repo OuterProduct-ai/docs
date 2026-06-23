@@ -1,0 +1,30 @@
+guides/connectors/databricks.mdx
+  s_36e0fa1b76e609::t_7ceba4c8c2d834 2,5,8,10,12,25,29,35,57
+guides/connectors/s3.mdx
+  s_0c2577470ea8d7::t_0d408cc4138faf 2,5,8,10,12,19,21-22,43-73,76,83
+  s_36e0fa1b76e609::t_972189cc8fc939 18,24-42,74-75,79,87,104-105
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "bfa4e84230b0a3a2d9520b25b1806cc16ef252e5",
+  "prompts": {},
+  "sessions": {
+    "s_0c2577470ea8d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef1c9-a29e-7c51-aaac-a7cb349753b2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    },
+    "s_36e0fa1b76e609": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef14a-5f01-7230-a0af-0e78079c0d6c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    }
+  }
+}
