@@ -1,34 +1,47 @@
 ---
 title: "Connect your Databricks workspace to your OuterProduct account"
 sidebarTitle: "Databricks"
-icon: "layer-group"
-description: "Read Databricks tables from OuterProduct using a Console-stored personal access token."
+icon: "/logo/connectors/databricks.svg"
+description: "Authenticate your OuterProduct account with Databricks via Workload Identity Federation."
 ---
 
-`ws.register_databricks` lets OuterProduct read data from your Databricks SQL warehouse or cluster at query time. You create a Databricks connector in the [OuterProduct Console](https://console.outerproduct.com) with a personal access token, then reference the connector by name in the SDK. No Databricks token is passed through the SDK.
+## Give your OuterProduct account permission to access your Databricks workspace
 
-## Give your OuterProduct account permission to read Databricks
+We authenticate with Databricks via [OAuth token federation](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-federation). OuterProduct gets an AWS IAM OIDC token through STS, then Databricks exchanges it for a Databricks OAuth token using [OAuth 2.0 Token Exchange](https://www.rfc-editor.org/rfc/rfc8693).
 
-Before registering a Databricks table from Python, create a connector in the OuterProduct Console and generate a personal access token in Databricks.
+For Databricks background, see [Authenticate access to Databricks using OAuth token federation](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-federation).
 
 <Steps>
   <Step title="Open the New Connector wizard">
     Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **Databricks**.
   </Step>
-  <Step title="Generate a personal access token in Databricks">
-    In your Databricks account, navigate to **Settings → Developer → Access tokens** and click **Generate new token**. When prompted, select **Other APIs** as the token type. Copy this token, as you'll need it in the next step.
-
-    <Note>
-      Assign the token to a Databricks user or service principal that has `SELECT` access on the tables you want OuterProduct to read.
-    </Note>
-  </Step>
   <Step title="Enter your Databricks connection details">
-    Paste your Databricks server hostname, HTTP path, and the personal access token you just generated into the connector wizard.
+    Enter your Databricks workspace URL, SQL warehouse HTTP path, and the service principal OuterProduct should authenticate as.
+  </Step>
+  <Step title="Run the generated federation policy command">
+    Copy the Databricks CLI command from the connector wizard and run it as a Databricks account admin. Databricks federation policies are account-level, so your CLI profile must use `https://accounts.cloud.databricks.com`. For policy details, see [Configure a federation policy](https://docs.databricks.com/aws/en/dev-tools/auth/oauth-federation-policy).
+
+    ```bash expandable
+    databricks account service-principal-federation-policy create <service-principal-id> --json '{
+      "oidc_policy": {
+        "issuer": "https://<outerproduct-aws-issuer>.tokens.sts.global.api.aws",
+        "audiences": ["databricks"],
+        "subject": "<outerproduct-aws-principal-arn>"
+      }
+    }'
+    ```
+
+    Do not edit the generated issuer, audience, or subject.
+  </Step>
+  <Step title="Grant Databricks permissions">
+    Grant the Databricks service principal access to the SQL warehouse and tables you want OuterProduct to read. It needs `CAN USE` on the warehouse plus `USE CATALOG`, `USE SCHEMA`, and `SELECT` on the registered tables.
   </Step>
   <Step title="Save the connector">
-    Click **Add connector**. OuterProduct validates the Databricks connection before saving the connector.
+    Return to the connector wizard and click **Add connector**. OuterProduct validates the workload identity login before saving the connector.
   </Step>
 </Steps>
+
+The generated federation policy only sets up login. Databricks table and warehouse permissions still come from the service principal.
 
 ## Use it from Python
 
@@ -47,11 +60,3 @@ train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
-
-<Tip>
-  The server hostname and HTTP path are configured once in the Console connector, not in the SDK. Find them in the Databricks SQL warehouse UI under **Connection details**. The HTTP path changes if you switch warehouses, so update your connector accordingly.
-</Tip>
-
-<Warning>
-  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
-</Warning>

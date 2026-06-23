@@ -1,33 +1,35 @@
 ---
-title: "outerproduct connectors"
+title: "Connectors"
 sidebarTitle: "Connectors"
-description: "Register external tables into a Workspace with ws.register_s3, ws.register_snowflake, and ws.register_databricks. Credentials are configured once in the Console and referenced by name."
+description: "Register external tables from S3, Snowflake, and Databricks. Configure access once in the Console, then pass the connector name in the SDK."
 ---
 
-A `Workspace` registers tables from external sources with three methods: `ws.register_s3`, `ws.register_snowflake`, and `ws.register_databricks`. Each registers a source table that lives in the cloud system, with no intermediate download or local processing, and returns the table's `DataFrame`. You then query it with `ws.table(name)` or `ws.sql(...)`. For local files and in-memory frames, see the [Workspace reference](/sdk/dataset).
+Connectors let OuterProduct read tables from S3, Snowflake, and Databricks.
 
-All three share the same shape:
+Create the connector in the [OuterProduct Console](https://console.outerproduct.com) first. Then pass the connector name when you register a table in the SDK.
+
+All connector methods use the same shape:
 
 ```python
-ws.register_<source>(table_name, source_locator, connector="<console-credential-name>")
+ws.register_<source>(table_name, source_locator, connector="<console-connector-name>")
 ```
 
 <Note>
-  For all external connectors (S3, Snowflake, and Databricks), your cloud credentials are **never** passed through the SDK. You store them once in the [OuterProduct Console](https://console.outerproduct.com) under **Connectors**, and the SDK references them by the name you assigned with the `connector` argument. The OuterProduct backend uses those stored credentials at training and inference time.
+  Your cloud credentials are not passed through the SDK. S3 uses an IAM role. Snowflake and Databricks use workload identity federation with short-lived OAuth tokens.
 </Note>
 
 ---
 
 ## register\_s3
 
-`ws.register_s3` registers a parquet file stored in Amazon S3. You supply the name of a pre-configured S3 credential from the OuterProduct Console, and the backend reads your data at training time using a cross-account IAM role, so no AWS access keys are required in your code.
+`ws.register_s3` registers a parquet file stored in Amazon S3. OuterProduct reads it by assuming the IAM role configured in the Console.
 
 <Steps>
-  <Step title="Add an S3 credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **S3**, enter your bucket details, and follow the wizard to attach the OuterProduct trust policy to a role in your AWS account.
+  <Step title="Add an S3 connector in the Console">
+    Select **S3** and enter your S3 URI. In AWS, create an IAM role with the generated custom trust policy, attach the generated S3 permissions policy to the same role, and paste the role ARN back into the wizard.
   </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the name you gave the connector to `register_s3(..., connector=...)`. The backend resolves the stored credentials automatically.
+  <Step title="Use the connector name in the SDK">
+    Pass the connector name to `register_s3(..., connector=...)`.
   </Step>
 </Steps>
 
@@ -50,39 +52,33 @@ ws.register_s3(table_name, url, connector)
 ```
 
 <ParamField path="table_name" type="str" required>
-  Name to register the table under in the workspace. Query it later with `ws.table(table_name)`.
+  Name to register the table under. Query it later with `ws.table(table_name)`.
 </ParamField>
 
 <ParamField path="url" type="str" required>
-  The fully-qualified S3 URL of the parquet file (e.g. `"s3://my-bucket/data/customers.parquet"`). Must start with `s3://`.
+  The S3 URL of the parquet file, for example `"s3://my-bucket/data/customers.parquet"`.
 </ParamField>
 
 <ParamField path="connector" type="str" required>
-  The name of the S3 credential stored in the OuterProduct Console. This name maps to the IAM role that OuterProduct uses to access your bucket.
+  The name of the S3 connector stored in the Console. OuterProduct assumes the IAM role saved in that connector.
 </ParamField>
 
 <ResponseField name="DataFrame" type="DataFrame">
-  The `DataFrame` for the newly registered table. The data is read by the OuterProduct backend at training time.
+  The `DataFrame` for the registered table.
 </ResponseField>
 
 ---
 
 ## register\_snowflake
 
-`ws.register_snowflake` registers a table stored in Snowflake. The backend reads the table using a Programmatic Access Token (PAT) that you registered in the Console, so no PAT appears in your SDK code.
+`ws.register_snowflake` registers a table stored in Snowflake. OuterProduct authenticates with Snowflake workload identity federation, an OAuth-token-based authentication flow.
 
 <Steps>
-  <Step title="Add an S3 credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **S3**, enter your bucket details, and follow the wizard to attach the OuterProduct trust policy to a role in your AWS account.
+  <Step title="Add a Snowflake connector in the Console">
+    Select **Snowflake**, enter your Snowflake account identifier, and run the generated setup SQL in Snowflake.
   </Step>
-  <Step title="Add a Snowflake credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Snowflake** and paste your account details and a Programmatic Access Token. To generate a PAT, open Snowsight and go to **Governance & Security → Users & roles**, select your user, and choose **Programmatic access tokens → Generate new token**.
-  </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the name you gave the connector to `S3Connector(connector_credential_name=...)`. The backend resolves the stored credentials automatically.
-  </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the connector name to `register_snowflake(..., connector=...)`. The backend resolves the stored PAT automatically.
+  <Step title="Use the connector name in the SDK">
+    Pass the connector name to `register_snowflake(..., connector=...)`.
   </Step>
 </Steps>
 
@@ -105,33 +101,33 @@ ws.register_snowflake(table_name, source_locator, connector)
 ```
 
 <ParamField path="table_name" type="str" required>
-  Name to register the table under in the workspace. Query it later with `ws.table(table_name)`.
+  Name to register the table under. Query it later with `ws.table(table_name)`.
 </ParamField>
 
 <ParamField path="source_locator" type="str" required>
-  The fully-qualified Snowflake table in `DATABASE.SCHEMA.TABLE` form (e.g. `"MYDB.PUBLIC.CUSTOMERS"`).
+  The Snowflake table in `DATABASE.SCHEMA.TABLE` form, for example `"MYDB.PUBLIC.CUSTOMERS"`.
 </ParamField>
 
 <ParamField path="connector" type="str" required>
-  The name of the Snowflake credential stored in the OuterProduct Console. The backend uses this credential to authenticate against Snowflake at training time.
+  The name of the Snowflake connector stored in the Console.
 </ParamField>
 
 <ResponseField name="DataFrame" type="DataFrame">
-  The `DataFrame` for the newly registered table. The data is read by the OuterProduct backend at training time.
+  The `DataFrame` for the registered table.
 </ResponseField>
 
 ---
 
 ## register\_databricks
 
-`ws.register_databricks` registers a table in a Databricks SQL warehouse or cluster. The backend reads the table using a personal access token that you registered in the Console, so no token is passed through the SDK.
+`ws.register_databricks` registers a table in Databricks. OuterProduct authenticates with Databricks OAuth token federation. OuterProduct gets an AWS IAM OIDC token through STS, then Databricks exchanges it for a Databricks OAuth token using OAuth 2.0 Token Exchange (RFC 8693).
 
 <Steps>
-  <Step title="Add a Databricks credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token**, choosing **Other APIs** as the token type.
+  <Step title="Add a Databricks connector in the Console">
+    Select **Databricks** and enter your workspace URL, SQL warehouse HTTP path, and service principal. Run the generated Databricks account-level federation policy command, then grant that service principal access to the warehouse and tables.
   </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the connector name to `register_databricks(..., connector=...)`. The backend resolves the stored token automatically.
+  <Step title="Use the connector name in the SDK">
+    Pass the connector name to `register_databricks(..., connector=...)`.
   </Step>
 </Steps>
 
@@ -154,41 +150,26 @@ ws.register_databricks(table_name, source_locator, connector)
 ```
 
 <ParamField path="table_name" type="str" required>
-  Name to register the table under in the workspace. Query it later with `ws.table(table_name)`.
+  Name to register the table under. Query it later with `ws.table(table_name)`.
 </ParamField>
 
 <ParamField path="source_locator" type="str" required>
-  The fully-qualified Databricks table in `catalog.schema.table` form (e.g. `"main.default.customers"`).
+  The Databricks table in `catalog.schema.table` form, for example `"main.default.customers"`.
 </ParamField>
 
 <ParamField path="connector" type="str" required>
-  The name of the Databricks credential stored in the OuterProduct Console. The backend uses this personal access token to authenticate against Databricks at training time.
+  The name of the Databricks connector stored in the Console.
 </ParamField>
 
 <ResponseField name="DataFrame" type="DataFrame">
-  The `DataFrame` for the newly registered table. The data is read by the OuterProduct backend at training time.
+  The `DataFrame` for the registered table.
 </ResponseField>
 
 ---
 
-<Steps>
-  <Step title="Add a Snowflake credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Snowflake** and paste your account details and a Programmatic Access Token. To generate a PAT, open Snowsight and go to **Governance & Security → Users & roles**, select your user, and choose **Programmatic access tokens → Generate new token**.
-  </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the connector name to `SnowflakeConnector(connector_credential_name=...)` along with your account and database details. The backend resolves the stored PAT automatically.
-  </Step>
-  <Step title="Add a Databricks credential in the Console">
-    Log in to [console.outerproduct.com](https://console.outerproduct.com), navigate to **Connectors**, and click **New Connector**. Select **Databricks** and paste your workspace credentials. To create a personal access token, open your Databricks account, go to **Settings → Developer → Access tokens**, and click **Generate new token**, choosing **Other APIs** as the token type.
-  </Step>
-  <Step title="Use the credential name in the SDK">
-    Pass the connector name to `DatabricksConnector(connector_credential_name=...)` along with your workspace and warehouse details. The backend resolves the stored token automatically.
-  </Step>
-</Steps>
-
 ## Query across your sources
 
-A workspace can hold tables from more than one system at once, and `ws.sql(...)` joins across them. Register an S3 dataset, a Snowflake table, and a Databricks table, then build one training set from all three:
+A workspace can hold tables from more than one system. `ws.sql(...)` can join them.
 
 ```python
 ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
@@ -212,4 +193,4 @@ train = ws.sql("""
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churned")).wait()
 ```
 
-The join runs server-side, and the credentials for each source stay in the Console.
+The join runs server-side, and the connector configuration for each source stays in the Console.
