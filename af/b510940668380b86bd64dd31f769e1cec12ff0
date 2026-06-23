@@ -1,0 +1,60 @@
+guides/connectors/snowflake.mdx
+  s_0c2577470ea8d7::t_56f2b3f9189e59 5,8,53
+  s_0c2577470ea8d7::t_11a0c76bdee0d6 10
+  s_8f25028e8009a2::t_9a9c0f847c67fa 4
+guides/connectors/s3.mdx
+  s_8f25028e8009a2::t_f0936c3290e655 4
+logo/connectors/s3.svg
+  s_8f25028e8009a2::t_bcc97e71aa2ac5 1
+logo/connectors/databricks.svg
+  s_8f25028e8009a2::t_e5e02a477c351c 1
+guides/connectors/databricks.mdx
+  s_0c2577470ea8d7::t_660563a6f6a1a5 10,37
+  s_0c2577470ea8d7::t_bc2bc9a6f3467e 12,22
+  s_0c2577470ea8d7::t_56f2b3f9189e59 5,8,19-21,23-36,40,44
+  s_8f25028e8009a2::t_7b2860584a1bb3 4
+logo/connectors/snowflake.svg
+  s_8f25028e8009a2::t_da930834c15de7 1
+sdk/connectors.mdx
+  s_36e0fa1b76e609::t_cc88cea81caea3 14,126,129,196
+  s_0c2577470ea8d7::t_11a0c76bdee0d6 74
+  s_0c2577470ea8d7::t_56f2b3f9189e59 18,127
+  s_36e0fa1b76e609::t_424c6aaf9bb633 28,31
+  s_0c2577470ea8d7::t_fd7a087ecaa366 2,4,11,25,29,32,55,59,63,67,78,81,104,108,112,116,130,153,157,161,165,172
+  s_0c2577470ea8d7::t_2ad9bd7d9cbab8 7,9
+  s_36e0fa1b76e609::t_f86e9051d938ad 77
+  s_0c2577470ea8d7::t_660563a6f6a1a5 123
+  s_36e0fa1b76e609::t_c6617f1440b800 80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "afb510940668380b86bd64dd31f769e1cec12ff0",
+  "prompts": {},
+  "sessions": {
+    "s_0c2577470ea8d7": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef1c9-a29e-7c51-aaac-a7cb349753b2",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    },
+    "s_36e0fa1b76e609": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef14a-5f01-7230-a0af-0e78079c0d6c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    },
+    "s_8f25028e8009a2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "50380938-e0e0-42a0-9721-248a16d90eff",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    }
+  }
+}
