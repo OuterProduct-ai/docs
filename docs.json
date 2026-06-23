@@ -51,8 +51,8 @@
             "group": "Data Connectors",
             "pages": [
               "guides/connectors/s3",
-              "guides/connectors/snowflake",
-              "guides/connectors/databricks"
+              "guides/connectors/databricks",
+              "guides/connectors/snowflake"
             ]
           },
           {
