@@ -1,15 +1,15 @@
 ---
-title: "Connecting to Databricks"
+title: "Connect your Databricks workspace to your OuterProduct account"
 sidebarTitle: "Databricks"
 icon: "layer-group"
-description: "Reference Databricks SQL warehouse or cluster tables from OuterProduct using a stored access token. No Databricks credentials pass through the SDK."
+description: "Read Databricks tables from OuterProduct using a Console-stored personal access token."
 ---
 
-`ws.register_databricks` lets OuterProduct read data from your Databricks SQL warehouse or cluster at query time. You store your Databricks credential once in the [OuterProduct Console](https://console.outerproduct.com) using a personal access token and reference it by name in the SDK. No Databricks access tokens are ever passed through the SDK, as the OuterProduct backend authenticates directly with Databricks using the stored credential.
+`ws.register_databricks` lets OuterProduct read data from your Databricks SQL warehouse or cluster at query time. You create a Databricks connector in the [OuterProduct Console](https://console.outerproduct.com) with a personal access token, then reference the connector by name in the SDK. No Databricks token is passed through the SDK.
 
-## Add a Databricks credential in the Console
+## Give your OuterProduct account permission to read Databricks
 
-Before registering a Databricks table from Python, create a credential in the OuterProduct Console and generate a personal access token in Databricks.
+Before registering a Databricks table from Python, create a connector in the OuterProduct Console and generate a personal access token in Databricks.
 
 <Steps>
   <Step title="Open the New Connector wizard">
@@ -22,17 +22,17 @@ Before registering a Databricks table from Python, create a credential in the Ou
       Assign the token to a Databricks user or service principal that has `SELECT` access on the tables you want OuterProduct to read.
     </Note>
   </Step>
-  <Step title="Enter your Databricks credentials">
+  <Step title="Enter your Databricks connection details">
     Paste your Databricks server hostname, HTTP path, and the personal access token you just generated into the connector wizard.
   </Step>
   <Step title="Save the connector">
-    Click **Add connector**. Your credential is now stored in the Console and ready to use from the SDK.
+    Click **Add connector**. OuterProduct validates the Databricks connection before saving the connector.
   </Step>
 </Steps>
 
 ## Use it from Python
 
-Once your credential is saved in the Console, register the Databricks table as a source table with `ws.register_databricks`. Pass a table name, the source locator in `catalog.schema.table` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+Once your connector is saved in the Console, register the Databricks table as a source table with `ws.register_databricks`. Pass a table name, the source locator in `catalog.schema.table` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
