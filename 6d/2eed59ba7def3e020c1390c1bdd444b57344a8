@@ -1,0 +1,20 @@
+guides/connectors/snowflake.mdx
+  s_36e0fa1b76e609::t_bc67430a7ebbb7 2,5,8,10,16-17,19,22,32,37,41-42,45
+  s_36e0fa1b76e609::t_56139be31ca558 20,23-31,33-34
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.5.9",
+  "base_commit_sha": "6d2eed59ba7def3e020c1390c1bdd444b57344a8",
+  "prompts": {},
+  "sessions": {
+    "s_36e0fa1b76e609": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019ef14a-5f01-7230-a0af-0e78079c0d6c",
+        "model": "gpt-5.5"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    }
+  }
+}
