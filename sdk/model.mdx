@@ -184,20 +184,25 @@ for name, importance in zip(reasoning.feature_names, reasoning.attributions):
 model.scenario(
     df: DataFrame,
     *,
-    target_class: int | str | None = None,
+    target_value: float,
     n_trials: int = 500,
     max_steps: int = 30,
+    random_state: int | None = 42,
+    constraints: dict[str, dict] | None = None,
+    explain_every: int = 1,
+    check_every: int = 1,
+    top_k_drivers: int | None = None,
 ) -> ScenarioResult
 ```
 
-Runs a counterfactual search for each row in `df`, finding the minimal feature edits that would shift the prediction to `target_class`. Each row is treated independently; results are returned together in a `ScenarioResult`.
+Searches for the minimal feature edits that drive each row's prediction across `target_value`. Each row is treated independently; results are returned together in a `ScenarioResult`.
 
 <ParamField body="df" type="DataFrame" required>
-  Query rows to analyse, as a `DataFrame`. Each row receives its own set of counterfactual candidates.
+  Query rows to analyse, as a `DataFrame`. Each row receives its own set of scenario candidates.
 </ParamField>
 
-<ParamField body="target_class" type="int | str | None">
-  The class you want each counterfactual to reach (for binary classification, the class to flip rows into). Defaults to `None`.
+<ParamField body="target_value" type="float" required>
+  The score the search drives each query's prediction to cross. In label units for regression; the positive-class probability in `(0, 1)` for binary classification (e.g. `0.5` flips a row to the other side of the decision boundary). Each query travels in whichever direction reaches the target, so a row already past it walks back toward it.
 </ParamField>
 
 <ParamField body="n_trials" default="500" type="int">
@@ -205,11 +210,31 @@ Runs a counterfactual search for each row in `df`, finding the minimal feature e
 </ParamField>
 
 <ParamField body="max_steps" default="30" type="int">
-  Maximum number of feature edits allowed per attempt. Constraining this produces more actionable (smaller) counterfactuals. Defaults to `30`.
+  Maximum number of feature edits allowed per attempt. Constraining this produces more actionable (smaller) scenarios. Defaults to `30`. Note that `n_trials × max_steps` is capped per query, so increasing one may require lowering the other.
+</ParamField>
+
+<ParamField body="random_state" default="42" type="int | None">
+  Seed for the search, making results reproducible. Pass `None` for nondeterministic search. Defaults to `42`.
+</ParamField>
+
+<ParamField body="constraints" type="dict[str, dict] | None">
+  Per-feature rules the search must respect, mapping a feature name to a constraint dict. Supported keys: `immutable` (`bool` — the feature may not be edited), `monotonic` (`"increase"` or `"decrease"` — edits may only move the value in one direction), `value_range` (`(low, high)` — either bound may be `None`), and `allowed_values` (a non-empty list of permitted values). `immutable` cannot be combined with the others. Defaults to `None`.
+</ParamField>
+
+<ParamField body="explain_every" default="1" type="int">
+  Speed/quality knob: higher values speed up the search at some cost to scenario yield. Defaults to `1` (highest quality).
+</ParamField>
+
+<ParamField body="check_every" default="1" type="int">
+  Speed/quality knob with higher leverage than `explain_every`: higher values speed up the search with a coarser stride. Defaults to `1` (highest quality).
+</ParamField>
+
+<ParamField body="top_k_drivers" type="int | None">
+  Restrict each step to the `K` most influential features, yielding sparser scenarios on wide feature spaces. `None` applies no restriction; avoid `1` (too restrictive). Defaults to `None`.
 </ParamField>
 
 <ResponseField name="returns" type="ScenarioResult">
-  A `ScenarioResult` containing one `QueryResult` per input row. See [ScenarioResult](#scenarioresult) below for the full object tree.
+  A `ScenarioResult` carrying the resolved `target_value` and one `QueryResult` per input row. See [ScenarioResult](#scenarioresult) below for the full object tree.
 </ResponseField>
 
 <CodeGroup>
@@ -228,25 +253,31 @@ queries = ws.register_pylist(
     table_name="queries",
 )
 
-result = model.scenario(queries, target_class=1)
+result = model.scenario(queries, target_value=0.5)
 
 for q in result.queries:
-    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
-    if q.already_at_desired_class:
-        print("  Already at target class, no change needed.")
+    print(f"baseline={q.baseline_prediction:.2f}")
+    if not q.scenarios:
+        print("  No scenario found (or already at target).")
         continue
-    for cf in q.counterfactuals:
-        print(f"  Candidate ({cf.n_changes} changes):")
-        for feature, change in cf.changes.items():
-            print(f"    {feature}: {change.before} → {change.after}")
+    for scenario in q.scenarios:
+        print(f"  Candidate ({len(scenario)} changes):")
+        for feature, new_value in scenario.items():
+            print(f"    {feature}: {q.query[feature]} → {new_value}")
 ```
 
 ```python Tuned search
 result = model.scenario(
     queries,
-    target_class=1,
-    n_trials=200,   # more attempts per row
-    max_steps=3,    # cap edits to keep changes actionable
+    target_value=0.5,
+    n_trials=200,       # more attempts per row
+    max_steps=3,        # cap edits to keep changes actionable
+    top_k_drivers=5,    # only edit the 5 most influential features
+    constraints={
+        "age": {"immutable": True},                  # never edit age
+        "income": {"monotonic": "increase"},          # income may only go up
+        "credit_score": {"value_range": (300, 850)},  # stay in valid range
+    },
 )
 ```
 
@@ -256,7 +287,11 @@ result = model.scenario(
 
 ## ScenarioResult
 
-`ScenarioResult` is returned by `model.scenario()`. It groups all counterfactual results for a batch of query rows.
+`ScenarioResult` is returned by `model.scenario()`. It groups all scenario results for a batch of query rows.
+
+<ResponseField name="target_value" type="float">
+  The target the search drove each query's prediction toward, echoed back from the request.
+</ResponseField>
 
 <ResponseField name="queries" type="list[QueryResult]">
   One `QueryResult` per row in the input `DataFrame`, in the same order as the input rows.
@@ -266,58 +301,27 @@ result = model.scenario(
 
 ## QueryResult
 
-A single row's counterfactual analysis.
+A single row's scenario analysis.
 
-<ResponseField name="query_index" type="int">
-  Zero-based index of this row within the input `DataFrame`, matching the original row order.
+<ResponseField name="query" type="dict[str, Any]">
+  The original feature values for this row. Scenario diffs are read against this baseline.
 </ResponseField>
 
 <ResponseField name="baseline_prediction" type="float">
   The model's prediction for this row before any edits are applied.
 </ResponseField>
 
-<ResponseField name="already_at_desired_class" type="bool">
-  `True` if the baseline prediction already belongs to `target_class`, meaning no change is required. When `True`, `counterfactuals` will be empty.
-</ResponseField>
-
-<ResponseField name="counterfactuals" type="list[Counterfactual]">
-  Candidate counterfactual edits that would shift this row's prediction to `target_class`, ordered by fewest changes first. May be empty if the search found no valid path within the configured `max_steps` and `n_trials`.
-</ResponseField>
-
----
-
-## Counterfactual
-
-One candidate set of edits for a single query row.
-
-<ResponseField name="n_changes" type="int">
-  Number of features modified in this counterfactual. Smaller is generally more actionable.
-</ResponseField>
-
-<ResponseField name="changes" type="dict[str, Change]">
-  Mapping from feature name to a `Change` object describing what value it held before and what it would need to become.
+<ResponseField name="scenarios" type="list[dict[str, Any]]">
+  Candidate scenarios that drive this row's prediction across `target_value`, ordered by fewest changes first. Each scenario is a compact diff — `{changed_feature: new_value}` — with unchanged features omitted; read the original values from `query`. The list is empty when the search found no valid path within the configured `max_steps` and `n_trials`, or when the baseline prediction is already at `target_value`.
 </ResponseField>
 
 ```python
-for cf in query_result.counterfactuals:
-    print(f"  {cf.n_changes} change(s):")
-    for feature, change in cf.changes.items():
-        print(f"    {feature}: {change.before} → {change.after}")
+for q in result.queries:
+    for scenario in q.scenarios:
+        print(f"  {len(scenario)} change(s):")
+        for feature, new_value in scenario.items():
+            print(f"    {feature}: {q.query[feature]} → {new_value}")
 # 2 change(s):
 #   credit_score: 620 → 680
 #   income: 50000 → 62000
 ```
-
----
-
-## Change
-
-Describes a single feature edit within a `Counterfactual`.
-
-<ResponseField name="before" type="any">
-  The feature's value in the original query row.
-</ResponseField>
-
-<ResponseField name="after" type="any">
-  The value the feature would need to take for the counterfactual to reach `target_class`.
-</ResponseField>

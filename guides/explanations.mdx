@@ -35,7 +35,7 @@ reasoning.drivers     # ndarray of same shape as input data
 
 A `ReasoningModel` provides verifiable reasoning via scenarios.  Scenarios are minimal interventions on input data that change model outputs to a specific target value.  As a result, scenarios provide verifiable reasoning for models.
 
-`model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate scenarios.
+`model.scenario()` is available on any `ReasoningModel` and returns a structured `ScenarioResult` containing one `QueryResult` per input row, each with the candidate scenarios. The required `target_value` is the score the search drives each prediction toward — in label units for regression, or the positive-class probability in `(0, 1)` for binary classification (e.g. `0.5` flips a row to the other side of the decision boundary).
 
 ```python
 queries_df = pd.DataFrame([
@@ -44,14 +44,15 @@ queries_df = pd.DataFrame([
 ])
 queries = ws.register_pandas(queries_df, table_name="queries")
 
-result = model.scenario(queries)
+result = model.scenario(queries, target_value=0.5)
 
 for q in result.queries:
-    print(f"Query {q.query_index}: baseline={q.baseline_prediction:.2f}")
-    for cf in q.scenarios:
-        print(f"  Candidate ({cf.n_changes} changes):")
-        for feature, change in cf.changes.items():
-            print(f"    {feature}: {change.before} → {change.after}")
+    print(f"baseline={q.baseline_prediction:.2f}")
+    for scenario in q.scenarios:
+        # Each scenario is a compact diff: {changed_feature: new_value}.
+        print(f"  Candidate ({len(scenario)} changes):")
+        for feature, new_value in scenario.items():
+            print(f"    {feature}: {q.query[feature]} → {new_value}")
 ```
 
 ## Sourcing scenarios
@@ -61,6 +62,7 @@ The number of scenarios is determined by the reasoning effort.  Control the effo
 ```python
 result = model.scenario(
     queries,
+    target_value=0.5,
     n_trials=200,   # number of scenario sourcing trials per query row
     max_steps=20,   # reasoning effort per trial
 )

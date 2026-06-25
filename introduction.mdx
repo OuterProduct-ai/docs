@@ -49,7 +49,7 @@ model = op.reasoning.fit(
 # 4. Reasoning 
 test_df = df.filter(op.col("id") >= split).drop(op.col("churned"))
 predictions, reasoning = model.predict_and_explain(test_df)
-scenarios = model.scenario(test_df)
+scenarios = model.scenario(test_df, target_value=0.5)
 ```
 
 ## Building blocks

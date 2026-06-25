@@ -110,7 +110,7 @@
     "ReasoningModel.explain(dataset) -> Reasoning",
     "ReasoningModel.predict_and_explain(dataset) -> (ndarray, Reasoning)",
     "ReasoningModel.get_global_drivers() -> Reasoning",
-    "ReasoningModel.scenario(dataset, target_class=..., max_steps=...) -> ScenarioResult",
+    "ReasoningModel.scenario(dataset, target_value=..., max_steps=..., constraints=...) -> ScenarioResult",
     "outerproduct.reasoning.pattern_tracker.fit(model, dataset, target_range=...) -> Job[PatternTracker]",
     "PatternTracker.transform(X) / .distribution(X) / .partition(X)",
     "outerproduct.FileUploadConnector().upload(path)",
