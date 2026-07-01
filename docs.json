@@ -7,13 +7,7 @@
     "dark": "/logo/op-logo-dark.svg"
   },
   "favicon": "/logo/op-avatar.png",
-  "redirects": [
-    {
-      "source": "/use-cases/recommender",
-      "destination": "/use-cases/recommendations",
-      "permanent": true
-    }
-  ],
+  "redirects": [],
   "colors": {
     "primary": "#000000",
     "light": "#FFFFFF",
