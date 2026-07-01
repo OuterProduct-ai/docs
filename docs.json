@@ -112,8 +112,7 @@
               "sdk/connectors"
             ]
           }
-        ],
-        "hidden": true
+        ]
       },
       {
         "tab": "API Reference",
