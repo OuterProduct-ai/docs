@@ -10,7 +10,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/introduction",
+      "destination": "/guides/introduction",
       "permanent": true
     },
     {
@@ -41,10 +41,7 @@
                 "icon": "link",
                 "pages": [
                   "guides/connectors/overview",
-                  "guides/connectors/file-upload",
-                  "guides/connectors/s3",
-                  "guides/connectors/snowflake",
-                  "guides/connectors/databricks"
+                  "guides/connectors/file-upload"
                 ]
               },
               "guides/dataquery",

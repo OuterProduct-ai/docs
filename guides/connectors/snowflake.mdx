@@ -1,13 +1,10 @@
 ---
-title: "Connect your Snowflake account to your OuterProduct account"
-sidebarTitle: "Snowflake"
-description: "Authenticate your OuterProduct account with Snowflake via Workload Identity Federation."
-icon: "snowflake"
+title: "Snowflake"
 ---
 
-## Give your OuterProduct account permission to access your Snowflake account
+## Give your OuterProduct account permission to access your Snowflake aaccount
 
-We authenticate with Snowflake via [Workload Identity Federation](https://docs.snowflake.com/en/user-guide/workload-identity-federation), an OAuth-token-based authentication flow.
+We authenticate with Snowflake via [Workload Identity Federation](https://docs.snowflake.com/en/user-guide/workload-identity-federation), an OAuth-token-based authentication flow[Workload Identity Federation](https://docs.snowflake.com/en/user-guide/workload-identity-federation), an OAuth-token-based authentication flow.
 
 <Steps>
   <Step title="Open the New Connector wizard">
@@ -40,8 +37,6 @@ We authenticate with Snowflake via [Workload Identity Federation](https://docs.s
 
 The generated SQL only sets up login. The service user still needs whatever Snowflake privileges your organization requires to read the tables you register.
 
-## Use it from Python
-
 Once your connector is saved in the Console, register the Snowflake table as a source table with `ws.register_snowflake`. Pass a table name, the source locator in `DATABASE.SCHEMA.TABLE` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
@@ -57,3 +52,5 @@ train = ws.table("customers").filter(op.col("signup_year") >= 2020)
 
 model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 ```
+
+OLL

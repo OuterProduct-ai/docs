@@ -1,9 +1,191 @@
 ---
 title: "Connect your Amazon S3 bucket to your OuterProduct account"
 sidebarTitle: "Amazon S3"
+icon: "box-archive"
 description: "Authenticate your OuterProduct account with AWS by assuming an IAM role you own."
-icon: "aws"
 ---
+
+## Give your OuterProduct account permission to access your S3 bucket
+
+We authenticate with AWS by assuming an IAM role in your account. The generated custom trust policy includes an `ExternalId`, which mitigates [the confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
+
+You will paste two generated JSON blocks in AWS: first the custom trust policy, then the S3 permissions policy.
+
+<Steps>
+  <Step title="Open the New Connector wizard">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **S3**.
+  </Step>
+  <Step title="Enter your S3 URI">
+    Enter the S3 URI you want OuterProduct to read, for example `s3://my-bucket/data/`, then click **Next**.
+  </Step>
+  <Step title="Create an IAM role with the generated custom trust policy">
+    In AWS IAM, go to **Roles**, click **Create role**, and choose **Custom trust policy**. Paste the generated custom trust policy from the connector wizard into the trust policy box.
+
+    ```json expandable
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "AWS": "<outerproduct-principal-arn>"
+          },
+          "Action": "sts:AssumeRole",
+          "Condition": {
+            "StringEquals": {
+              "sts:ExternalId": "outerproduct:<org-id>"
+            }
+          }
+        }
+      ]
+    }
+    ```
+
+    Do not paste the S3 permissions policy into the custom trust policy box.
+  </Step>
+  <Step title="Attach the generated S3 permissions policy to the same role">
+    Finish creating the role, open it, and go to **Permissions**. Click **Add permissions**, choose **Create inline policy**, switch to **JSON**, and paste the generated permissions policy from the connector wizard.
+
+    ```json expandable
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "s3:ListBucket",
+          "Resource": "arn:aws:s3:::my-bucket",
+          "Condition": {
+            "StringLike": {
+              "s3:prefix": [
+                "data",
+                "data/*"
+              ]
+            }
+          }
+        },
+        {
+          "Effect": "Allow",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::my-bucket/data/*"
+        }
+      ]
+    }
+    ```
+  </Step>
+  <Step title="Enter the role ARN">
+    Copy the ARN for that IAM role from AWS and paste it into the connector wizard.
+  </Step>
+  <Step title="Save the connector">
+    Click **Add connector**. OuterProduct validates `sts:AssumeRole` before saving the connector.
+  </Step>
+</Steps>
+
+The generated custom trust policy only sets up login. The generated permissions policy controls which S3 objects OuterProduct can read.
+
+## Use it from Python
+
+Once your connector is saved in the Console, register the S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
+
+ws.register_s3("customers", "s3://my-bucket/data/customers.parquet", connector="prod-aws")
+
+# Build the training set as a query over the registered source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+```
+
+<Warning>
+  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
+</Warning>
+
+## Give your OuterProduct account permission to access your S3 bucket
+
+We authenticate with AWS by assuming an IAM role in your account. The generated custom trust policy includes an `ExternalId`, which protects against [the confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
+
+You will paste two generated JSON blocks in AWS: first the custom trust policy, then the S3 permissions policy.
+
+<Steps>
+  <Step title="Open the New Connector wizard">
+    Log in to [console.outerproduct.com](https://console.outerproduct.com) and navigate to **Connectors**. Click **New Connector**, give your connector a name, and select **S3**.
+  </Step>
+  <Step title="Enter your S3 URI">
+    Enter the S3 URI you want OuterProduct to read, for example `s3://my-bucket/data/`, then click **Next**.
+  </Step>
+  <Step title="Create an IAM role with the generated custom trust policy">
+    In AWS IAM, go to **Roles**, click **Create role**, and choose **Custom trust policy**. Paste the generated custom trust policy from the connector wizard into the trust policy box.
+
+    ```json expandable
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Principal": {
+            "AWS": "<outerproduct-principal-arn>"
+          },
+          "Action": "sts:AssumeRole",
+          "Condition": {
+            "StringEquals": {
+              "sts:ExternalId": "outerproduct:<org-id>"
+            }
+          }
+        }
+      ]
+    }
+    ```
+
+    Do not paste the S3 permissions policy into the custom trust policy box.
+  </Step>
+  <Step title="Attach the generated S3 permissions policy to the same role">
+    Finish creating the role, open it, and go to **Permissions**. Click **Add permissions**, choose **Create inline policy**, switch to **JSON**, and paste the generated permissions policy from the connector wizard.
+
+    ```json expandable
+    {
+      "Version": "2012-10-17",
+      "Statement": [
+        {
+          "Effect": "Allow",
+          "Action": "s3:ListBucket",
+          "Resource": "arn:aws:s3:::my-bucket",
+          "Condition": {
+            "StringLike": {
+              "s3:prefix": [
+                "data",
+                "data/*"
+              ]
+            }
+          }
+        },
+        {
+          "Effect": "Allow",
+          "Action": "s3:GetObject",
+          "Resource": "arn:aws:s3:::my-bucket/data/*"
+        }
+      ]
+    }
+    ```
+  </Step>
+  <Step title="Enter the role ARN">
+    Copy the ARN for that IAM role from AWS and paste it into the connector wizard.
+  </Step>
+  <Step title="Save the connector">
+    Click **Add connector**. OuterProduct validates `sts:AssumeRole` before saving the connector.
+  </Step>
+</Steps>
+
+The generated custom trust policy only sets up login. The generated permissions policy controls which S3 objects OuterProduct can read.
+
+Once your connector is saved in the Console, register the S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+
+<Warning>
+  The `connector` argument must match exactly the name you gave your connector in the OuterProduct Console.
+</Warning>
 
 ## Give your OuterProduct account permission to access your S3 bucket
 
@@ -86,20 +268,4 @@ The generated custom trust policy only sets up login. The generated permissions 
   For more background on why you had to attach these policies, read AWS's guide to third party tool authentication, in particular its solution against the [confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
 </Tip>
 
-## Use it from Python
-
 Once your connector is saved in the Console, register the S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
-
-```python
-import outerproduct as op
-
-op.init()  # reads OUTERPRODUCT_API_KEY from the environment
-ws = op.Workspace()
-
-ws.register_s3("customers", "s3://my-bucket/data/customers.parquet", connector="prod-aws")
-
-# Build the training set as a query over the registered source.
-train = ws.table("customers").filter(op.col("signup_year") >= 2020)
-
-model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
-```
