@@ -9,11 +9,6 @@
   "favicon": "/logo/op-avatar.png",
   "redirects": [
     {
-      "source": "/",
-      "destination": "/introduction",
-      "permanent": true
-    },
-    {
       "source": "/use-cases/recommender",
       "destination": "/use-cases/recommendations",
       "permanent": true

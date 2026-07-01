@@ -2,8 +2,42 @@
 title: "Overview"
 ---
 
-Training a reasoning model on the OuterProduct platform, then predicting with it, comes down to a few pieces that fit together.
+Training a reasoning model on the OuterProduct platform, then predicting with it, comes down to the following flow.
 
 - Configure the run with a **Task** (what to predict), **metrics** (what to optimize for), and an **HPO space** with an **Optimizer** (which model families to try and how hard to search).
+
+```python
+import outerproduct as op
+
+# 1. Task — what to predict
+task = op.Binclass(label_column="Churn")
+
+# 2. HPO space — which model families + ranges to search
+hpo_space = op.HPOSpace().add(
+    op.ModelParamSpace(family="tabm").float("lr", 1e-4, 3e-3, log=True)
+)
+
+# 3. Optimizer — search strategy + budget
+optimizer = op.Optimizer(kind="tpe", n_trials_per_step=4, n_steps=5)
+```
+
 - Submits the job by calling **Fit** to run the search on OuterProduct servers and get back a **reasoning model** or a Pareto curve when you optimize more than one metric.
+
+```python
+# 4. Fit — submit the job, block for results
+job = op.reasoning.fit(
+    train_tbl,
+    task=task,
+    metrics=["auc"],
+    hpo_space=hpo_space,
+    optimizer=optimizer,
+)
+model = job.wait()   # single best model (or a ModelCurve if you pass >1 metric)
+```
+
 - From there, **predict** to run inference on new data. Beyond predictions, reasoning models have further reasoning capabilities, explored in a subsequent section.
+
+```python
+# 5. Predict — inference on held-out data
+proba = model.predict(test_features)
+```
