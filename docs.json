@@ -62,7 +62,8 @@
               "reasoning",
               {
                 "group": "Distillation",
-                "pages": []
+                "pages": [],
+                "icon": "filter"
               },
               "examples"
             ],

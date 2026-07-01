@@ -42,14 +42,13 @@ After you registered your data, you can create an OuterProduct`DataFrame` by que
 
 You can create an OuterProduct `DataFrame` by simply calling`Workspace.table()`:
 
-```python focus={2}
-ws.register_csv("customers.csv", table_name="customers")
+```python
 table = ws.table("customers")
 ```
 
 ### DataFrame querying
 
-The DataFrame object comes with a variety of functions that enable you to perform basic data query, including selecting specific columns, adding/dropping columns, and filtering for specific values. You may chain data querying functions together to construct custom views of your data. Here's an example:
+The `DataFrame` object comes with a variety of functions that enable you to perform basic data query, including selecting specific columns, adding/dropping columns, and filtering for specific values. You may chain data querying functions together to construct custom views of your data. Here's an example:
 
 ```python
 # Create new table by querying existing table
@@ -63,7 +62,7 @@ new_table = (
 )
 ```
 
-You may construct new DataFrames by joining uploaded datasets on a common ID, as seen in the example below:
+You may construct new `DataFrame` by joining uploaded datasets on a common ID, as seen in the example below:
 
 ```python
 # Create new dataframe by joining "customers" and "events" on "customer_id"
@@ -79,7 +78,7 @@ df = (
 
 ### SQL queries
 
-You may also create custom queries of your data using SQL syntax. To do so, you can call `WorkSpace.sql().`The dataset joining example above can also be rewritten as the following SQL query:
+You may also create custom queries of your data using SQL syntax. To do so, you can call `Workppace.sql().`The dataset joining example above can also be rewritten as the following SQL query:
 
 ```python
 # Create new dataframe by joining "customers" and "events" on "customer_id"
