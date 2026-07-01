@@ -7,7 +7,7 @@ A `Task` object declares the kind of predictive modeling and the target column n
 ## **Tabular tasks**
 
 - `op.Binclass()` — binary classification
-- `op.Multiclass()` —  multi-class (3\+) classification
+- `op.Multiclass()` —  multi-class classification
 - `op.Regression()` — continuous numeric predictions
 
 ```python
@@ -17,7 +17,7 @@ task = op.Binclass(label_column="Churn")
 # Multiclass: which playlist type?
 task = op.Multiclass(label_column="Playlist")
 
-# Regression predicting the "LTV" column
+# Regression: what lifetime value?
 task = op.Regression(label_column="LTV")
 ```
 
@@ -25,19 +25,19 @@ task = op.Regression(label_column="LTV")
 
 ### Sequence tasks
 
-Sequence tasks assign **one label per entity** from that entity's ordered history — e.g. predicting whether a customer will churn based on their full event timeline. Use them when each entity contributes a sequence of rows but resolves to a single prediction.
+Sequence tasks assign **one label per entity** from that entity's ordered history (e.g., predicting whether a customer will churn based on their full event timeline). Use them when each entity contributes a sequence of rows but resolves to a single prediction.
 
 All three share the same four arguments:
 
 - `label_column` _(required)_ — the per-entity target column.
-- `id_column` _(required)_ — the entity identifier. All rows sharing an id form one sequence, and each entity has exactly one label.
+- `id_column` _(required)_ — the entity identifier. All rows sharing an ID form one sequence, and each entity has exactly one label.
 - `timestamp_column` _(required)_ — the column that orders rows _within_ each entity.
-- `tabular_columns` _(optional, default_ `[]`_)_ — static per-entity feature columns (constant within an entity), each modeled as a single per-entity token. Every remaining column (anything that isn't the id, timestamp, or label) is automatically treated as a per-step sequence feature.
+- `tabular_columns` _(optional, default_ `[]`_)_ — static per-entity feature columns (constant within an entity), each modeled as a single per-entity token. Every remaining column (anything that isn't the ID, timestamp, or label) is automatically treated as a per-step sequence feature.
 
 Pick the variant by label type:
 
 - `op.SequenceBinclass()` — binary classification
-- `op.SequenceMulticlass()` — multi-class (3\+) classification
+- `op.SequenceMulticlass()` — multi-class classification
 - `op.SequenceRegression()` — continuous numeric predictions
 
 ```python
@@ -56,7 +56,7 @@ task = op.SequenceMulticlass(
     timestamp_column="played_at",
 )
 
-# Regression: predict lifetime value from the transaction sequence
+# Regression: what lifetime value, from the transaction sequence?
 task = op.SequenceRegression(
     label_column="ltv",
     id_column="account_id",
