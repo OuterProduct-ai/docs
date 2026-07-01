@@ -1,0 +1,66 @@
+---
+title: "Models"
+---
+
+## Model
+
+Once `op.reasoning.fit(...).wait()` finishes, you get back a `Model` object. This object is a lightweight handle to the trained model living on the OuterProduct server. The same object is returned when you load an existing model with `op.get_model()`.
+
+### Methods
+
+- `predict(df)` — run inference on held-out data. Returns a NumPy array of shape `(n_rows, n_outputs)`: class probabilities for classification, predicted values for regression. Inputs are capped at 100k rows per call.
+- `rename(name)` — set or change the model's name (unique within your org). Raises if the name is already taken.
+
+### Properties
+
+All read-only.
+
+| Property | Type | Description |
+| :-- | :-- | :-- |
+| `id` | `str` | Server-assigned model UUID. |
+| `short_id` | `str | None` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) — the value shown in the UI. |
+| `name` | `str | None` | Model name, if one has been assigned. |
+| `hyperparameters` | `dict | None` | The winning trial's hyperparameters (specific to the model family). |
+| `validation_metrics` | `dict[str, float] | None` | Cross-validation scores, keyed by metric name. |
+| `feature_names` | `list[str] | None` | Names of the input features. |
+| `schema` | `list[FieldDef]` | Input feature schema — each field's name and datatype. |
+| `label_column` | `str | None` | Name of the target column. |
+
+The `None`-able properties are populated for any server-backed model (from a fit or `op.get_model()`); they're `None` only for a model loaded locally from an artifact.
+
+### Model curve
+
+When you optimize more than one metric, `.wait()` returns a `ModelCurve` instead of a single model: the **Pareto frontier** of models, one per non-dominated trade-off between your metrics.
+
+```python
+for model, metrics in curve:
+    print(model.short_id, metrics["auc"])
+```
+
+Each entry pairs a trained `model` with a `metrics` dict mapping every requested metric name to that model's value. The curve is also indexable and sized  (`curve[0]`, `len(curve)`) and exposes`.models` (the list of models alone) and `.metrics` (the list of metric dicts alone).
+
+### Loading a trained model
+
+Models persist after training, so you don't need to refit to reuse one. If you have a handle to a model from a previous run, fetch it with `op.get_model()`. The argument can be **any handle the model has**, and the kind is inferred from its shape.
+
+```python
+model = op.get_model("mdl-7bQ2xV")   # id, short_id, or name
+proba = model.predict(test_features)
+```
+
+### Listing your models
+
+To see every model in your org, use `op.get_models()`:
+
+```python
+for model in op.get_models():
+    print(model.short_id, model.name, model.validation_metrics)
+```
+
+It returns a `list` of the same model objects `op.get_model()` gives you, so you can filter or sort (for example, by a validation metric):
+
+```python
+models = op.get_models()
+best = max(models, key=lambda m: m.validation_metrics["auc"])
+proba = best.predict(test_features)
+```

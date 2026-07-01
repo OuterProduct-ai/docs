@@ -1,0 +1,41 @@
+---
+title: "Authentication"
+icon: "gear"
+---
+
+Before using the OuterProduct platform, you need to authenticate with your OuterProduct API key (generated from your organization's page in the OuterProduct console). There are several ways to do this:
+
+## Option 1: API key
+
+You can pass your OuterProduct API key explicitly in the SDK initialization:
+
+```python
+import outerproduct as op
+op.init(api_key='sk-...')
+```
+
+By default, the SDK talks to OuterProduct's production API at the URL `https://api.outerproduct.com`. If you are using a **dedicated self-hosted deployment**, point the SDK at it with the `base_url`argument:
+
+```python
+import outerproduct as op
+op.init(api_key='sk-...', base_url='https://your-deployment.example.com')
+```
+
+## Option 2: Environment variables
+
+The simplest approach is to set  the `OUTERPRODUCT_API_KEY` and optionally `OUTERPRODUCT_BASE_URL` environment variables before running your script:
+
+```python
+export OUTERPRODUCT_API_KEY='sk-...'
+export OUTERPRODUCT_BASE_URL='https://your-deployment.example.com'
+```
+
+Then simply call `op.init()` with no arguments:
+
+```python
+import outerproduct as op
+op.init()
+```
+
+<Frame>
+</Frame>

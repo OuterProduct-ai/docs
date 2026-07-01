@@ -1,13 +1,11 @@
 ---
-title: "The unified reasoning engine"
-sidebarTitle: "Overview"
-icon: "telescope"
-description: "OuterProduct enables model training and reasoning across the structured data stack.  Query over multiple sources of data, train your machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure. "
+title: "OLD INTRO"
+hidden: true
 ---
 
 ## Reason over the structured data stack
 
-Below, we outline the four step process for reasoning over all data sources and model types. 
+Below, we outline the four step process for reasoning over all data sources and model types.
 
 1. Register tables across S3, Snowflake, Databricks, local files.
 2. Query tables for model training.
@@ -51,8 +49,3 @@ test_df = df.filter(op.col("id") >= split).drop(op.col("churned"))
 predictions, reasoning = model.predict_and_explain(test_df)
 scenarios = model.scenario(test_df, target_value=0.5)
 ```
-
-## Building blocks
-
-- **DataFrame**: derived from queries over the universe of your data (S3, Snowflake, Databricks, or local tables).
-- **Reasoning:** train a **reasoning model** optimized for reasoning across multiple model families (including tabular foundation models), hyper-parameter configurations, and metrics.  Reasoning models come with native reasoning across the structured data stack.

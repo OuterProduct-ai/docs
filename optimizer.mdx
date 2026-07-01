@@ -1,0 +1,30 @@
+---
+title: "Optimizer"
+---
+
+The optimizer controls how OuterProduct searches your HPO space: the **search strategy** and the **total budget**. Instead of trying every combination, it samples hyperparameter configurations and (for adaptive strategies) learns from completed trials to focus on promising regions.
+
+```python
+# TPE sampler running 5 rounds of 4 trials each (20 trials total)
+optimizer = op.Optimizer(
+    kind="tpe",
+    n_trials_per_step=4,
+    n_steps=5,
+)
+```
+
+## **Parameters**
+
+- `kind` — the search strategy: `"tpe"` (default), `"cmaes"`, or `"random"`.
+- `n_trials_per_step` — trials evaluated per round. Defaults to `2`; must be ≥ 1.
+- `n_steps` — number of sequential rounds. Defaults to `2`; must be ≥ 1. Adaptive samplers incorporate completed trials before proposing the next batch.
+
+## **Search strategies**
+
+- `"tpe"` — Bayesian sampler that focuses on promising regions.
+- `"cmaes"` — evolutionary strategy (best for spaces dominated by continuous parameters).
+- `"random"` — independent sampling that ignores prior results (`n_steps` is forced to `1)`.
+
+## **Budget**
+
+Total models trained = `n_trials_per_step × n_steps` (20 in the example above). More steps means more feedback for later trials; more trials per step means more parallelism per round.

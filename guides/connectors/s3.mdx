@@ -1,8 +1,8 @@
 ---
 title: "Connect your Amazon S3 bucket to your OuterProduct account"
 sidebarTitle: "Amazon S3"
-icon: "/logo/connectors/s3.svg"
 description: "Authenticate your OuterProduct account with AWS by assuming an IAM role you own."
+icon: "aws"
 ---
 
 ## Give your OuterProduct account permission to access your S3 bucket
@@ -83,8 +83,7 @@ You will paste two generated JSON blocks in AWS: first the custom trust policy, 
 The generated custom trust policy only sets up login. The generated permissions policy controls which S3 objects OuterProduct can read.
 
 <Tip>
-  For more background on why you had to attach these policies, read AWS's guide to third party tool authentication, in particular its solution against
-  the [confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
+  For more background on why you had to attach these policies, read AWS's guide to third party tool authentication, in particular its solution against the [confused deputy problem](https://docs.aws.amazon.com/IAM/latest/UserGuide/confused-deputy.html).
 </Tip>
 
 ## Use it from Python
