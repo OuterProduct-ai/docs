@@ -33,9 +33,9 @@
           {
             "group": "Unified Reasoning Engine SDK",
             "pages": [
-              "introduction",
-              "installation",
-              "setup",
+              "guides/introduction",
+              "guides/quickstart",
+              "guides/authentication",
               {
                 "group": "Data Connectors",
                 "icon": "link",
@@ -47,12 +47,12 @@
                   "guides/connectors/databricks"
                 ]
               },
-              "data-query",
+              "guides/dataquery",
               {
                 "group": "Models",
                 "icon": "share-nodes",
                 "pages": [
-                  "overview",
+                  "guides/models/overview",
                   "models",
                   "untitled-page",
                   "optimizer",
@@ -61,13 +61,9 @@
                   "prediction"
                 ]
               },
-              {
-                "group": "Distillation",
-                "pages": [],
-                "icon": "filter"
-              },
-              "reasoning",
-              "examples",
+              "guides/distillation",
+              "guides/reasoning",
+              "guides/examples",
               "old-intro"
             ],
             "icon": "engine"

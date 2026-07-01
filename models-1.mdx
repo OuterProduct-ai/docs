@@ -2,8 +2,6 @@
 title: "Models"
 ---
 
-## Load a pre-trained model
-
 ## Model
 
 ### Methods
@@ -42,3 +40,37 @@ Each entry pairs a trained `model` with a `metrics` dict mapping every requested
 - `.metrics` — the list of metric dicts alone
 
 Every model on the curve exposes the same methods and properties above.
+
+### Loading a trained model
+
+Models persist after training, so you don't need to refit to reuse one. If you have a handle to a model from a previous run, fetch it with `op.get_model()`:
+
+```python
+model = op.get_model("mdl-7bQ2xV")   # short_id, UUID, or name
+proba = model.predict(test_features)
+```
+
+The argument can be **any handle the model has**, and the kind is inferred from its shape:
+
+- a **UUID** — the opaque `id`
+- a value starting with `mdl-` — the `short_id` shown in the UI
+- **anything else** — the model's org-unique **name** (e.g. `op.get_model("q3-churn")`)
+
+The returned object is fully functional and identical to one straight from a fit: the same `predict()`, the same properties, and the correct type for the task (tabular or sequence). Its metadata is preloaded, so reading `.hyperparameters` or `.validation_metrics` right after the call doesn't cost an extra request.
+
+### Listing your models
+
+To see every model in your org, use `op.get_models()`:
+
+```python
+for model in op.get_models():
+    print(model.short_id, model.name, model.validation_metrics)
+```
+
+It returns a `list` of the same model objects `op.get_model()` gives you — so you can filter or sort in plain Python (for example, by a validation metric) and call `predict()` on any of them directly:
+
+```python
+models = op.get_models()
+best = max(models, key=lambda m: m.validation_metrics["auc"])
+proba = best.predict(test_features)
+```
