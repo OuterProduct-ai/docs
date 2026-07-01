@@ -13,7 +13,6 @@ job = op.reasoning.fit(
     metrics=["auc", "neg_class_error"],
     hpo_space=hpo_space,
     optimizer=optimizer,
-    random_state=42,
 )
 curve = job.wait()
 ```
@@ -25,7 +24,6 @@ curve = job.wait()
 - `metrics` — list of metric names to optimize. One metric selects a single best model; several trigger multi-objective (Pareto) optimization. Defaults to a task-appropriate metric.
 - `hpo_space` — the `HPOSpace` to search. Defaults to a server-chosen space.
 - `optimizer` — the `Optimizer` . Defaults to TPE.
-- `random_state` — seed for reproducibility. Defaults to `42`.
 
 **Supported metrics**
 

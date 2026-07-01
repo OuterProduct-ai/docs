@@ -17,5 +17,3 @@ The method returns a NumPy array of shape `(n_rows, n_outputs)`, one row per inp
 | Regression | `(n_rows, 1)` | the predicted value |
 | Binary classification | `(n_rows, 2)` | `[P(class 0), P(class 1)]` |
 | Multi-class | `(n_rows, n_classes)` | per-class probabilities, sum to 1 |
-
-**Sequence tasks** predict **one row per entity**: shape `(n_entities, n_outputs)`, with the same column meaning as the tabular tasks above (1 for regression, 2 for binary classification, `n_classes` for multi-class classification). Rows follow the entities' first-appearance order, and the response also returns the matching `sequence_ids`.
