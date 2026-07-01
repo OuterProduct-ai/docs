@@ -7,8 +7,6 @@ Training a reasoning model on the OuterProduct platform, then predicting with it
 - Configure the run with a **Task** (what to predict), **metrics** (what to optimize for), and an **HPO space** with an **Optimizer** (which model families to try and how hard to search).
 
 ```python
-import outerproduct as op
-
 # 1. Task — what to predict
 task = op.Binclass(label_column="Churn")
 
