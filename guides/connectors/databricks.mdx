@@ -1,11 +1,9 @@
 ---
 title: "Connect your Databricks workspace to your OuterProduct account"
 sidebarTitle: "Databricks"
+icon: "/logo/connectors/databricks.svg"
 description: "Authenticate your OuterProduct account with Databricks via Workload Identity Federation."
-icon: "database"
 ---
-
-
 
 ## Give your OuterProduct account permission to access your Databricks workspace
 
@@ -44,3 +42,21 @@ For Databricks background, see [Authenticate access to Databricks using OAuth to
 </Steps>
 
 The generated federation policy only sets up login. Databricks table and warehouse permissions still come from the service principal.
+
+## Use it from Python
+
+Once your connector is saved in the Console, register the Databricks table as a source table with `ws.register_databricks`. Pass a table name, the source locator in `catalog.schema.table` form, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+
+```python
+import outerproduct as op
+
+op.init()  # reads OUTERPRODUCT_API_KEY from the environment
+ws = op.Workspace()
+
+ws.register_databricks("customers", "main.default.customers", connector="prod-databricks")
+
+# Build the training set as a query over the registered source.
+train = ws.table("customers").filter(op.col("signup_year") >= 2020)
+
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
+```

@@ -28,14 +28,11 @@ icon: "play"
     ws = op.Workspace()
     ```
   </Step>
-  <Step title="Setup data connector (S3)">
-    [Connect your OuterProduct with AWS S3](/guides/connectors/s3)
-  </Step>
   <Step title="Register a source table">
-    Register a source table using the appropriate `register_*` function. For example,`register_s3` registers data to your workspace from the specified s3 bucket.  (See the [Data Connectors](/guides/connectors/overview) for guide on setting up  connectors.)
+    Register a source table using the appropriate `register_*` function. For example,`register_csv` registers a csv file to the workspace.  (See the Overview for an example of registering multiple sources.)
 
     ```python
-    ws.register_s3("customers", "s3://my-bucket/data/customers.parquet", connector="prod-aws")
+    ws.register_csv("customers.csv", table_name="customers")
     ```
   </Step>
   <Step title="Build a training set and fit a reasoning model">
@@ -43,8 +40,7 @@ icon: "play"
 
     ```python
     train = ws.table("customers")
-    job = op.reasoning.fit(train, task=op.Binclass(label_column="churn"))
-    model = job.wait()
+    model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
     ```
   </Step>
   <Step title="Run inference with native reasoning">
@@ -69,13 +65,12 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from the environment
 ws = op.Workspace()
 
-# Register data from S3 that you can query.
-ws.register_s3("customers", "s3://my-bucket/data/customers.parquet", connector="prod-aws")
+# Register a CSV as a source table you can query.
+ws.register_csv("customers.csv", table_name="customers")
 
 # Build the training set as a query, then fit a ReasoningModel.
 train = ws.table("customers")
-job = op.reasoning.fit(train, task=op.Binclass(label_column="churn"))
-model = job.wait()
+model = op.reasoning.fit(train, task=op.Binclass(label_column="churn")).wait()
 
 # Score recent customers with a query; get predictions and reasoning.
 recent = ws.table("customers").filter(op.col("signup_year") == 2025)

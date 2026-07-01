@@ -10,7 +10,7 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "/guides/introduction",
+      "destination": "/introduction",
       "permanent": true
     },
     {
@@ -28,42 +28,15 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Guide",
+        "tab": "Documentation",
         "groups": [
           {
-            "group": "Unified Reasoning Engine SDK",
+            "group": "Getting Started",
             "pages": [
-              "guides/introduction",
-              "guides/quickstart",
-              "guides/authentication",
-              {
-                "group": "Data Connectors",
-                "icon": "link",
-                "pages": [
-                  "guides/connectors/overview",
-                  "guides/connectors/file-upload"
-                ]
-              },
-              "guides/dataquery",
-              {
-                "group": "Models",
-                "icon": "share-nodes",
-                "pages": [
-                  "guides/models/overview",
-                  "models",
-                  "untitled-page",
-                  "optimizer",
-                  "training",
-                  "models-1",
-                  "prediction"
-                ]
-              },
-              "guides/distillation",
-              "guides/reasoning",
-              "guides/examples",
-              "old-intro"
+              "introduction",
+              "installation"
             ],
-            "icon": "engine"
+            "expanded": true
           },
           {
             "group": "Concepts",
@@ -72,8 +45,15 @@
               "guides/training",
               "guides/explanations"
             ],
-            "icon": "book",
-            "hidden": true
+            "icon": "book"
+          },
+          {
+            "group": "Data Connectors",
+            "pages": [
+              "guides/connectors/s3",
+              "guides/connectors/databricks",
+              "guides/connectors/snowflake"
+            ]
           },
           {
             "group": "MCP Server",
@@ -87,8 +67,7 @@
       },
       {
         "tab": "SDK Reference",
-        "pages": [
-          "sdk/overview",
+        "groups": [
           {
             "group": "Core",
             "pages": [
@@ -110,7 +89,8 @@
               "sdk/connectors"
             ]
           }
-        ]
+        ],
+        "hidden": true
       },
       {
         "tab": "API Reference",
