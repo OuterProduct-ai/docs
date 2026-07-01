@@ -1,3 +1,9 @@
 ---
 title: "Overview"
 ---
+
+Training a reasoning model on the OuterProduct platform, then predicting with it, comes down to a few pieces that fit together.
+
+- Configure the run with a **Task** (what to predict), **metrics** (what to optimize for), and an **HPO space** with an **Optimizer** (which model families to try and how hard to search).
+- Submits the job by calling **Fit** to runs the search on its servers and hands back a **reasoning model**: a lightweight handle to the winning model, or a Pareto curve when you optimize more than one metric.
+- From there you **predict** to run inference on new data. Beyond predictions, reasoning models have further reasoning capabilities, explored in a subsequent section. The handle can also be saved and reloaded later, so training and prediction needn't happen together.

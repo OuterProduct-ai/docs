@@ -2,7 +2,7 @@
 title: "Training"
 ---
 
-`op.reasoning.fit()` submits a training job: your `task` defines what to predict, `metrics` define what to optimize for, and the `hpo_space` and `optimizer` control the search. It returns a `ReasoningFitJob`. 
+`op.reasoning.fit()` submits a training job: your `task` defines what to predict, `metrics` define what to optimize for, and the `hpo_space` and `optimizer` control the search. It returns a `ReasoningFitJob`.
 
 Call `.wait()` to block until results are ready. It returns the single best model, or, when you optimize more than one metric, the **Pareto frontier** of models trading them off.
 

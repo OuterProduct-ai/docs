@@ -54,11 +54,11 @@
                 "pages": [
                   "guides/models/overview",
                   "guides/models/task",
-                  "untitled-page",
-                  "optimizer",
-                  "training",
-                  "models-1",
-                  "prediction"
+                  "guides/models/hpospace",
+                  "guides/models/optimizer",
+                  "guides/models/training",
+                  "guides/models/models1",
+                  "guides/models/prediction"
                 ]
               },
               "guides/distillation",
