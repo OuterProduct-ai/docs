@@ -36,6 +36,6 @@ model = job.wait()   # single best model (or a ModelCurve if you pass >1 metric)
 - From there, **predict** to run inference on new data. Beyond predictions, reasoning models have further reasoning capabilities, explored in a subsequent section.
 
 ```python
-# 5. Predict — inference on held-out data
+# 5. Predict — inference on test data
 proba = model.predict(test_features)
 ```
