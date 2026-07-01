@@ -53,7 +53,7 @@
                 "icon": "share-nodes",
                 "pages": [
                   "guides/models/overview",
-                  "models",
+                  "guides/models/task",
                   "untitled-page",
                   "optimizer",
                   "training",

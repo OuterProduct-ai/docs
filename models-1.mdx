@@ -16,13 +16,13 @@ Once `op.reasoning.fit(...).wait()` finishes, you get back a `Model` object. Thi
 | **Property** | **Type** | **Description** |
 | :-- | :-- | :-- |
 | `id` | `str` | Server-assigned model UUID |
-| `short_id` | `str | None` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) |
-| `name` | `str | None` | Model name, if one has been assigned |
-| `hyperparameters` | `dict | None` | The winning trial's hyperparameters (specific to the model family) |
-| `validation_metrics` | `dict[str, float] | None` | Cross-validation scores, keyed by metric name |
-| `feature_names` | `list[str] | None` | Names of the input features |
+| `short_id` | `str` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) |
+| `name` | `str` | Model name, if one has been assigned |
+| `hyperparameters` | `dict` | The winning trial's hyperparameters (specific to the model family) |
+| `validation_metrics` | `dict[str,float]` | Cross-validation scores, keyed by metric name |
+| `feature_names` | `list[str]` | Names of the input features |
 | `schema` | `list[FieldDef]` | Input feature schema |
-| `label_column` | `str | None` | Name of the target column |
+| `label_column` | `str` | Name of the target column |
 
 ## Multi-metric fits: the model curve
 
