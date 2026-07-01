@@ -1,0 +1,92 @@
+---
+title: "Task"
+---
+
+A `Task` object declares the kind of predictive modeling and the target column name within the data set. OuterProduct supports multiple tasks across tabular and time-series data.
+
+## **Tabular tasks**
+
+- `op.Binclass()` — binary classification
+- `op.Multiclass()` —  multi-class (3\+) classification
+- `op.Regression()` — continuous numeric predictions
+
+```python
+# Binary: will this customer churn?
+task = op.Binclass(label_column="Churn")
+
+# Multiclass: which playlist type?
+task = op.Multiclass(label_column="Playlist")
+
+# Regression predicting the "LTV" column
+task = op.Regression(label_column="LTV")
+```
+
+## **Time-series tasks**
+
+### Sequence tasks
+
+Sequence tasks assign **one label per entity** from that entity's ordered history — e.g. predicting whether a customer will churn based on their full event timeline. Use them when each entity contributes a sequence of rows but resolves to a single prediction.
+
+All three share the same four arguments:
+
+- `label_column` _(required)_ — the per-entity target column.
+- `id_column` _(required)_ — the entity identifier. All rows sharing an id form one sequence, and each entity has exactly one label.
+- `timestamp_column` _(required)_ — the column that orders rows _within_ each entity.
+- `tabular_columns` _(optional, default_ `[]`_)_ — static per-entity feature columns (constant within an entity), each modeled as a single per-entity token. Every remaining column (anything that isn't the id, timestamp, or label) is automatically treated as a per-step sequence feature.
+
+Pick the variant by label type:
+
+- `op.SequenceBinclass()` — binary classification
+- `op.SequenceMulticlass()` — multi-class (3\+) classification
+- `op.SequenceRegression()` — continuous numeric predictions
+
+```python
+# Binary: will this customer churn, given their event history?
+task = op.SequenceBinclass(
+    label_column="churned",
+    id_column="customer_id",
+    timestamp_column="event_time",
+    tabular_columns=["signup_plan", "region"],  # static per-entity features
+)
+
+# Multiclass: which playlist type, from listening history?
+task = op.SequenceMulticlass(
+    label_column="playlist",
+    id_column="user_id",
+    timestamp_column="played_at",
+)
+
+# Regression: predict lifetime value from the transaction sequence
+task = op.SequenceRegression(
+    label_column="ltv",
+    id_column="account_id",
+    timestamp_column="txn_time",
+)
+```
+
+Note: `tabular_columns` is optional — omit it and every non-id/timestamp/label column is treated as a per-step sequence feature.
+
+### Forecasting tasks
+
+Forecasting predicts the **future values of a series** — you have one or more entities, each with a value tracked over time, and you want to extend that timeline forward. Unlike the sequence tasks (which collapse a history into a single per-entity label), forecasting produces a _sequence_ of future values: one prediction per step over the requested horizon.
+
+Arguments:
+
+- `label_column` _(required)_ — the column whose future values you're forecasting.
+- `id_column` _(required)_ — the series/entity identifier. All rows sharing an id form one series, forecast independently.
+- `timestamp_column` _(required)_ — the column that orders rows _within_ each series.
+- `horizon` _(required, ≥ 1)_ — how many steps ahead to forecast.
+- `lookback` _(optional, ≥ 1, default_ `None`_)_ — how much recent history to condition on. `None` uses all available history.
+
+```python
+# Forecast the next 14 days of sales for each store
+task = op.Forecasting(
+    label_column="daily_sales",
+    id_column="store_id",
+    timestamp_column="date",
+    horizon=14,
+    lookback=90,  # condition on the last 90 steps; omit to use all history
+)
+```
+
+> Note: use Forecasting when the prediction is _itself indexed by time_ (a curve going forward). If you instead want a single label or number per entity derived from its history, reach for a sequence task (`SequenceBinclass` / `SequenceMulticlass` / `SequenceRegression`).

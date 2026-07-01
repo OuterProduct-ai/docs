@@ -1,0 +1,23 @@
+---
+title: "Training"
+---
+
+`op.reasoning.fit()` submits the training job with your task, HPO space, and optimizer. It returns the Pareto frontier of models over the metrics you choose to optimize. Call `.wait()` to block until results are ready.
+
+```python
+job = op.reasoning.fit(
+    train_tbl.drop(split_id),        # all features except the ID column
+    task=task,
+    metrics=["auc", "neg_class_error"],
+    hpo_space=hpo_space,
+    optimizer=optimizer,
+    random_state=42,
+)
+curve = job.wait()
+```
+
+**Supported metrics**
+
+- `auc` — area under the ROC curve
+- `neg_class_error` — negative misclassification rate
+- `neg_rmse` — negative RMSE

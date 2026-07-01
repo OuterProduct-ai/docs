@@ -28,15 +28,45 @@
   "navigation": {
     "tabs": [
       {
-        "tab": "Documentation",
+        "tab": "Guide",
         "groups": [
           {
-            "group": "Getting Started",
+            "group": "OuterProduct SDK",
             "pages": [
               "introduction",
-              "installation"
+              "installation",
+              "setup",
+              {
+                "group": "Data Connectors",
+                "icon": "link",
+                "pages": [
+                  "guides/connectors/overview",
+                  "guides/connectors/file-upload",
+                  "guides/connectors/s3",
+                  "guides/connectors/snowflake",
+                  "guides/connectors/databricks"
+                ]
+              },
+              "data-query",
+              {
+                "group": "Models",
+                "icon": "share-nodes",
+                "pages": [
+                  "models",
+                  "untitled-page",
+                  "optimizer",
+                  "training",
+                  "prediction"
+                ]
+              },
+              "reasoning",
+              {
+                "group": "Distillation",
+                "pages": []
+              },
+              "examples"
             ],
-            "expanded": true
+            "icon": "engine"
           },
           {
             "group": "Concepts",
@@ -45,15 +75,8 @@
               "guides/training",
               "guides/explanations"
             ],
-            "icon": "book"
-          },
-          {
-            "group": "Data Connectors",
-            "pages": [
-              "guides/connectors/s3",
-              "guides/connectors/databricks",
-              "guides/connectors/snowflake"
-            ]
+            "icon": "book",
+            "hidden": true
           },
           {
             "group": "MCP Server",

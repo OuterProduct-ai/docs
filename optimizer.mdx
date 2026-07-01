@@ -1,0 +1,24 @@
+---
+title: "Optimizer"
+---
+
+The optimizer controls **how** OuterProduct searches the HPO space you defined — the search strategy and the total budget. Rather than trying every combination, it samples hyperparameter configurations intelligently, learning from the trials it has already run to focus on the most promising regions of the space.
+
+```python
+# TPE sampler running 5 steps of 4 trials each (20 trials total)
+optimizer = op.Optimizer(
+    kind="tpe",
+    n_trials_per_step=4,
+    n_steps=5,
+)
+```
+
+**Parameters**
+
+- `kind` — the search strategy. `"tpe"` (Tree-structured Parzen Estimator) is a Bayesian sampler that builds a probabilistic model of which hyperparameters produce good metrics and preferentially samples from the promising regions. It typically finds strong configurations in far fewer trials than random or grid search.
+- `n_trials_per_step` — how many trials (candidate models) are evaluated within each step. Trials in a step can be run together before the sampler updates.
+- `n_steps` — how many sequential steps to run. After each step, the sampler incorporates the completed trials' results before proposing the next batch.
+
+**How the budget works**
+
+Total models trained = `n_trials_per_step × n_steps`. In the example above that's **4 × 5 = 20 trials**.

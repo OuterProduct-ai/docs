@@ -1,0 +1,16 @@
+---
+title: "Prediction"
+---
+
+Each model on the returned frontier exposes `model.predict()` for inference on held-out data.
+
+```python
+proba = model.predict(test_features)
+```
+
+Iterate over the frontier to compare models. Each entry pairs a trained `model` with its `curve_metrics`:
+
+```python
+for i, (model, curve_metrics) in enumerate(curve):
+    print(model.hyperparameters["__model__"], curve_metrics["auc"])
+```
