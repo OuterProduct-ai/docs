@@ -13,16 +13,16 @@ title: "Models"
 
 All read-only.
 
-| Property | Type | Description |
-| :-- | :-- | :-- |
-| `id` | `str` | Server-assigned model UUID. |
-| `short_id` | `str | None` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) — the value shown in the UI. |
-| `name` | `str | None` | Model name, if one has been assigned. |
-| `hyperparameters` | `dict | None` | The winning trial's hyperparameters (specific to the model family). |
-| `validation_metrics` | `dict[str, float] | None` | Cross-validation scores, keyed by metric name. |
-| `feature_names` | `list[str] | None` | Names of the input features. |
-| `schema` | `list[FieldDef]` | Input feature schema — each field's name and datatype. |
-| `label_column` | `str | None` | Name of the target column. |
+| Property | Type | Description |  |
+| :-- | :-- | :-- | --- |
+| `id` | `str` | Server-assigned model UUID. |  |
+| `short_id` | \`str | None\` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) — the value shown in the UI. |
+| `name` | \`str | None\` | Model name, if one has been assigned. |
+| `hyperparameters` | \`dict | None\` | The winning trial's hyperparameters (specific to the model family). |
+| `validation_metrics` | \`dict\[str, float\] | None\` | Cross-validation scores, keyed by metric name. |
+| `feature_names` | \`list\[str\] | None\` | Names of the input features. |
+| `schema` | `list[FieldDef]` | Input feature schema — each field's name and datatype. |  |
+| `label_column` | \`str | None\` | Name of the target column. |
 
 ### Model curve
 
@@ -33,9 +33,8 @@ for model, metrics in curve:
     print(model.short_id, metrics["auc"])
 ```
 
-Each entry pairs a trained `model` with a `metrics` dict mapping every requested metric name to that model's value. The curve is also:
+Each entry pairs a trained `model` with a `metrics` dict mapping every requested metric name to that model's value. The curve is also indexable and sized  (`curve[0]`, `len(curve)`) and exposes
 
-- **indexable and sized** — `curve[0]`, `len(curve)`
 - `.models` — the list of models alone
 - `.metrics` — the list of metric dicts alone
 
