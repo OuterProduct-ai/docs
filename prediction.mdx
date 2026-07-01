@@ -14,3 +14,13 @@ Iterate over the frontier to compare models. Each entry pairs a trained `model` 
 for i, (model, curve_metrics) in enumerate(curve):
     print(model.hyperparameters["__model__"], curve_metrics["auc"])
 ```
+
+A completed fit hands you a trained model — `predict()` for inference plus a set of read-only properties describing what was trained. A single-metric fit returns one model; a multi-metric fit returns a `ModelCurve` (see below).
+
+```python
+proba = model.predict(test_features)
+```
+
+### 
+
+### 

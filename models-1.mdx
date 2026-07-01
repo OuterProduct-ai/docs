@@ -1,0 +1,44 @@
+---
+title: "Models"
+---
+
+## Load a pre-trained model
+
+## Model
+
+### Methods
+
+- `predict(df)` — run inference on held-out data. Returns a NumPy array of shape `(n_rows, n_outputs)`: class probabilities for classification, predicted values for regression. Inputs are capped at 100k rows per call.
+- `rename(name)` — set or change the model's name (unique within your org). Raises if the name is already taken.
+
+### Properties
+
+All read-only.
+
+| Property | Type | Description |
+| :-- | :-- | :-- |
+| `id` | `str` | Server-assigned model UUID. |
+| `short_id` | `str | None` | Short, human-friendly handle (e.g. `mdl-7bQ2xV9mKp4R`) — the value shown in the UI. |
+| `name` | `str | None` | Model name, if one has been assigned. |
+| `hyperparameters` | `dict | None` | The winning trial's hyperparameters (specific to the model family). |
+| `validation_metrics` | `dict[str, float] | None` | Cross-validation scores, keyed by metric name. |
+| `feature_names` | `list[str] | None` | Names of the input features. |
+| `schema` | `list[FieldDef]` | Input feature schema — each field's name and datatype. |
+| `label_column` | `str | None` | Name of the target column. |
+
+### Model curve
+
+When you optimize more than one metric, `.wait()` returns a `ModelCurve` instead of a single model: the **Pareto frontier** of models, one per non-dominated trade-off between your metrics.
+
+```python
+for model, metrics in curve:
+    print(model.short_id, metrics["auc"])
+```
+
+Each entry pairs a trained `model` with a `metrics` dict mapping every requested metric name to that model's value. The curve is also:
+
+- **indexable and sized** — `curve[0]`, `len(curve)`
+- `.models` — the list of models alone
+- `.metrics` — the list of metric dicts alone
+
+Every model on the curve exposes the same methods and properties above.

@@ -31,7 +31,7 @@
         "tab": "Guide",
         "groups": [
           {
-            "group": "OuterProduct SDK",
+            "group": "Unified Reasoning Engine SDK",
             "pages": [
               "introduction",
               "installation",
@@ -52,20 +52,23 @@
                 "group": "Models",
                 "icon": "share-nodes",
                 "pages": [
+                  "overview",
                   "models",
                   "untitled-page",
                   "optimizer",
                   "training",
+                  "models-1",
                   "prediction"
                 ]
               },
-              "reasoning",
               {
                 "group": "Distillation",
                 "pages": [],
                 "icon": "filter"
               },
-              "examples"
+              "reasoning",
+              "examples",
+              "old-intro"
             ],
             "icon": "engine"
           },
@@ -91,7 +94,8 @@
       },
       {
         "tab": "SDK Reference",
-        "groups": [
+        "pages": [
+          "sdk/overview",
           {
             "group": "Core",
             "pages": [

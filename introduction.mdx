@@ -1,58 +1,60 @@
 ---
-title: "The unified reasoning engine"
+title: "Introduction"
 sidebarTitle: "Introduction"
 icon: "telescope"
-description: "OuterProduct enables model training and reasoning across the structured data stack.  Query over multiple sources of data, train your machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure."
+description: "Get started with OuterProduct's Unified Reasoning Engine"
 ---
 
-## Reason over the structured data stack
+OuterProduct is building the infrastructure to enable unified reasoning for enterprise structured data and empower enterprise AI with verifiable reasoning context. 
 
-Below, we outline the four step process for reasoning over all data sources and model types.
+At our core is the Unified Reasoning Engine. We've built a platform that allows users to connect and query over multiple sources of data, train machine learning models, and reason over this intelligence, all with full governance and on managed infrastructure. 
 
-1. Register tables across S3, Snowflake, Databricks, local files.
-2. Query tables for model training.
-3. Optimize model performance across model families (including tabular foundation models), thousands of hyper-parameter configurations, and multiple metrics.
-4. Reason to interpret model outputs and verify model behavior.
-
-```python
-import outerproduct as op
-
-# Set the OUTERPRODUCT_API_KEY environment variable
-# Create an API key at console.outerproduct.com (contact us to get access)
-op.init()  
-ws = op.Workspace()
-
-# 1. Register multiple data sources 
-ws.register_parquet("segments", "data/segments.parquet") 
-ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
-ws.register_snowflake("customers", "ANALYTICS.PUBLIC.CUSTOMERS", connector="prod-snowflake")
-ws.register_databricks("payments", "main.finance.payments", connector="prod-databricks")
-
-# 2. Query tables
-df = ws.sql("""
-    SELECT c.customer_id, c.plan, COUNT(e.event_id) AS events_30d, c.churned FROM customers c
-    LEFT JOIN events e ON e.customer_id = c.customer_id
-    GROUP BY c.customer_id, c.plan, c.churned
-""")
-
-# 3. Model training
-split = int(0.8 * df.count())
-train_df = df.filter(op.col("id") < split)
-model = op.reasoning.fit(
-    train_df,
-    task=op.Binclass(label_column="churned"),
-    hpo_space=op.HPOSpace.add(op.ModelSpace("tabicl")).add(op.ModelSpace("tabm")),
-    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=10),
-	metrics=[op.metric('accuracy'), op.metric('logloss')]
-).wait()
-
-# 4. Reasoning 
-test_df = df.filter(op.col("id") >= split).drop(op.col("churned"))
-predictions, reasoning = model.predict_and_explain(test_df)
-scenarios = model.scenario(test_df, target_value=0.5)
-```
-
-## Building blocks
+At a high level, there are two core objects around which the engine and corresponding SDK functions are built around:
 
 - **DataFrame**: derived from queries over the universe of your data (S3, Snowflake, Databricks, or local tables).
-- **Reasoning:** train a **reasoning model** optimized for reasoning across multiple model families (including tabular foundation models), hyper-parameter configurations, and metrics.  Reasoning models come with native reasoning across the structured data stack.
+- **Reasoning:** train a **reasoning model** optimized for reasoning across multiple model families (including tabular foundation models), hyper-parameter configurations, and metrics. Reasoning models come with native reasoning across the structured data stack.
+
+We will explain both in detail as we guide you through the end-to-end functionalities of the platform.
+
+<Info>
+  Note this guide does not contain the full documentation of SDK functions available. For full documentation, please see the [SDK Reference](/sdk/overview)
+</Info>
+
+The Unified Reasoning Engine SDK follows these steps:
+
+<Columns cols={2}>
+  <Column>
+    <Card title="Quickstart" icon="play">
+      An end-to-end walk through on an example
+    </Card>
+
+    <Card title="Data Connectors" icon="link">
+      Setup connections to your cloud data source or upload data files locally
+    </Card>
+
+    <Card title="Models" icon="share-nodes">
+      Build  models over multiple model families and optimized hyper parameters
+    </Card>
+
+    <Card title="Reasoning" icon="brain-circuit">
+      Generate model drivers, scenarios, and reason codes with native verifiability
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Authentication" icon="gear">
+      Install the SDK and authenticate via OuterProduct Console
+    </Card>
+
+    <Card title="Data Query" icon="chart-tree-map">
+      Create OuterProduct`Dataframe` with registered data sources for modeling
+    </Card>
+
+    <Card title="Distillation" icon="filter">
+      Train reasoning models for non-differentiable models
+    </Card>
+
+    <Card title="Examples" icon="book-open">
+      See the Unified Reasoning Engine in action 
+    </Card>
+  </Column>
+</Columns>

@@ -1,0 +1,51 @@
+---
+title: "OLD INTRO"
+hidden: true
+---
+
+## Reason over the structured data stack
+
+Below, we outline the four step process for reasoning over all data sources and model types.
+
+1. Register tables across S3, Snowflake, Databricks, local files.
+2. Query tables for model training.
+3. Optimize model performance across model families (including tabular foundation models), thousands of hyper-parameter configurations, and multiple metrics.
+4. Reason to interpret model outputs and verify model behavior.
+
+```python
+import outerproduct as op
+
+# Set the OUTERPRODUCT_API_KEY environment variable
+# Create an API key at console.outerproduct.com (contact us to get access)
+op.init()  
+ws = op.Workspace()
+
+# 1. Register multiple data sources 
+ws.register_parquet("segments", "data/segments.parquet") 
+ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
+ws.register_snowflake("customers", "ANALYTICS.PUBLIC.CUSTOMERS", connector="prod-snowflake")
+ws.register_databricks("payments", "main.finance.payments", connector="prod-databricks")
+
+# 2. Query tables
+df = ws.sql("""
+    SELECT c.customer_id, c.plan, COUNT(e.event_id) AS events_30d, c.churned FROM customers c
+    LEFT JOIN events e ON e.customer_id = c.customer_id
+    GROUP BY c.customer_id, c.plan, c.churned
+""")
+
+# 3. Model training
+split = int(0.8 * df.count())
+train_df = df.filter(op.col("id") < split)
+model = op.reasoning.fit(
+    train_df,
+    task=op.Binclass(label_column="churned"),
+    hpo_space=op.HPOSpace.add(op.ModelSpace("tabicl")).add(op.ModelSpace("tabm")),
+    optimizer=op.Optimizer(kind="tpe", n_trials_per_step=5, n_steps=10),
+	metrics=[op.metric('accuracy'), op.metric('logloss')]
+).wait()
+
+# 4. Reasoning 
+test_df = df.filter(op.col("id") >= split).drop(op.col("churned"))
+predictions, reasoning = model.predict_and_explain(test_df)
+scenarios = model.scenario(test_df, target_value=0.5)
+```
