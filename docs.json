@@ -44,7 +44,7 @@
               },
               "guides/dataquery",
               {
-                "group": "Models",
+                "group": "Predictive modeling",
                 "icon": "share-nodes",
                 "pages": [
                   "guides/models/overview",
