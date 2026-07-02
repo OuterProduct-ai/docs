@@ -1,0 +1,101 @@
+---
+title: "Lead Scoring"
+icon: "money-bill"
+description: "Find your best customers using the Unified Reasoning Engine SDK"
+---
+
+## Introduction
+
+Customer data is typically high dimensional and noisy, making it difficult for sales and marketing teams to identify their best customers. The key problem that growth teams are solving for is "how do we know which customers are likely to convert? and why?" Using [publicly available dataset from Kaggle](https://www.kaggle.com/datasets/amritachatterjee09/lead-scoring-dataset/data), we'll demonstrate how our SDK can help you build highly performant lead scoring models that are natively explainable.
+
+<Info>
+  The full notebook for this example can be found here.
+</Info>
+
+## Workflow overview
+
+Here's the overarching workflow we will be following:
+
+1. **Authentication:** Installing and setting up the SDK with the appropriate credentials 
+2. **Upload data:** Register dataset on OuterProduct
+3. **Data transformation:** Transform the data so that it's ready for modeling
+4. **Modeling and evaluation:** Build and optimize the model; evaluate its performance
+5. **Reasoning:** Surface reasoning and context for each prediction
+
+## Authentication
+
+If you haven't installed the OuterProduct SDK yet, use the following command to do so now:
+
+```shellscript
+pip install outerproduct
+```
+
+or
+
+```shellscript
+uv add outerproduct
+```
+
+We start by importing the OuterProduct SDK and creating the workspace.
+
+```python
+# Import outerproduct and authenticate from environment variables
+import outerproduct as op
+op.init()
+
+# Set up a workspace to register datasets
+ws = op.Workspace()
+```
+
+## Upload data
+
+#### Data overview
+
+For this project we'll be using the lead scoring dataset that is publicly available on Kaggle. The dataset contains ~9000 historical leads, along with \>30 features characterizing each customer. Furthermore, there is a good amount of missing entries for some of the features, key characteristic that's reflected in most enterprise data. We will show how the SDK can effectively handle such problem.
+
+#### Data registration
+
+After downloading the data from Kaggle, we can register it in OuterProduct as such:
+
+```python
+# Data registering
+ws.register_csv(
+    'data/lead_scoring.csv', 
+    table_name=dataset_name
+)
+```
+
+#### Data transformation
+
+Here are a few things that we will do to prep the data for modeling:
+
+1. Add an index column since existing `Prospect ID` and `Lead Number` fields are noisy and difficult to work with
+2. Drop the `Prospect ID` and `Lead Number` fields
+3. Divide the data into training / test split following 80 / 20 split
+
+Notably, the SDK already handles missing fields for you during a training job:
+
+- Missing string values are replaced with "\_\_missing\_\_" and 
+- Missing int / float values are replaced with the median value of existing values for that feature
+
+```python
+# Data cleaning
+# adding index column
+INDEX_COL = "_idx"
+# Assign 0 .. n-1 using Lead Number only for ordering (not kept as a feature)
+indexed = ws.sql(f"""
+    SELECT
+        *,
+        CAST(ROW_NUMBER() OVER (ORDER BY "Lead Number") AS BIGINT) - 1 AS {INDEX_COL}
+    FROM lead_scoring
+""")
+
+#Drop features
+processed_table = indexed.drop("Prospect ID", "Lead Number")
+
+# Split by INDEX_COL into train and test data
+n = processed_table.count()
+split = int(0.8 * n)
+train_tbl = processed_table.filter(op.col(INDEX_COL) < split).sort_by(INDEX_COL)
+test_tbl = processed_table.filter(op.col(INDEX_COL) >= split).sort_by(INDEX_COL)
+```

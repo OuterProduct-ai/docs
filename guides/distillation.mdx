@@ -2,3 +2,45 @@
 title: "Distillation"
 icon: "filter"
 ---
+
+To access reasoning capabilities, you need a **Reasoning model**. If you start from a model that is not a Reasoning model, you distill it into one.
+
+Non-reasoning models (like XGBoost) can be trained with the OuterProduct `Trainer`:
+
+```python
+import outerproduct as op
+
+ws = op.Workspace()
+customers = ws.table("customers")
+
+model = (
+    op.Trainer.configure(
+        customers,
+        task=op.Binclass(label_column="churned"),
+        hpo_space=op.HPOSpace.from_dict({"xgboost": {...}}),
+        metric=op.Metric(name="roc_auc"),
+    )
+    .run(n_cv_splits=5)
+    .wait()
+)
+```
+
+To distill it, train a Reasoning model on your model's inputs and outputs. First, attach the model's predictions as a column:
+
+```python
+scores = model.predict(customers)
+
+df = customers.materialize().to_pandas()
+df["model_score"] = scores
+
+distill_table = ws.from_pandas(df, table_name="customers_distilled")
+```
+
+Then fit a Reasoning model on that column:
+
+```python
+reasoning_model = op.reasoning.fit(
+    distill_table,
+    task=op.Regression(label_column="model_score"),
+).wait()
+```

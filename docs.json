@@ -60,9 +60,21 @@
                   "guides/models/prediction"
                 ]
               },
-              "guides/distillation",
-              "guides/reasoning",
-              "guides/examples",
+              {
+                "group": "Reasoning",
+                "pages": [
+                  "guides/reasoning",
+                  "guides/distillation"
+                ]
+              },
+              {
+                "group": "Examples",
+                "icon": "book-open",
+                "pages": [
+                  "guides/examples/overview",
+                  "guides/examples/lead_scoring"
+                ]
+              },
               "old-intro"
             ],
             "icon": "engine"
