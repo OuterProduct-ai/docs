@@ -3,15 +3,17 @@ title: "Connect your data sources"
 sidebarTitle: "Overview"
 ---
 
-OuterProduct supports three cloud data sources: local files plus S3, Snowflake, and Databricks. For each data sources, you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
+The OuterProduct platform supports local files and three cloud data sources: S3, Snowflake, and Databricks. 
+
+For each data source, you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
 
 <CardGroup cols={2}>
   <Card title="File upload" icon="file" href="/guides/connectors/file-upload">
-    Register datasets  from your local machine. Currently, CSV and Parquet files are supported
+    Register datasets  from your local machine in CSV and Parquet format.
   </Card>
 
   <Card title="Amazon S3" icon="aws" href="/guides/connectors/s3">
-    Register files in your S3 bucket by stored credential. Your AWS keys never leave your account.
+    Register files in your S3 bucket by stored credential. 
   </Card>
 
   <Card title="Snowflake" icon="snowflake" href="/guides/connectors/snowflake">
