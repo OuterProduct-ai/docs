@@ -41,6 +41,7 @@
                 "group": "Data Query",
                 "icon": "database",
                 "pages": [
+                  "guides/overview",
                   "guides/reference-your-data",
                   "guides/xxx",
                   "guides/sql-queries"
