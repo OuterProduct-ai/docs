@@ -2,6 +2,42 @@
 title: "Overview"
 ---
 
+<Columns cols={3}>
+  <Column>
+    <Card title="Task" icon="circles-overlap-3">
+      Prediction problem and target column
+    </Card>
+  </Column>
+  <Column>
+    <Card title="HPO Space" icon="table-cells-rows">
+      Models & hyper-parameters
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Optimizer" icon="search-dollar">
+      Search strategy & budget
+    </Card>
+  </Column>
+</Columns>
+
+<Columns cols={3}>
+  <Column>
+    <Card title="Training" icon="gears">
+      Submit the model training job
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Models" icon="brain-circuit">
+      Model and curve objects
+    </Card>
+  </Column>
+  <Column>
+    <Card title="Prediction" icon="line-chart">
+      Inference on test data
+    </Card>
+  </Column>
+</Columns>
+
 Training a reasoning model on the OuterProduct platform, then predicting with it, comes down to the following flow.
 
 - Configure the run with a **Task** (what to predict), **metrics** (what to optimize for), and an **HPO space** with an **Optimizer** (which model families to try and how hard to search).
