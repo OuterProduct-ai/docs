@@ -102,4 +102,102 @@ test_tbl = processed_table.filter(op.col(INDEX_COL) >= split).sort_by(INDEX_COL)
 
 ## Modeling
 
-To 
+To create a reasoning model, we need to define three objects:
+
+1. [Task](/guides/models/task)
+2. [Hyper-parameter optimization space](/guides/models/hpospace)
+3. [Optimizer](/guides/models/optimizer)
+
+#### Task
+
+Here we define the training task for the model. In our case, we want a binary classification task predicting the "converted" feature.
+
+```python
+# Define task
+task = op.Binclass(label_column = "converted")
+```
+
+#### HPO Space
+
+The HPO space specifies the model families and the hyper-parameters that we want to search through to find the best one for our model.
+
+```python
+# Define HPO Space
+# xRFM: recursive feature machine (https://arxiv.org/abs/2508.10053)
+xrfm = (
+    op.ModelParamSpace(family="xrfm")
+    .float("bandwidth", 1.0, 20.0, log=True)
+    .float("exponent", 0.5, 2.0)
+    .int("iters", 4, 6)
+)
+
+# TabM: MLP-style tabular net (https://arxiv.org/abs/2410.24210)
+tabm = (
+    op.ModelParamSpace(family="tabm")
+    .float("lr", 1e-4, 3e-3, log=True)
+    .categorical("n_blocks", [1, 2, 3, 4])
+    .int("d_block", 64, 512, log=True)
+)
+
+hpo_space = op.HPOSpace().add(tabm).add(xrfm)
+```
+
+#### Optimizer
+
+Lastly, the optimizer object specifies the number of steps and trials to take during the search, as well as the search method itself:
+
+```python
+# Define optimizer
+optimizer = op.Optimizer(
+    kind="tpe", 
+    n_trials_per_step=4, 
+    n_steps=5
+)
+```
+
+#### Training
+
+With our object definitions in place, we can submit a training job for our reasoning model.
+
+<Info>
+  Note that op.reasoning.fit() creates a `ReasoningFitJob` object, which is not the model itself
+</Info>
+
+```python
+# Training Model
+job = op.reasoning.fit(
+    train_tbl.drop(INDEX_COL),  # all features except index as it is non-predictive
+    task=task,
+    hpo_space=hpo_space,
+    optimizer=optimizer,
+)
+model = job.wait() # Wait until job is finished and return the model
+```
+
+#### Evaluation
+
+We can then check model accuracy to see how well it performs against the test data:
+
+```python
+# Performance Evaluation
+import numpy as np
+import pandas as pd
+from sklearn.metrics import accuracy_score
+
+label = "converted"
+
+def evaluate(model, frame, split_id, label):
+    label_tbl = frame.select(split_id, label).materialize()
+    actual = label_tbl.column(label).to_numpy().astype(int)
+    feat_df = frame.drop(label)
+
+    proba = np.asarray(model.predict(feat_df.drop(split_id)))
+    if proba.ndim == 2 and proba.shape[1] > 1:
+        pred_class = proba.argmax(axis=1)
+    else:
+        pred_class = (proba.ravel() >= 0.5).astype(int)
+    return accuracy_score(actual, pred_class)
+
+print("training accuracy: ", evaluate(model, train_tbl, INDEX_COL, label))
+print("test accuracy: ", evaluate(model, test_tbl, INDEX_COL, label))
+```
