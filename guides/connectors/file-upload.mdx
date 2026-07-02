@@ -1,18 +1,26 @@
 ---
-title: "File Upload"
+title: "Local files"
 ---
 
-The `register_*` methods are the fastest way to get local data into OuterProduct. Register a CSV or Parquet file, or an in-memory frame, into your `Workspace` to upload the data and create a source table you can query. There is no credential to configure in the Console.
+## Local files
 
-## Supported formats
-
-Register a local **CSV** or **Parquet** file (`register_csv` / `register_parquet`). Each method uploads the rows and registers a source table, then returns the table's `DataFrame`.
+Register a local **CSV**, **Parquet**, or **JSON** file with `register_csv` / `register_parquet` / `register_json`. Each reads the file, uploads the rows, registers a source table, and returns its `DataFrame`.
 
 ```python
-# Register data via local machine uploads
-ws.register_parquet("segments", "data/segments.parquet") 
-ws.register_csv("customers.csv", table_name="customers")
+# path first, table name second (or omit to use the file stem)
+ws.register_parquet("data/segments.parquet", "segments")
+ws.register_csv("data/customers.csv", table_name="customers")
+ws.register_json("data/events.json", table_name="events")
+ws.register_parquet("data/events.parquet")  # table name → "events"
 ```
+
+| Format | Method | Notes |
+| :-- | :-- | :-- |
+| Parquet | `register_parquet(path, table_name=…)` | Compressed, columnar, types preserved — best for large data. |
+| CSV | `register_csv(path, table_name=…)` | Types inferred on read. |
+| JSON | `register_json(path, table_name=…)` | Newline-delimited JSON (one object per line). |
+
+> **Tip:** Prefer Parquet over CSV or JSON for large datasets. Parquet is compressed and columnar, so it uploads faster, uses less bandwidth, and preserves column types — CSV and JSON values are inferred on read.
 
 <Tip>
   Use a Parquet file instead of CSV when your dataset is large. Parquet files are compressed and columnar, so they upload faster and consume less bandwidth.

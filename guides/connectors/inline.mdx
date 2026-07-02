@@ -1,0 +1,45 @@
+---
+title: "Inline"
+---
+
+The `from_*` and `register_*` methods upload an **in-memory frame** (pandas, polars, Arrow, or plain Python) directly into your `Workspace`. Each one uploads the rows, creates a source table, and returns the table's `DataFrame`.
+
+## Uploading a frame
+
+The same upload can be done in two ways:
+
+- `from_*` — `table_name` is optional; a name is auto-generated if you omit it.
+- `register_*` — `table_name` is required and positional.
+
+```python
+import pandas as pd
+
+df = pd.DataFrame({"id": [1, 2, 3], "region": ["us", "eu", "us"]})
+
+# Optional name (auto-generated if omitted)
+ws.from_pandas(df)
+ws.from_pandas(df, table_name="regions")
+
+# Explicit name (required, positional)
+ws.register_pandas(df, "regions")
+```
+
+| Object | `from_*` (name optional) | `register_*` (name required) |
+| :-- | :-- | :-- |
+| pandas | `from_pandas(df, table_name=…)` | `register_pandas(df, "name")` |
+| polars | `from_polars(df, table_name=…)` | `register_polars(df, "name")` |
+| Arrow `Table` / `RecordBatch` | `from_arrow(tbl, table_name=…)` | `register_arrow(tbl, "name")` |
+| list of dicts | `from_pylist(rows, table_name=…)` | `register_pylist(rows, "name")` |
+| dict of columns | `from_pydict(cols, table_name=…)` | `register_pydict(cols, "name")` |
+
+## Your data persists across sessions
+
+Uploaded data is written to OuterProduct's servers as a source table. Because it's stored server-side, you upload **once**. In a later session, there is no need to re-upload. You can open a `Workspace` and load the table back by name using `ws.table(name)`:
+
+```python
+ws = Workspace()
+
+ws.list_tables()          # see everything already uploaded
+ws.has_table("regions")   # check whether a table exists
+ws.table("regions")       # load it back as a DataFrame
+```

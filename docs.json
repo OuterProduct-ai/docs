@@ -30,13 +30,21 @@
                 "icon": "link",
                 "pages": [
                   "guides/connectors/overview",
+                  "guides/connectors/inline",
                   "guides/connectors/file-upload",
                   "guides/connectors/s3",
                   "guides/connectors/snowflake",
                   "guides/connectors/databricks"
                 ]
               },
-              "guides/dataquery",
+              {
+                "group": "Data Query",
+                "icon": "database",
+                "pages": [
+                  "guides/reference-your-data",
+                  "guides/dataquery"
+                ]
+              },
               {
                 "group": "Predictive modeling",
                 "icon": "share-nodes",

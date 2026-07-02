@@ -1,0 +1,34 @@
+---
+title: "Reference your data"
+---
+
+## Referencing your data
+
+Every method returns the table's `DataFrame`, so you can capture it and query straight away:
+
+```python
+regions = ws.register_pandas(df, "regions")
+regions.filter(col("region") == "us")
+```
+
+If you didn't keep the return value, reference the table by name — either as a `DataFrame` or in SQL:
+
+```python
+ws.table("regions")                                        # as a DataFrame
+ws.sql("SELECT region, count(*) FROM regions GROUP BY region")  # in SQL
+```
+
+> **Give it a name you'll remember.** If you call a `from_*` method without `table_name`, the name is auto-generated — so either keep the returned `DataFrame` or pass an explicit `table_name` if you'll want to look it up later.
+
+### Queries are lazy
+
+Building or chaining a `DataFrame` — `ws.table("regions")`, `.filter(...)`, `.select(...)` — doesn't run anything. It builds up a query plan locally. Nothing is computed and no data is fetched until you call a **terminal** method, at which point the whole plan is sent to OuterProduct's servers to execute:
+
+```python
+q = ws.table("regions").filter(col("region") == "us")  # nothing runs yet
+q.show()          # runs on the server, prints the result
+q.materialize()   # runs on the server, returns an Arrow table
+q.count()         # runs on the server, returns a row count
+```
+
+## 
