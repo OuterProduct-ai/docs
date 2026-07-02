@@ -2,34 +2,23 @@
 title: "Local files"
 ---
 
-## Local files
-
 Register a local **CSV**, **Parquet**, or **JSON** file with `register_csv` / `register_parquet` / `register_json`. Each reads the file, uploads the rows, registers a source table, and returns its `DataFrame`.
 
 ```python
 # path first, table name second (or omit to use the file stem)
-ws.register_parquet("data/segments.parquet", "segments")
-ws.register_csv("data/customers.csv", table_name="customers")
-ws.register_json("data/events.json", table_name="events")
-ws.register_parquet("data/events.parquet")  # table name → "events"
+op_df = ws.register_parquet("data/segments.parquet", "segments")
+op_df = ws.register_csv("data/customers.csv", table_name="customers")
+op_df = ws.register_json("data/events.json", table_name="events")
+
+op_df = ws.register_parquet("data/events.parquet")  # table name → "events"
 ```
 
 | Format | Method | Notes |
 | :-- | :-- | :-- |
-| Parquet | `register_parquet(path, table_name=…)` | Compressed, columnar, types preserved — best for large data. |
+| Parquet | `register_parquet(path, table_name=…)` | Compressed, columnar, types preserved. |
 | CSV | `register_csv(path, table_name=…)` | Types inferred on read. |
-| JSON | `register_json(path, table_name=…)` | Newline-delimited JSON (one object per line). |
-
-> **Tip:** Prefer Parquet over CSV or JSON for large datasets. Parquet is compressed and columnar, so it uploads faster, uses less bandwidth, and preserves column types — CSV and JSON values are inferred on read.
+| JSON | `register_json(path, table_name=…)` | Types inferred on read. |
 
 <Tip>
-  Use a Parquet file instead of CSV when your dataset is large. Parquet files are compressed and columnar, so they upload faster and consume less bandwidth.
+  Use a Parquet file instead of CSV when your dataset is large. Parquet files are compressed and columnar, so they upload faster and consume less bandwidth. They also preserve column types, while CSV and JSON values are inferred on read.
 </Tip>
-
-## Other connectors
-
-If your data lives in a cloud data store rather than on your local machine, use one of the cloud connectors instead:
-
-- [Amazon S3](/guides/connectors/s3)
-- [Snowflake](/guides/connectors/snowflake)
-- [Databricks](/guides/connectors/databricks)

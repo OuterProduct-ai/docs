@@ -3,7 +3,7 @@ title: "Connect your data sources"
 sidebarTitle: "Overview"
 ---
 
-The OuterProduct platform supports local files and three cloud data sources: S3, Snowflake, and Databricks. 
+The OuterProduct platform supports upload of inline frames, local files, and files from three cloud data sources: S3, Snowflake, and Databricks.
 
 For each data source, you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
 
@@ -13,7 +13,7 @@ For each data source, you store your credentials once in the [OuterProduct Conso
   </Card>
 
   <Card title="Amazon S3" icon="aws" href="/guides/connectors/s3">
-    Register files in your S3 bucket by stored credential. 
+    Register files in your S3 bucket by stored credential.
   </Card>
 
   <Card title="Snowflake" icon="snowflake" href="/guides/connectors/snowflake">
@@ -24,3 +24,13 @@ For each data source, you store your credentials once in the [OuterProduct Conso
     Register Databricks SQL warehouse or cluster tables by stored credential.
   </Card>
 </CardGroup>
+
+Uploaded data is written to OuterProduct's servers as a source table. In a later session, there is no need to re-upload. You can open a `Workspace` and load the table back by name using `ws.table(name)`:
+
+```python
+ws = Workspace()
+
+ws.list_tables()          # see everything already uploaded
+ws.has_table("regions")   # check whether a table exists
+ws.table("regions")       # load it back as a DataFrame
+```
