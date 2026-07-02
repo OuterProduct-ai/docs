@@ -3,14 +3,10 @@ title: "Connect your data sources"
 sidebarTitle: "Overview"
 ---
 
-The OuterProduct platform supports upload of inline frames, local files, and files from three cloud data sources: S3, Snowflake, and Databricks.
-
-For each data source, you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
-
-<Columns cols={2}>
+<Columns cols={3}>
   <Column>
     <Card title="In-memory" icon="code" href="guides/connectors/inline">
-      Register in-memory frames in pandas, polars, Arrow, and plain Python
+      Register in-memory frames in pandas, polars, Arrow, Python
     </Card>
   </Column>
   <Column>
@@ -18,33 +14,31 @@ For each data source, you store your credentials once in the [OuterProduct Conso
       Register local files in CSV, Parquet, and JSON format.
     </Card>
   </Column>
-</Columns>
-
-<Columns cols={2}>
   <Column>
     <Card title="Amazon S3" icon="aws" href="/guides/connectors/s3">
       Register files in your S3 bucket by stored credential.
     </Card>
   </Column>
+</Columns>
+
+<Columns cols={3}>
   <Column>
     <Card title="Snowflake" icon="snowflake" href="/guides/connectors/snowflake">
       Register Snowflake tables by stored credential using a PAT. 
     </Card>
   </Column>
-</Columns>
-
-<Columns cols={2}>
   <Column>
     <Card title="Databricks" icon="database" href="/guides/connectors/databricks">
-      Register Databricks SQL warehouse or cluster tables by stored credential.
+      Register Databricks  tables by stored credential.
     </Card>
   </Column>
   <Column>
   </Column>
 </Columns>
 
-<CardGroup cols={2}>
-</CardGroup>
+The OuterProduct platform supports upload of inline frames, local files, and files from three cloud data sources: S3, Snowflake, and Databricks.
+
+For each data source, you store your credentials once in the [OuterProduct Console](https://console.outerproduct.com) and reference them by name in the SDK. No cloud credentials are ever passed through the SDK itself; the OuterProduct backend retrieves your data at query time using the stored credential.
 
 Uploaded data is written to OuterProduct's servers as a source table. In a later session, there is no need to re-upload. You can open a `Workspace` and query the table back by name using `ws.table(name)`:
 
