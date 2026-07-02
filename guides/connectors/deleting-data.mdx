@@ -1,0 +1,16 @@
+---
+title: "Deleting Data"
+---
+
+Remove a single table with `delete()`. This deletes it server-side, so it's gone for the whole organization:
+
+```python
+ws.delete("customers")
+```
+
+To clear every table in the workspace, loop over `list_tables()`:
+
+```python
+for name in ws.list_tables():
+    ws.delete(name)
+```

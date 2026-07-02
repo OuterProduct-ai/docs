@@ -45,7 +45,8 @@
                   "guides/overview",
                   "guides/reference-your-data",
                   "guides/xxx",
-                  "guides/sql-queries"
+                  "guides/sql-queries",
+                  "guides/connectors/deleting-data"
                 ]
               },
               {
