@@ -1,92 +1,92 @@
 ---
-title: "Data Query"
-description: "Register and prepare your data for modeling"
+title: "Data Transformation"
+description: "XXX"
 ---
 
-Once you have set up your Workspace and connectors, you can begin registering and querying your data to prepare for modeling.
-
-### Registering data into OuterProduct
-
-OuterProduct currently supports data registration via pre-built connectors to S3, DataBricks, and Snowflake, or through file uploads from local machines. Currently, `.csv` and `.parquet` files are supported for uploads.
+Once you have a `DataFrame`, you reshape it with transformation methods (filter rows, add columns, aggregate, join). Every transformation returns a **new** `DataFrame`, so they chain:
 
 ```python
-import outerproduct as op
-
-# Set the OUTERPRODUCT_API_KEY environment variable
-# Create an API key at console.outerproduct.com (contact us to get access)
-op.init()  
-ws = op.Workspace()
-
-# Register data across connectors 
-ws.register_s3("events", "s3://acme-data/events.parquet", connector="prod-aws")
-ws.register_snowflake("customers", "ANALYTICS.PUBLIC.CUSTOMERS", connector="prod-snowflake")
-ws.register_databricks("payments", "main.finance.payments", connector="prod-databricks")
-
-# Register data via local machine uploads
-ws.register_parquet("segments", "data/segments.parquet") 
-ws.register_csv("customers.csv", table_name="customers")
-```
-
-<Info>
-  For more details on how to set up connectors please refer to [Data Connectors Guide](/guides/connectors/overview)
-</Info>
-
-### Creating a DataFrame
-
-After you registered your data, you can create an OuterProduct`DataFrame` by querying against the tables in your workspace (defined below). The `DataFrame` is built in Rust on [Apache DataFusion](https://datafusion.apache.org/), so that queries run as real relational plans against all registered data sources simultaneously.
-
-<Tip>
-  Importantly, an OuterProduct `DataFrame` is a lazy-query, meaning that it will not materialize data until it is needed for computation.  As a result, you can query across data at any scale as if it were in memory.
-</Tip>
-
-You can create an OuterProduct `DataFrame` by simply calling`Workspace.table()`:
-
-```python
-table = ws.table("customers")
-```
-
-### DataFrame querying
-
-The `DataFrame` object comes with a variety of functions that enable you to perform basic data query, including selecting specific columns, adding/dropping columns, and filtering for specific values. You may chain data querying functions together to construct custom views of your data. Here's an example:
-
-```python
-# Create new table by querying existing table
-new_table = (
-    table
-    .drop("Area code", "Total day charge")
-    .with_column("from_CA", op.col("State") == 'CA')
-    .filter(op.col("from_CA") == False)
-    .select("customer_id", "churn")
-    .sort_by("customer_id")
-)
-```
-
-You may construct new `DataFrame` by joining uploaded datasets on a common ID, as seen in the example below:
-
-```python
-# Create new dataframe by joining "customers" and "events" on "customer_id"
 df = (
-    customers
-    .join(events, on="customer_id", how="left")
-    .aggregate(
-        [op.col("customer_id"), op.col("plan"), op.col("churned")],   # GROUP BY
-        [f.count(op.col("event_id")).alias("events_30d")],            # COUNT(...) AS events_30d
-    )
+    ws.table("orders")
+    .filter(op.col("status") == "paid")
+    .with_column("total", op.col("price") * op.col("quantity"))
+    .select("customer_id", "total")
 )
 ```
 
-### SQL queries
+## Column expressions
 
-You may also create custom queries of your data using SQL syntax. To do so, you can call `Workppace.sql().`The dataset joining example above can also be rewritten as the following SQL query:
+Refer to a column with `op.col(...)` and a constant with `op.lit(...)`. Expressions support the usual operators:
 
 ```python
-# Create new dataframe by joining "customers" and "events" on "customer_id"
-df = ws.sql("""
-    SELECT c.customer_id, c.plan, COUNT(e.event_id) AS events_30d, c.churned FROM customers c
-    LEFT JOIN events e ON e.customer_id = c.customer_id
-    GROUP BY c.customer_id, c.plan, c.churned
-""")
+from outerproduct import col, lit
+
+col("age") >= 18                      		# comparison
+col("price") * col("quantity")        	# arithmetic
+(col("region") == "us") & col("active")	# combine with & (and), | (or), ~ (not)
+col("total").alias("order_total")     	# rename an expression
 ```
+
+## Selecting rows and columns
+
+```python
+df.filter(col("region") == "us")        	# keep matching rows
+df.select("id", "region")               	# keep specific columns
+df.drop("internal_notes")               	# remove columns
+df.distinct()                           		# unique rows
+df.limit(100)                           		# first 100 rows
+df.head(10)                             		# first 10 (alias for limit)
+df.tail(10)                             		# last 10
+```
+
+## Adding and renaming columns
+
+```python
+df.with_column("total", col("price") * col("quantity"))  # add one column
+df.with_column_renamed("qty", "quantity")                 	# rename a column
+df.with_columns(
+    total=col("price") * col("quantity"),
+    is_big=col("price") > 1000,
+)                                                          			# add several at once
+```
+
+## Sorting
+
+```python
+df.sort(col("created_at").sort(ascending=False))   	# newest first
+df.sort_by("region", "id")                         		# ascending, by column name
+```
+
+## Aggregating
+
+`aggregate(group_by, aggs)` takes a list of grouping expressions and a list of aggregate expressions. Aggregate functions come from `datafusion.functions`. For complex aggregations, running SQL queries might be simpler.
+
+```python
+from datafusion import functions as f
+from outerproduct import col
+
+by_region = ws.table("orders").aggregate(
+    group_by=[col("region")],
+    aggs=[
+        f.count(col("id")).alias("n_orders"),
+        f.sum(col("total")).alias("revenue"),
+        f.avg(col("total")).alias("avg_order"),
+    ],
+)
+```
+
+## Joining and combining
+
+```python
+orders.join(customers, on="customer_id", how="inner")   # join on a shared column
+orders.join_on(customers, col("orders.cid") == col("customers.id"), how="left")
+
+a.union(b)           	# stack rows (use union_distinct to dedupe)
+a.intersect(b)       	# rows in both
+a.except_all(b)		# rows in a not in b
+```
+
+Supported join types (`how=`): `inner`, `left`, `right`, `full`, `semi`, `anti`.
 
 <Info>
   To see a comprehensive list of data querying functions please refer to the Data Query Documentation.

@@ -1,6 +1,6 @@
 ---
 title: "Connect your Amazon S3 bucket to your OuterProduct account"
-sidebarTitle: "Amazon S3"
+sidebarTitle: "Amazon S3 Connector"
 description: "Authenticate your OuterProduct account with AWS by assuming an IAM role you own."
 ---
 
@@ -87,7 +87,7 @@ The generated custom trust policy only sets up login. The generated permissions 
 
 ## Use it from Python
 
-Once your connector is saved in the Console, register the S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
+Once your connector is saved in the Console, register an S3 file as a source table with `ws.register_s3`. Pass a table name, the full `s3://` URI of the folder or file corresponding to a parquet table, and the `connector` name from the Console. The call returns a `DataFrame` you can train on, or query later with `ws.table(name)` or `ws.sql(...)`.
 
 ```python
 import outerproduct as op
@@ -95,7 +95,11 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from the environment
 ws = op.Workspace()
 
-ws.register_s3("customers", "s3://my-bucket/data/customers.parquet", connector="prod-aws")
+ws.register_s3(
+	"customers", 
+	"s3://my-bucket/data/customers.parquet", 
+	connector="prod-aws"
+)
 
 # Build the training set as a query over the registered source.
 train = ws.table("customers").filter(op.col("signup_year") >= 2020)

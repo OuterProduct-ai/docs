@@ -26,7 +26,7 @@
               "guides/quickstart",
               "guides/authentication",
               {
-                "group": "Data Connectors",
+                "group": "Data Upload",
                 "icon": "link",
                 "pages": [
                   "guides/connectors/overview",
@@ -42,7 +42,8 @@
                 "icon": "database",
                 "pages": [
                   "guides/reference-your-data",
-                  "guides/dataquery"
+                  "guides/dataquery",
+                  "guides/sql-queries"
                 ]
               },
               {

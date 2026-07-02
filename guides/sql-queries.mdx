@@ -1,0 +1,14 @@
+---
+title: "SQL Queries"
+---
+
+You may also create custom queries of your data using SQL syntax. To do so, you can call `Workppace.sql().`The dataset joining example above can also be rewritten as the following SQL query:
+
+```python
+# Create new dataframe by joining "customers" and "events" on "customer_id"
+df = ws.sql("""
+    SELECT c.customer_id, c.plan, COUNT(e.event_id) AS events_30d, c.churned FROM customers c
+    LEFT JOIN events e ON e.customer_id = c.customer_id
+    GROUP BY c.customer_id, c.plan, c.churned
+""")
+```

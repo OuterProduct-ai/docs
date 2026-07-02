@@ -1,6 +1,6 @@
 ---
 title: "Connect your Snowflake account to your OuterProduct account"
-sidebarTitle: "Snowflake"
+sidebarTitle: "Snowflake Connector"
 description: "Authenticate your OuterProduct account with Snowflake via Workload Identity Federation."
 ---
 
@@ -49,7 +49,11 @@ import outerproduct as op
 op.init()  # reads OUTERPRODUCT_API_KEY from the environment
 ws = op.Workspace()
 
-ws.register_snowflake("customers", "MYDB.PUBLIC.CUSTOMERS", connector="prod-snowflake")
+ws.register_snowflake(
+	"customers", 
+	"MYDB.PUBLIC.CUSTOMERS", 
+	connector="prod-snowflake"
+)
 
 # Build the training set as a query over the registered source.
 train = ws.table("customers").filter(op.col("signup_year") >= 2020)

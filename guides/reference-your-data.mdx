@@ -1,34 +1,43 @@
 ---
-title: "Reference your data"
+title: "DataFrame"
 ---
 
-## Referencing your data
+After you registered your data, you can create an OuterProduct`DataFrame` by querying against the tables in your workspace. The `DataFrame` is built in Rust on [Apache DataFusion](https://datafusion.apache.org/), so that queries run as real relational plans against all registered data sources simultaneously.
 
-Every method returns the table's `DataFrame`, so you can capture it and query straight away:
+<Tip>
+  An OuterProduct `DataFrame` is a lazy-query, meaning that it will not materialize data until it is needed for computation.  As a result, you can query data at any scale as if it were in memory.
+</Tip>
 
-```python
-regions = ws.register_pandas(df, "regions")
-regions.filter(col("region") == "us")
-```
+## Creating a DataFrame
 
-If you didn't keep the return value, reference the table by name — either as a `DataFrame` or in SQL:
-
-```python
-ws.table("regions")                                        # as a DataFrame
-ws.sql("SELECT region, count(*) FROM regions GROUP BY region")  # in SQL
-```
-
-> **Give it a name you'll remember.** If you call a `from_*` method without `table_name`, the name is auto-generated — so either keep the returned `DataFrame` or pass an explicit `table_name` if you'll want to look it up later.
-
-### Queries are lazy
-
-Building or chaining a `DataFrame` — `ws.table("regions")`, `.filter(...)`, `.select(...)` — doesn't run anything. It builds up a query plan locally. Nothing is computed and no data is fetched until you call a **terminal** method, at which point the whole plan is sent to OuterProduct's servers to execute:
+Get a `DataFrame` for a registered table with `Workspace.table()`:
 
 ```python
-q = ws.table("regions").filter(col("region") == "us")  # nothing runs yet
-q.show()          # runs on the server, prints the result
-q.materialize()   # runs on the server, returns an Arrow table
-q.count()         # runs on the server, returns a row count
+customers = ws.table("customers")
 ```
 
-## 
+Or express the query in SQL:
+
+```python
+top_regions = ws.sql("SELECT region, count(*) AS n FROM customers GROUP BY region")
+```
+
+## Getting results
+
+Creating a `DataFrame` only builds a query plan (it doesn't run anything). A **terminal** method sends the whole plan to OuterProduct's servers, runs it, and returns a concrete result:
+
+```python
+customers = ws.table("customers")   # nothing runs yet
+
+customers.show()          # prints a preview (default 20 rows)
+customers.count()         # → int, the row count
+table = customers.materialize()   # → PyArrow Table with all rows
+```
+
+Convert the materialized `Table` into whatever you need:
+
+```python
+table = customers.materialize()
+table.to_pandas()   # pandas DataFrame
+table.to_pylist()   # list of row dicts
+```
