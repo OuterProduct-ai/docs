@@ -99,3 +99,7 @@ split = int(0.8 * n)
 train_tbl = processed_table.filter(op.col(INDEX_COL) < split).sort_by(INDEX_COL)
 test_tbl = processed_table.filter(op.col(INDEX_COL) >= split).sort_by(INDEX_COL)
 ```
+
+## Modeling
+
+To 

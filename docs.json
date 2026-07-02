@@ -63,9 +63,13 @@
               {
                 "group": "Reasoning",
                 "pages": [
+                  "guides/overview-1",
                   "guides/reasoning",
+                  "guides/verifiability",
+                  "guides/reason-codes",
                   "guides/distillation"
-                ]
+                ],
+                "icon": "brain-circuit"
               },
               {
                 "group": "Examples",
