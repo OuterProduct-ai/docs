@@ -1,0 +1,181 @@
+---
+title: "Data "
+---
+
+Once you have a `DataFrame`, you reshape it with transformation methods (filter rows, add columns, aggregate, join). Every transformation returns a **new** `DataFrame`, so they chain:
+
+```python
+df = (
+    ws.table("orders")
+    .filter(op.col("status") == "paid")
+    .with_column("total", op.col("price") * op.col("quantity"))
+    .select("customer_id", "total")
+)
+```
+
+## Column expressions
+
+Refer to a column with `op.col(...)` and a constant with `op.lit(...)`. Expressions support the usual operators:
+
+```python
+from outerproduct import col, lit
+
+col("age") >= 18                      		# comparison
+col("price") * col("quantity")        	# arithmetic
+(col("region") == "us") & col("active")	# combine with & (and), | (or), ~ (not)
+col("total").alias("order_total")     	# rename an expression
+```
+
+## Selecting rows and columns
+
+```python
+df.filter(col("region") == "us")        	# keep matching rows
+df.select("id", "region")               	# keep specific columns
+df.drop("internal_notes")               	# remove columns
+df.distinct()                           		# unique rows
+df.limit(100)                           		# first 100 rows
+df.head(10)                             		# first 10 (alias for limit)
+df.tail(10)                             		# last 10
+```
+
+## Adding and renaming columns
+
+```python
+df.with_column("total", col("price") * col("quantity"))  # add one column
+df.with_column_renamed("qty", "quantity")                 	# rename a column
+df.with_columns(
+    total=col("price") * col("quantity"),
+    is_big=col("price") > 1000,
+)                                                          			# add several at once
+```
+
+## Sorting
+
+```python
+df.sort(col("created_at").sort(ascending=False))   	# newest first
+df.sort_by("region", "id")                         		# ascending, by column name
+```
+
+## Aggregating
+
+`aggregate(group_by, aggs)` takes a list of grouping expressions and a list of aggregate expressions. Aggregate functions come from `datafusion.functions`. For complex aggregations, running SQL queries might be simpler.
+
+```python
+from datafusion import functions as f
+from outerproduct import col
+
+by_region = ws.table("orders").aggregate(
+    group_by=[col("region")],
+    aggs=[
+        f.count(col("id")).alias("n_orders"),
+        f.sum(col("total")).alias("revenue"),
+        f.avg(col("total")).alias("avg_order"),
+    ],
+)
+```
+
+## Joining and combining
+
+```python
+orders.join(customers, on="customer_id", how="inner")   # join on a shared column
+orders.join_on(customers, col("orders.cid") == col("customers.id"), how="left")
+
+a.union(b)           	# stack rows (use union_distinct to dedupe)
+a.intersect(b)       	# rows in both
+a.except_all(b)		# rows in a not in b
+```
+
+Supported join types (`how=`): `inner`, `left`, `right`, `full`, `semi`, `anti`.
+
+<Info>
+  To see a comprehensive list of data querying functions please refer to the Data Query Documentation.
+</Info>
+
+Once you have a `DataFrame`, you reshape it with transformation methods (filter rows, add columns, aggregate, join). Every transformation returns a **new** `DataFrame`, so they chain:
+
+```python
+df = (
+    ws.table("orders")
+    .filter(op.col("status") == "paid")
+    .with_column("total", op.col("price") * op.col("quantity"))
+    .select("customer_id", "total")
+)
+```
+
+## Column expressions
+
+Refer to a column with `op.col(...)` and a constant with `op.lit(...)`. Expressions support the usual operators:
+
+```python
+from outerproduct import col, lit
+
+col("age") >= 18                      		# comparison
+col("price") * col("quantity")        	# arithmetic
+(col("region") == "us") & col("active")	# combine with & (and), | (or), ~ (not)
+col("total").alias("order_total")     	# rename an expression
+```
+
+## Selecting rows and columns
+
+```python
+df.filter(col("region") == "us")        	# keep matching rows
+df.select("id", "region")               	# keep specific columns
+df.drop("internal_notes")               	# remove columns
+df.distinct()                           		# unique rows
+df.limit(100)                           		# first 100 rows
+df.head(10)                             		# first 10 (alias for limit)
+df.tail(10)                             		# last 10
+```
+
+## Adding and renaming columns
+
+```python
+df.with_column("total", col("price") * col("quantity"))  # add one column
+df.with_column_renamed("qty", "quantity")                 	# rename a column
+df.with_columns(
+    total=col("price") * col("quantity"),
+    is_big=col("price") > 1000,
+)                                                          			# add several at once
+```
+
+## Sorting
+
+```python
+df.sort(col("created_at").sort(ascending=False))   	# newest first
+df.sort_by("region", "id")                         		# ascending, by column name
+```
+
+## Aggregating
+
+`aggregate(group_by, aggs)` takes a list of grouping expressions and a list of aggregate expressions. Aggregate functions come from `datafusion.functions`. For complex aggregations, running SQL queries might be simpler.
+
+```python
+from datafusion import functions as f
+from outerproduct import col
+
+by_region = ws.table("orders").aggregate(
+    group_by=[col("region")],
+    aggs=[
+        f.count(col("id")).alias("n_orders"),
+        f.sum(col("total")).alias("revenue"),
+        f.avg(col("total")).alias("avg_order"),
+    ],
+)
+```
+
+## Joining and combining
+
+```python
+orders.join(customers, on="customer_id", how="inner")   # join on a shared column
+orders.join_on(customers, col("orders.cid") == col("customers.id"), how="left")
+
+a.union(b)           	# stack rows (use union_distinct to dedupe)
+a.intersect(b)       	# rows in both
+a.except_all(b)		# rows in a not in b
+```
+
+Supported join types (`how=`): `inner`, `left`, `right`, `full`, `semi`, `anti`.
+
+<Info>
+  To see a comprehensive list of data querying functions please refer to the Data Query Documentation.
+</Info>

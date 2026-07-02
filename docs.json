@@ -42,7 +42,7 @@
                 "icon": "database",
                 "pages": [
                   "guides/reference-your-data",
-                  "guides/dataquery",
+                  "guides/xxx",
                   "guides/sql-queries"
                 ]
               },
