@@ -30,6 +30,7 @@
                 "icon": "link",
                 "pages": [
                   "guides/connectors/overview",
+                  "guides/connectors/workspace",
                   "guides/connectors/inline",
                   "guides/connectors/file-upload",
                   "guides/connectors/s3",

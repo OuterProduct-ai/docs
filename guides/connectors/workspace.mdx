@@ -1,0 +1,28 @@
+---
+title: "Workspace"
+---
+
+## How it works
+
+`op.Workspace()` is your session for working with data on OuterProduct. It holds your credentials and connects to the server, so tables you've uploaded in the past are available immediately, with no re-upload.
+
+```python
+import outerproduct as op
+
+op.init(api_key="sk-...")     	# set credentials once
+ws = op.Workspace()        		# open a session
+```
+
+Queries and training run server-side. The `Workspace` is the client that ships the work there and brings results back.
+
+## Scope
+
+A `Workspace` is scoped to the **organization** tied to your API key. All your source tables and models live in that shared namespace. Every `Workspace` you open with the same key sees the same data, so you can create as many as you need. 
+
+To work across organizations, build each `Workspace` with a different client.
+
+```python
+op.workspace(client=my_client)
+```
+
+When the client is not specified, `op.workspace` builds one from the credentials you set with `op.init(api_key=..., base_url=...)`.

@@ -5,6 +5,11 @@ sidebarTitle: "Overview"
 
 <Columns cols={3}>
   <Column>
+    <Card title="Workspace" icon="home-blank">
+      Your session for working with data on OuterProduct
+    </Card>
+  </Column>
+  <Column>
     <Card title="In-memory" icon="code" href="inline">
       Register in-memory frames in pandas, polars, Arrow, Python
     </Card>
@@ -14,14 +19,14 @@ sidebarTitle: "Overview"
       Register local files in CSV, Parquet, and JSON format.
     </Card>
   </Column>
+</Columns>
+
+<Columns cols={3}>
   <Column>
     <Card title="Amazon S3" icon="aws" href="s3">
       Register files in your S3 bucket by stored credential.
     </Card>
   </Column>
-</Columns>
-
-<Columns cols={3}>
   <Column>
     <Card title="Snowflake" icon="snowflake" href="snowflake">
       Register Snowflake tables by stored credential using a PAT. 
@@ -31,8 +36,6 @@ sidebarTitle: "Overview"
     <Card title="Databricks" icon="database" href="databricks">
       Register Databricks  tables by stored credential.
     </Card>
-  </Column>
-  <Column>
   </Column>
 </Columns>
 
