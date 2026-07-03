@@ -77,16 +77,21 @@ by_region = ws.table("orders").aggregate(
 
 ## Joining and combining
 
+Joining stitches two DataFrames together side by side, matching rows on a key. Supported join types (`how=`): `inner`, `left`, `right`, `full`, `semi`, `anti`.
+
 ```python
 orders.join(customers, on="customer_id", how="inner")   # join on a shared column
 orders.join_on(customers, col("orders.cid") == col("customers.id"), how="left")
+```
 
-a.union(b)           	# stack rows (use union_distinct to dedupe)
+Set operations stack or compare two DataFrames that share the same columns.
+
+```python
+a.union(b)           	# stack rows 
+a.union_distinct(b)	# use union_distinct to dedupe stacked rows
 a.intersect(b)       	# rows in both
 a.except_all(b)		# rows in a not in b
 ```
-
-Supported join types (`how=`): `inner`, `left`, `right`, `full`, `semi`, `anti`.
 
 <Info>
   To see a comprehensive list of data querying functions please refer to the Data Query Documentation.
