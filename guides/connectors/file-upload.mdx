@@ -17,7 +17,7 @@ op_df = ws.register_parquet("data/events.parquet")  # table name → "events"
 | :-- | :-- | :-- |
 | Parquet | `register_parquet(path, table_name=…)` | Compressed, columnar, types preserved. |
 | CSV | `register_csv(path, table_name=…)` | Types inferred on read. |
-| JSON | `register_json(path, table_name=…)` | Types inferred on read. |
+| JSON | `register_json(path, table_name=…)` | Newline-delimited JSON, types inferred on read. |
 
 <Tip>
   Use a Parquet file instead of CSV when your dataset is large. Parquet files are compressed and columnar, so they upload faster and consume less bandwidth. They also preserve column types, while CSV and JSON values are inferred on read.

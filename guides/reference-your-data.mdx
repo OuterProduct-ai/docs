@@ -38,6 +38,7 @@ Convert the materialized `Table` into whatever you need:
 
 ```python
 table = customers.materialize()
-table.to_pandas()   # pandas DataFrame
-table.to_pylist()   # list of row dicts
+table.to_pandas()   	# pandas DataFrame
+table.to_pylist()   	# list of row dicts
+table.to_pydict()	# dict of columns
 ```
