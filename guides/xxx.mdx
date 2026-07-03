@@ -22,6 +22,7 @@ from outerproduct import col, lit
 
 col("age") >= 18                      		# comparison
 col("price") * col("quantity")        	# arithmetic
+col("price") * lit(0.9)					# arithmetic with constant
 (col("region") == "us") & col("active")	# combine with & (and), | (or), ~ (not)
 col("total").alias("order_total")     	# rename an expression
 ```
