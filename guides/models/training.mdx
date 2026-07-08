@@ -19,7 +19,7 @@ curve = job.wait()
 
 **Arguments**
 
-- `df` _(required)_ — the training table, passed positionally. Every column is treated as a feature except those named by the task (label, id, timestamp).
+- `df` _(required)_ — the training table, passed positionally. **Must be an OuterProduct dataframe**. Every column is treated as a feature except those named by the task (label, id, timestamp).
 - `task` _(required)_ — the kind of predictive modeling problem.
 - `metrics` — list of metric names to optimize. One metric selects a single best model; several trigger multi-objective (Pareto) optimization. Defaults to a task-appropriate metric.
 - `hpo_space` — the `HPOSpace` to search. Defaults to a server-chosen space.
