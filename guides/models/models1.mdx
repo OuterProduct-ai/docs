@@ -44,6 +44,13 @@ model = op.get_model("mdl-7bQ2xV")   # id, short_id, or name
 proba = model.predict(test_features)
 ```
 
+Every model carries the hyperparameters it was trained with. Read them from `model.hyperparameters`, a dict whose `'__model__'` key tells you the model family (e.g. `'tabm'`, `'xrfm'`, `'tabicl'`) alongside other hyperparameters:
+
+```python
+params = model.hyperparameters
+print(params["__model__"])   # 'tabm' — the model family
+```
+
 ## Listing your models
 
 To see every model in your org, use `op.get_models()`:
