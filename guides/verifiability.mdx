@@ -1,3 +1,35 @@
 ---
 title: "Verifiability"
+description: "Verify the importance of surfaced drivers through scenarios"
 ---
+
+One of the key pillars of the Unified Reasoning Engine is the ability to verify that the surfaced drivers are in fact the most important ones for a specific inference sample. The idea powering OuterProduct's verifiability pillar is as following:
+
+> _If the driver were truly influential on the outcome of the prediction, then it would mean that changing the value of the driver in a certain direction would change the prediction. We define each "what-if" as a scenario._
+
+The OuterProduct platform enriches each prediction with a series of scenarios, and thereby providing verifiability for model interpretation. See below on how to use scenarios through the OuterProduct SDK.
+
+#### Training a reasoning model
+
+#### Call Scenarios through model
+
+```python
+samples = test_tbl.filter(op.col(label) == True)
+
+result = model.scenario(
+    samples,
+    target_value=0.3,
+    n_trials=100,
+    max_steps=20,
+    constraints={"State": {"immutable": True}, "Area code": {"immutable": True}},
+)
+
+# Each scenario is a compact diff {changed_feature: new_value}; unchanged features are
+# omitted, and the "before" value comes from the query row.
+for i, q in enumerate(result.queries):
+    print(f"Query {i}: baseline={q.baseline_prediction:.2f}")
+    for scenario in q.scenarios:
+        print(f"  Candidate ({len(scenario)} changes):")
+        for feature, new_value in scenario.items():
+            print(f"    {feature}: {q.query[feature]} → {new_value}")
+```
