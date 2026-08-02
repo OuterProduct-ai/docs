@@ -1,0 +1,19 @@
+installation.mdx
+  s_93b66abb761f6d::t_0c42bdee03bfb5 11,13,16-21,84
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.20",
+  "base_commit_sha": "81eb68b3dce4d9ab788204b153e90c233b0cd6c6",
+  "prompts": {},
+  "sessions": {
+    "s_93b66abb761f6d": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "019fc364-7b56-72e0-a5d8-069a9a50cd1c",
+        "model": "gpt-5.6-sol"
+      },
+      "human_author": "Michael Fortunato <michael.n.fortunato@gmail.com>"
+    }
+  }
+}
