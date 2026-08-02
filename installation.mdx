@@ -8,15 +8,17 @@ icon: "play"
   <Step title="Install the SDK">
     Install the OuterProduct SDK from PyPI.
 
-    ```shellscript
+    <CodeGroup>
+
+    ```bash uv
+    uv add outerproduct
+    ```
+
+    ```bash pip
     pip install outerproduct
     ```
 
-    Or with the uv package manager:
-
-    ```shellscript
-    uv add outerproduct
-    ```
+    </CodeGroup>
   </Step>
   <Step title="Initialize and open a workspace">
     Call `op.init()` once to authenticate, then open a `Workspace`. The workspace is your entry point for unified data queries, model training, and reasoning.
